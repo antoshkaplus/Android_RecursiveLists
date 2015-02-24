@@ -27,10 +27,18 @@ import java.util.List;
 
 public class MainActivity extends ListActivity {
 
+    // should think about good naming of those variables
+    public final static String EXTRA_PARENT_ID = "ExtraParentId";
+    public RecursiveLists lists = RecursiveLists.getInstance();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null) {
+
+            Intent intent = getIntent();
+            int parentId = intent.getIntExtra(EXTRA_PARENT_ID, lists.getRootId());
+            List<Item> items = RecursiveLists.getInstance().getListItems(parentId);
 
             ArrayList<String> values = new ArrayList<>();
             for (int i = 0; i < 100; ++i) {
@@ -45,7 +53,6 @@ public class MainActivity extends ListActivity {
         }
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -57,16 +64,24 @@ public class MainActivity extends ListActivity {
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         if (v == getListView()) {
-            menu.add("Edit");
-            menu.add("Recurse");
-            // if items inside ask... are you sure?
-            menu.add("Remove");
-            menu.add("Reposition");
-
-            // new
             menu.add("Add New");
+            // click on item // and not blank?
+            if (true) menu.add("Remove");
+            menu.add("Edit");
+            // click on item and // 1 - parentId
+            if (true && lists.getListItems(1).size() > 1) menu.add("Reposition");
+            if (lists.getListItems(0).size() == 0) menu.add("Recurse");
         }
     }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        // can also change color of items around
+
+        getActionBar().setBackgroundDrawable(new ColorDrawable(Color.RED));
+        return super.onContextItemSelected(item);
+    }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -87,13 +102,8 @@ public class MainActivity extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(EXTRA_PARENT_ID, id);
         startActivity(intent);
     }
 
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        // can also change color of items around
-        getActionBar().setBackgroundDrawable(new ColorDrawable(Color.RED));
-        return super.onContextItemSelected(item);
-    }
 }

@@ -33,6 +33,10 @@ public class RecursiveLists implements Closeable {
         return items.get(0);
     }
 
+    public int getRootId() {
+        return 0;
+    }
+
     public void remove(Item item) {
 
     }
