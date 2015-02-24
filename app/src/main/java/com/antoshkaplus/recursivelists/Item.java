@@ -8,10 +8,12 @@ import org.json.JSONException;
  */
 public class Item {
 
-    String title;
-    int order;
-    int parentKey;
-    int key;
+    public String title;
+    public int order;
+    public int parentKey;
+    public int key;
+
+    public Item(String title, int order, int parentKey)
 
     JSONObject toJson() throws JSONException {
         JSONObject jsonObject= new JSONObject();

@@ -18,20 +18,22 @@ import android.widget.EditText;
 public class AddStringDialog extends DialogFragment {
     private static final String TAG = "AddStringDialog";
 
+    public static final String ARG_TITLE = "arg_title";
+    public static final String ARG_HINT = "arg_hint";
+
     private CharSequence title;
     private CharSequence hint;
     private EditText input;
 
     private static final int TOP_INPUT_PADDING_DP = 15;
 
-    private AddStringDialogListener listener = null;
+    private AddStringDialogListener listener = new DefaultListener();
 
-
-    public static AddStringDialog newInstance(CharSequence title, CharSequence hint) {
-        AddStringDialog dialog = new AddStringDialog();
-        dialog.title = title;
-        dialog.hint = hint;
-        return dialog;
+    @Override
+    public void setArguments(Bundle args) {
+        super.setArguments(args);
+        title = args.getString(ARG_TITLE, "");
+        hint = args.getString(ARG_HINT, "");
     }
 
     @Override
@@ -55,7 +57,6 @@ public class AddStringDialog extends DialogFragment {
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                if (listener == null) return false;
                 Log.d(TAG, " " + keyEvent.getAction());
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
@@ -102,6 +103,13 @@ public class AddStringDialog extends DialogFragment {
 
     public void setAddStringDialogListener(AddStringDialogListener listener) {
         this.listener = listener;
+    }
+
+    private class DefaultListener implements AddStringDialogListener {
+        @Override
+        public void onAddStringDialogSuccess(CharSequence string) {}
+        @Override
+        public void onAddStringDialogCancel() {}
     }
 
     public interface AddStringDialogListener {

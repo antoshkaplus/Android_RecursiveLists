@@ -3,6 +3,7 @@ package com.antoshkaplus.recursivelists;
 import android.app.Activity;
 import android.app.ActionBar;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.app.ListActivity;
 //import android.app.ListFragment;
 import android.content.Intent;
@@ -29,7 +30,16 @@ public class MainActivity extends ListActivity {
 
     // should think about good naming of those variables
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
-    public RecursiveLists lists = RecursiveLists.getInstance();
+    private RecursiveLists lists = RecursiveLists.getInstance();
+
+    private final static int MENU_ADD_NEW = 0;
+    private final static int MENU_REMOVE = 1;
+    private final static int MENU_EDIT = 2;
+    private final static int MENU_REPOSITION = 3;
+    private final static int MENU_RECURSE = 4;
+
+    private int parentId;
+    private int pressedPosition = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +48,7 @@ public class MainActivity extends ListActivity {
 
             Intent intent = getIntent();
             int parentId = intent.getIntExtra(EXTRA_PARENT_ID, lists.getRootId());
-            List<Item> items = RecursiveLists.getInstance().getListItems(parentId);
+            List<Item> items = new ArrayList<>(); // RecursiveLists.getInstance().getListItems(parentId);
 
             ArrayList<String> values = new ArrayList<>();
             for (int i = 0; i < 100; ++i) {
@@ -69,14 +79,44 @@ public class MainActivity extends ListActivity {
             if (true) menu.add("Remove");
             menu.add("Edit");
             // click on item and // 1 - parentId
-            if (true && lists.getListItems(1).size() > 1) menu.add("Reposition");
-            if (lists.getListItems(0).size() == 0) menu.add("Recurse");
+            //if (true && lists.getListItems(1).size() > 1) menu.add("Reposition");
+            //if (lists.getListItems(0).size() == 0) menu.add("Recurse");
         }
     }
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         // can also change color of items around
+
+        switch (item.getItemId()) {
+            case MENU_ADD_NEW:
+                FragmentTransaction ft = getFragmentManager().beginTransaction();
+                AddStringDialog dialog = new AddStringDialog();
+                Bundle args = new Bundle();
+                args.putString(AddStringDialog.ARG_TITLE, "Add new:");
+                args.putString(AddStringDialog.ARG_HINT, "Item");
+                dialog.setArguments(args);
+                dialog.setAddStringDialogListener(new AddStringDialog.AddStringDialogListener() {
+                    @Override
+                    public void onAddStringDialogSuccess(CharSequence string) {
+                        // need to add value at special location
+                        lists.create(string.toString(), pressedPosition, parentId);
+                    }
+                    @Override
+                    public void onAddStringDialogCancel() {}
+                });
+                dialog.show(ft, "dialog");
+                break;
+            case MENU_EDIT:
+
+                break;
+            case MENU_REMOVE:
+                
+                break;
+            default:
+                // do nothing
+        }
+
 
         getActionBar().setBackgroundDrawable(new ColorDrawable(Color.RED));
         return super.onContextItemSelected(item);
