@@ -13,11 +13,12 @@ import android.view.WindowManager;
 import android.widget.EditText;
 
 /**
- * Created by antoshkaplus on 10/30/14.
+ * Created by antoshkaplus on 2/25/15.
  */
-public class AddStringDialog extends DialogFragment {
+public class EditStringDialog extends DialogFragment {
 
-    private static final String TAG = "AddStringDialog";
+
+    private static final String TAG = "EditStringDialog";
 
     public static final String ARG_TITLE = "arg_title";
     public static final String ARG_HINT = "arg_hint";
@@ -28,7 +29,7 @@ public class AddStringDialog extends DialogFragment {
 
     private static final int TOP_INPUT_PADDING_DP = 15;
 
-    private AddStringDialogListener listener = new DefaultListener();
+    private EditStringDialogListener listener = new DefaultListener();
 
     @Override
     public void setArguments(Bundle args) {
@@ -61,14 +62,14 @@ public class AddStringDialog extends DialogFragment {
                 Log.d(TAG, " " + keyEvent.getAction());
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
-                        Log.d(TAG, "pressed Add button");
-                        listener.onAddStringDialogSuccess(input.getText());
+                        Log.d(TAG, "pressed Edit button");
+                        listener.onEditStringDialogSuccess(input.getText());
                         dismiss();
                         return true;
                     }
                     if (i == KeyEvent.KEYCODE_BACK) {
                         Log.d(TAG, "pressed Back button");
-                        listener.onAddStringDialogCancel();
+                        listener.onEditStringDialogCancel();
                         dismiss();
                         return true;
                     }
@@ -77,22 +78,22 @@ public class AddStringDialog extends DialogFragment {
             }
         });
         input.setSingleLine();
-        input.setImeActionLabel("Add", 0);
+        input.setImeActionLabel("Edit", 0);
         input.requestFocus();
         Dialog dialog = (new AlertDialog.Builder(getActivity())
                 .setTitle(title)
                 .setView(input)
-                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                .setPositiveButton("Edit", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        listener.onAddStringDialogSuccess(input.getText());
+                        listener.onEditStringDialogSuccess(input.getText());
                         dismiss();
                     }
                 }))
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        listener.onAddStringDialogCancel();
+                        listener.onEditStringDialogCancel();
                         dismiss();
                     }
                 })
@@ -102,19 +103,20 @@ public class AddStringDialog extends DialogFragment {
         return dialog;
     }
 
-    public void setAddStringDialogListener(AddStringDialogListener listener) {
+    public void setEditStringDialogListener(EditStringDialogListener listener) {
         this.listener = listener;
     }
 
-    private class DefaultListener implements AddStringDialogListener {
+    private class DefaultListener implements EditStringDialogListener {
         @Override
-        public void onAddStringDialogSuccess(CharSequence string) {}
+        public void onEditStringDialogSuccess(CharSequence string) {}
         @Override
-        public void onAddStringDialogCancel() {}
+        public void onEditStringDialogCancel() {}
     }
 
-    public interface AddStringDialogListener {
-        void onAddStringDialogSuccess(CharSequence string);
-        void onAddStringDialogCancel();
+    public interface EditStringDialogListener {
+        void onEditStringDialogSuccess(CharSequence string);
+        void onEditStringDialogCancel();
     }
+
 }

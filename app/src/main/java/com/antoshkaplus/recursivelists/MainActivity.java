@@ -34,6 +34,7 @@ public class MainActivity extends ListActivity {
 
     private final static int MENU_ADD_NEW = 0;
     private final static int MENU_REMOVE = 1;
+    private final static int MENU_REMOVE_INNER = 5;
     private final static int MENU_EDIT = 2;
     private final static int MENU_REPOSITION = 3;
     private final static int MENU_RECURSE = 4;
@@ -74,9 +75,11 @@ public class MainActivity extends ListActivity {
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         if (v == getListView()) {
+            // need to use anonymous function to assign id of menu item
             menu.add("Add New");
             // click on item // and not blank?
             if (true) menu.add("Remove");
+            if (true) menu.add("Remove Inner");
             menu.add("Edit");
             // click on item and // 1 - parentId
             //if (true && lists.getListItems(1).size() > 1) menu.add("Reposition");
@@ -89,7 +92,7 @@ public class MainActivity extends ListActivity {
         // can also change color of items around
 
         switch (item.getItemId()) {
-            case MENU_ADD_NEW:
+            case MENU_ADD_NEW: {
                 FragmentTransaction ft = getFragmentManager().beginTransaction();
                 AddStringDialog dialog = new AddStringDialog();
                 Bundle args = new Bundle();
@@ -101,24 +104,58 @@ public class MainActivity extends ListActivity {
                     public void onAddStringDialogSuccess(CharSequence string) {
                         // need to add value at special location
                         lists.create(string.toString(), pressedPosition, parentId);
+                        // update current list
                     }
                     @Override
                     public void onAddStringDialogCancel() {}
                 });
                 dialog.show(ft, "dialog");
                 break;
-            case MENU_EDIT:
-
+            }
+            case MENU_EDIT: {
+                FragmentTransaction ft = getFragmentManager().beginTransaction();
+                EditStringDialog dialog = new EditStringDialog();
+                Bundle args = new Bundle();
+                args.putString(EditStringDialog.ARG_TITLE, "Edit:");
+                args.putString(EditStringDialog.ARG_HINT, "Item");
+                dialog.setArguments(args);
+                dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
+                    @Override
+                    public void onEditStringDialogSuccess(CharSequence string) {
+                        // should know position of this item
+                        lists.getItem(9);
+                        // update current list
+                    }
+                    @Override
+                    public void onEditStringDialogCancel() {}
+                });
                 break;
-            case MENU_REMOVE:
-                
+            }
+            case MENU_REMOVE: {
+                Item t = null;
+                lists.remove(t);
                 break;
-            default:
+            }
+            case MENU_REMOVE_INNER: {
+                Item t = null;
+                lists.removeInner(t);
+                break;
+            }
+            case MENU_REPOSITION: {
+                ActionBar bar = getActionBar();
+                bar.setBackgroundDrawable(new ColorDrawable(Color.RED));
+                // wait for the click
+                break;
+            }
+            case MENU_RECURSE: {
+                // in items create that item to be with children
+                //
+            }
+            default: {
                 // do nothing
+                // or throw exception
+            }
         }
-
-
-        getActionBar().setBackgroundDrawable(new ColorDrawable(Color.RED));
         return super.onContextItemSelected(item);
     }
 
@@ -134,7 +171,6 @@ public class MainActivity extends ListActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 

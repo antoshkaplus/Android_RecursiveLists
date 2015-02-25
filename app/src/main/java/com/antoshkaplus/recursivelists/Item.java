@@ -10,17 +10,22 @@ public class Item {
 
     public String title;
     public int order;
-    public int parentKey;
-    public int key;
+    public int parentId;
+    public int id;
 
-    public Item(String title, int order, int parentKey)
+    public Item(int id, String title, int order, int parentId) {
+        this.id = id;
+        this.title = title;
+        this.order = order;
+        this.parentId = parentId;
+    }
 
     JSONObject toJson() throws JSONException {
         JSONObject jsonObject= new JSONObject();
         jsonObject.put("title", title);
         jsonObject.put("order", order);
-        jsonObject.put("parentKey", parentKey);
-        jsonObject.put("key", key);
+        jsonObject.put("parentId", parentId);
+        jsonObject.put("key", id);
         return jsonObject;
     }
 

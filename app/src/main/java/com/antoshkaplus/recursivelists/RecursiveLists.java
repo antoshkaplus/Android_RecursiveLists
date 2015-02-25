@@ -1,5 +1,7 @@
 package com.antoshkaplus.recursivelists;
 
+import android.content.Intent;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Dictionary;
@@ -10,6 +12,7 @@ import java.util.List;
  */
 public class RecursiveLists implements Closeable {
 
+    private Dictionary<Integer, Item> items_;
     private Dictionary<Integer, List<Item>> items;
     private static RecursiveLists instance = null;
 
@@ -25,8 +28,12 @@ public class RecursiveLists implements Closeable {
 
     }
 
-    public List<Item> getListItems(int key) {
-        return items.get(key);
+    public Item getItem(int id) {
+        return items_.get(id);
+    }
+
+    public List<Item> getListItems(int parentId) {
+        return items.get(parentId);
     }
 
     public List<Item> getRoot() {
@@ -38,6 +45,11 @@ public class RecursiveLists implements Closeable {
     }
 
     public void remove(Item item) {
+
+    }
+
+    public void removeInner(Item item) {
+
 
     }
 
