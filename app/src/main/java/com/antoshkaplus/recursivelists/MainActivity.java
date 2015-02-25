@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -17,6 +18,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
+import android.view.ViewParent;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
@@ -30,7 +32,6 @@ public class MainActivity extends ListActivity {
 
     // should think about good naming of those variables
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
-    private RecursiveLists lists = RecursiveLists.getInstance();
 
     private final static int MENU_ADD_NEW = 0;
     private final static int MENU_REMOVE = 1;
@@ -46,22 +47,37 @@ public class MainActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null) {
-
             Intent intent = getIntent();
-            int parentId = intent.getIntExtra(EXTRA_PARENT_ID, lists.getRootId());
-            List<Item> items = new ArrayList<>(); // RecursiveLists.getInstance().getListItems(parentId);
-
-            ArrayList<String> values = new ArrayList<>();
-            for (int i = 0; i < 100; ++i) {
-                values.add("tefjwofpqj[q");
-            }
-
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                    android.R.layout.simple_list_item_1, android.R.id.text1, values);
-            setListAdapter(adapter);
-
+            parentId = intent.getIntExtra(EXTRA_PARENT_ID, -1);
+            resetAdapter();
             registerForContextMenu(getListView());
+            getListView().setBackground(new ColorDrawable(Color.YELLOW));
+            ViewGroup.LayoutParams viewGroup = getListView().getLayoutParams();
+            viewGroup.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            getListView().setLayoutParams(viewGroup);
+            ViewParent v = getListView().getParent();
+            // better have my own guy
+            registerForContextMenu(v);
         }
+    }
+
+    // should be called after every change
+    void resetAdapter() {
+        DatabaseManager manager = new DatabaseManager(this);
+        Item parent = new Item();
+        parent.id = parentId;
+        List<Item> items = new ArrayList<>();
+        try {
+           items = manager.getChildren(parent);
+        } catch (Exception ex) {
+            // just use finally
+            ex.printStackTrace();
+        }
+        manager.close();
+        ArrayAdapter<Item> adapter = new ArrayAdapter<Item>(
+                this, android.R.layout.simple_list_item_1,
+                android.R.id.text1, items);
+        setListAdapter(adapter);
     }
 
     @Override
@@ -76,7 +92,7 @@ public class MainActivity extends ListActivity {
         super.onCreateContextMenu(menu, v, menuInfo);
         if (v == getListView()) {
             // need to use anonymous function to assign id of menu item
-            menu.add("Add New");
+            menu.add(0, MENU_ADD_NEW, 0, "Add New");
             // click on item // and not blank?
             if (true) menu.add("Remove");
             if (true) menu.add("Remove Inner");
@@ -103,8 +119,15 @@ public class MainActivity extends ListActivity {
                     @Override
                     public void onAddStringDialogSuccess(CharSequence string) {
                         // need to add value at special location
-                        lists.create(string.toString(), pressedPosition, parentId);
-                        // update current list
+                        DatabaseManager manager = new DatabaseManager(MainActivity.this);
+                        try {
+                            manager.addItem(new Item(string.toString(), pressedPosition, parentId));
+                            // need to update other guys order
+                            // update current list
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                        manager.close();
                     }
                     @Override
                     public void onAddStringDialogCancel() {}
@@ -123,7 +146,7 @@ public class MainActivity extends ListActivity {
                     @Override
                     public void onEditStringDialogSuccess(CharSequence string) {
                         // should know position of this item
-                        lists.getItem(9);
+                        //lists.getItem(9);
                         // update current list
                     }
                     @Override
@@ -133,12 +156,12 @@ public class MainActivity extends ListActivity {
             }
             case MENU_REMOVE: {
                 Item t = null;
-                lists.remove(t);
+                //lists.remove(t);
                 break;
             }
             case MENU_REMOVE_INNER: {
                 Item t = null;
-                lists.removeInner(t);
+                //lists.removeInner(t);
                 break;
             }
             case MENU_REPOSITION: {
@@ -173,6 +196,8 @@ public class MainActivity extends ListActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
