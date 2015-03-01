@@ -28,7 +28,7 @@ import java.util.List;
 
 
 
-public class MainActivity extends ListActivity {
+public class MainActivity extends Activity {
 
     // should think about good naming of those variables
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
@@ -46,19 +46,28 @@ public class MainActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             Intent intent = getIntent();
             parentId = intent.getIntExtra(EXTRA_PARENT_ID, -1);
             resetAdapter();
             registerForContextMenu(getListView());
             getListView().setBackground(new ColorDrawable(Color.YELLOW));
-            ViewGroup.LayoutParams viewGroup = getListView().getLayoutParams();
-            viewGroup.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            getListView().setLayoutParams(viewGroup);
-            ViewParent v = getListView().getParent();
-            // better have my own guy
-            registerForContextMenu(v);
+            registerForContextMenu(findViewById(R.id.container));
+            registerForContextMenu(getListView());
         }
+    }
+
+    ListView getListView() {
+        return (ListView)findViewById(R.id.content);
+    }
+
+    View getContainer() {
+        return findViewById(R.id.container);
+    }
+
+    void setListAdapter(ListAdapter adapter) {
+        getListView().setAdapter(adapter);
     }
 
     // should be called after every change
@@ -90,7 +99,7 @@ public class MainActivity extends ListActivity {
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        if (v == getListView()) {
+        if (v == getListView() || v == getContainer()) {
             // need to use anonymous function to assign id of menu item
             menu.add(0, MENU_ADD_NEW, 0, "Add New");
             // click on item // and not blank?
@@ -121,8 +130,9 @@ public class MainActivity extends ListActivity {
                         // need to add value at special location
                         DatabaseManager manager = new DatabaseManager(MainActivity.this);
                         try {
+                            // need to update other guys order inside this method
                             manager.addItem(new Item(string.toString(), pressedPosition, parentId));
-                            // need to update other guys order
+                            resetAdapter();
                             // update current list
                         } catch (Exception ex) {
                             ex.printStackTrace();
@@ -197,14 +207,14 @@ public class MainActivity extends ListActivity {
         return super.onOptionsItemSelected(item);
     }
 
-
-
-    @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        super.onListItemClick(l, v, position, id);
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra(EXTRA_PARENT_ID, id);
-        startActivity(intent);
-    }
+//
+//
+//    @Override
+//    protected void onListItemClick(ListView l, View v, int position, long id) {
+//        super.onListItemClick(l, v, position, id);
+//        Intent intent = new Intent(this, MainActivity.class);
+//        intent.putExtra(EXTRA_PARENT_ID, id);
+//        startActivity(intent);
+//    }
 
 }

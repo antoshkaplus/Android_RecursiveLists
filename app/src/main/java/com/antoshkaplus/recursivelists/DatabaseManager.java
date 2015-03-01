@@ -33,7 +33,10 @@ public class DatabaseManager implements DataSet {
     }
 
     public List<Item> getChildren(Item item) throws SQLException {
-        return helper.getItemDao().queryForEq(Item.FIELD_NAME_PARENT_ID, item.id);
+        return helper.getItemDao().queryBuilder()
+                .orderBy(Item.FIELD_NAME_ORDER, true)
+                .where().eq(Item.FIELD_NAME_PARENT_ID, item.id)
+                .query();
     }
 
     public void deleteItem(Item item) throws SQLException {
@@ -51,6 +54,14 @@ public class DatabaseManager implements DataSet {
 
     @Override
     public void addItem(Item item) throws Exception {
+        Item parent = new Item();
+        parent.id = item.parentId;
+        List<Item> items = getChildren(parent);
+        items = items.subList(item.order, items.size());
+        for (Item i : items) {
+            ++i.order;
+            updateItem(i);
+        }
         helper.getItemDao().create(item);
     }
 
