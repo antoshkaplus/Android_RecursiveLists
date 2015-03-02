@@ -28,7 +28,7 @@ import java.util.List;
 
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
 
     // should think about good naming of those variables
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
 
     private int parentId;
     private int pressedPosition = 0;
+    private boolean repositioning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +53,34 @@ public class MainActivity extends Activity {
             parentId = intent.getIntExtra(EXTRA_PARENT_ID, -1);
             resetAdapter();
             registerForContextMenu(getListView());
-            getListView().setBackground(new ColorDrawable(Color.YELLOW));
-            registerForContextMenu(findViewById(R.id.container));
+            //getListView().setBackground(new ColorDrawable(Color.YELLOW));
+            getListView().setOnItemClickListener(this);
+            getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                    pressedPosition = position;
+                    return false;
+                }
+            });
+            View container = findViewById(R.id.container);
+            container.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    pressedPosition = getListView().getAdapter().getCount();
+                    ShowAddNewDialog();
+                    return true;
+                }
+            });
+            container.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (repositioning) {
+                        reposition(pressedPosition, getItemCount());
+                        repositioning = false;
+                    }
+                }
+            });
+            registerForContextMenu(container);
             registerForContextMenu(getListView());
         }
     }
@@ -72,20 +99,9 @@ public class MainActivity extends Activity {
 
     // should be called after every change
     void resetAdapter() {
-        DatabaseManager manager = new DatabaseManager(this);
-        Item parent = new Item();
-        parent.id = parentId;
-        List<Item> items = new ArrayList<>();
-        try {
-           items = manager.getChildren(parent);
-        } catch (Exception ex) {
-            // just use finally
-            ex.printStackTrace();
-        }
-        manager.close();
         ArrayAdapter<Item> adapter = new ArrayAdapter<Item>(
                 this, android.R.layout.simple_list_item_1,
-                android.R.id.text1, items);
+                android.R.id.text1, getItems());
         setListAdapter(adapter);
     }
 
@@ -99,16 +115,15 @@ public class MainActivity extends Activity {
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        if (v == getListView() || v == getContainer()) {
-            // need to use anonymous function to assign id of menu item
+        if ((v == getListView() || v == getContainer()) && menu.size() == 0) {
             menu.add(0, MENU_ADD_NEW, 0, "Add New");
-            // click on item // and not blank?
-            if (true) menu.add("Remove");
-            if (true) menu.add("Remove Inner");
-            menu.add("Edit");
-            // click on item and // 1 - parentId
-            //if (true && lists.getListItems(1).size() > 1) menu.add("Reposition");
-            //if (lists.getListItems(0).size() == 0) menu.add("Recurse");
+            if (getItemCount() != pressedPosition) {
+                // click on item // and not blank?
+                if (true) menu.add("Remove");
+                if (true) menu.add("Remove Inner");
+                menu.add(0, MENU_EDIT, 0, "Edit");
+                if (getItemCount() > 1) menu.add(0, MENU_REPOSITION, 0, "Reposition");
+            }
         }
     }
 
@@ -118,31 +133,7 @@ public class MainActivity extends Activity {
 
         switch (item.getItemId()) {
             case MENU_ADD_NEW: {
-                FragmentTransaction ft = getFragmentManager().beginTransaction();
-                AddStringDialog dialog = new AddStringDialog();
-                Bundle args = new Bundle();
-                args.putString(AddStringDialog.ARG_TITLE, "Add new:");
-                args.putString(AddStringDialog.ARG_HINT, "Item");
-                dialog.setArguments(args);
-                dialog.setAddStringDialogListener(new AddStringDialog.AddStringDialogListener() {
-                    @Override
-                    public void onAddStringDialogSuccess(CharSequence string) {
-                        // need to add value at special location
-                        DatabaseManager manager = new DatabaseManager(MainActivity.this);
-                        try {
-                            // need to update other guys order inside this method
-                            manager.addItem(new Item(string.toString(), pressedPosition, parentId));
-                            resetAdapter();
-                            // update current list
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        manager.close();
-                    }
-                    @Override
-                    public void onAddStringDialogCancel() {}
-                });
-                dialog.show(ft, "dialog");
+                ShowAddNewDialog();
                 break;
             }
             case MENU_EDIT: {
@@ -155,6 +146,17 @@ public class MainActivity extends Activity {
                 dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
                     @Override
                     public void onEditStringDialogSuccess(CharSequence string) {
+                        DatabaseManager manager = new DatabaseManager(MainActivity.this);
+                        try {
+                            Item item = manager.getItem(getItem(pressedPosition).id);
+                            item.title = string.toString();
+                            manager.updateItem(item);
+                            resetAdapter();
+                            // update current list
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                        manager.close();
                         // should know position of this item
                         //lists.getItem(9);
                         // update current list
@@ -162,6 +164,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void onEditStringDialogCancel() {}
                 });
+                dialog.show(ft, "dialog");
                 break;
             }
             case MENU_REMOVE: {
@@ -176,13 +179,11 @@ public class MainActivity extends Activity {
             }
             case MENU_REPOSITION: {
                 ActionBar bar = getActionBar();
+                // need to save default action bar color
                 bar.setBackgroundDrawable(new ColorDrawable(Color.RED));
-                // wait for the click
+                getListView().setSelection(pressedPosition);
+                repositioning = true;
                 break;
-            }
-            case MENU_RECURSE: {
-                // in items create that item to be with children
-                //
             }
             default: {
                 // do nothing
@@ -207,14 +208,89 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-//
-//
-//    @Override
-//    protected void onListItemClick(ListView l, View v, int position, long id) {
-//        super.onListItemClick(l, v, position, id);
-//        Intent intent = new Intent(this, MainActivity.class);
-//        intent.putExtra(EXTRA_PARENT_ID, id);
-//        startActivity(intent);
-//    }
+    private Item getItem(int position) {
+        return (Item)getListView().getAdapter().getItem(position);
+    }
+
+    private List<Item> getItems() {
+        DatabaseManager manager = new DatabaseManager(this);
+        List<Item> items = new ArrayList<>();
+        try {
+            items = manager.getChildren(parentId);
+        } catch (Exception ex) {
+            // just use finally
+            ex.printStackTrace();
+        }
+        manager.close();
+        return items;
+    }
+
+    private int getItemCount() {
+        return getListView().getAdapter().getCount();
+    }
+
+    private void ShowAddNewDialog() {
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        AddStringDialog dialog = new AddStringDialog();
+        Bundle args = new Bundle();
+        args.putString(AddStringDialog.ARG_TITLE, "Add new:");
+        args.putString(AddStringDialog.ARG_HINT, "Item");
+        dialog.setArguments(args);
+        dialog.setAddStringDialogListener(new AddStringDialog.AddStringDialogListener() {
+            @Override
+            public void onAddStringDialogSuccess(CharSequence string) {
+                // need to add value at special location
+                DatabaseManager manager = new DatabaseManager(MainActivity.this);
+                try {
+                    manager.addItem(new Item(string.toString(), pressedPosition, parentId));
+                    resetAdapter();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                manager.close();
+            }
+            @Override
+            public void onAddStringDialogCancel() {}
+        });
+        dialog.show(ft, "dialog");
+    }
+
+    void reposition(int positionBefore, int positionAfter) {
+        List<Item> items = getItems();
+        Item item = items.remove(positionBefore);
+        if (positionBefore <= positionAfter) --positionAfter;
+        items.add(positionAfter, item);
+        for (int i = 0; i < items.size(); ++i) {
+            items.get(i).order = i;
+        }
+        DatabaseManager manager = new DatabaseManager(MainActivity.this);
+        try {
+            manager.updateItems(items);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        resetAdapter();
+    }
+
+    void endReposition() {
+        repositioning = false;
+
+    }
+
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (repositioning) {
+            reposition(pressedPosition, position);
+            endReposition();
+            return;
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        Item item = getItem(position);
+        intent.putExtra(EXTRA_PARENT_ID, item.id);
+        startActivity(intent);
+    }
+
+
 
 }

@@ -15,6 +15,7 @@ public interface DataSet {
     void deleteChildren(Item item) throws Exception;
     void addItem(Item item) throws Exception;
     Item getItem(int id) throws Exception;
-    List<Item> getChildren(Item item) throws Exception;
+    List<Item> getChildren(int id) throws Exception;
     void updateItem(Item item) throws Exception;
+
 }

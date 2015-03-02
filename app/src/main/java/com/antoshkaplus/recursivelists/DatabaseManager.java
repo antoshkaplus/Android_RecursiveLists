@@ -1,19 +1,11 @@
 package com.antoshkaplus.recursivelists;
 
 import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
 
 import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.stmt.DeleteBuilder;
-import com.j256.ormlite.stmt.QueryBuilder;
 
-import java.net.URL;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -32,10 +24,10 @@ public class DatabaseManager implements DataSet {
         return helper.getItemDao().queryForId(id);
     }
 
-    public List<Item> getChildren(Item item) throws SQLException {
+    public List<Item> getChildren(int id) throws SQLException {
         return helper.getItemDao().queryBuilder()
                 .orderBy(Item.FIELD_NAME_ORDER, true)
-                .where().eq(Item.FIELD_NAME_PARENT_ID, item.id)
+                .where().eq(Item.FIELD_NAME_PARENT_ID, id)
                 .query();
     }
 
@@ -54,9 +46,7 @@ public class DatabaseManager implements DataSet {
 
     @Override
     public void addItem(Item item) throws Exception {
-        Item parent = new Item();
-        parent.id = item.parentId;
-        List<Item> items = getChildren(parent);
+        List<Item> items = getChildren(item.parentId);
         items = items.subList(item.order, items.size());
         for (Item i : items) {
             ++i.order;
@@ -65,9 +55,23 @@ public class DatabaseManager implements DataSet {
         helper.getItemDao().create(item);
     }
 
-    public void updateItem(Item item) throws SQLException {
+    public void updateItem(Item item) throws Exception {
         helper.getItemDao().update(item);
     }
+
+    public void updateItems(final List<Item> items) throws Exception {
+        final Dao<Item, Integer> dao = helper.getItemDao();
+        dao.callBatchTasks(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                for (Item i : items) {
+                    dao.update(i);
+                }
+                return null;
+            }
+        });
+    }
+
 
     public void close() {
         helper.close();

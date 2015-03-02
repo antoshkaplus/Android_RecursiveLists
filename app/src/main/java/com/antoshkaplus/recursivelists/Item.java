@@ -23,8 +23,11 @@ public class Item {
     public String title;
     @DatabaseField(columnName = FIELD_NAME_ORDER)
     public int order;
-    @DatabaseField(columnName = FIELD_NAME_PARENT_ID, foreignColumnName = FIELD_NAME_ID)
+
+    // should not forget to assign
+    @DatabaseField(columnName = FIELD_NAME_PARENT_ID)
     public int parentId;
+
     @DatabaseField(columnName = FIELD_NAME_ID, generatedId = true)
     public int id;
 
