@@ -5,10 +5,11 @@ import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.app.ListActivity;
-//import android.app.ListFragment;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.view.ContextMenu;
@@ -40,20 +41,27 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private final static int MENU_REPOSITION = 3;
     private final static int MENU_RECURSE = 4;
 
+    private final static int ROOT_ID  = -1;
+
     private int parentId;
     private int pressedPosition = 0;
     private boolean repositioning = false;
+
+    // those can be constants
+    private int repositioningBarColor = Color.YELLOW;
+    private int defaultBarColor = Color.LTGRAY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setActionBarColor(defaultBarColor);
         if (savedInstanceState == null) {
             Intent intent = getIntent();
-            parentId = intent.getIntExtra(EXTRA_PARENT_ID, -1);
+            parentId = intent.getIntExtra(EXTRA_PARENT_ID, ROOT_ID);
+            setActionBarTitle();
             resetAdapter();
             registerForContextMenu(getListView());
-            //getListView().setBackground(new ColorDrawable(Color.YELLOW));
             getListView().setOnItemClickListener(this);
             getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
                 @Override
@@ -76,7 +84,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 public void onClick(View v) {
                     if (repositioning) {
                         reposition(pressedPosition, getItemCount());
-                        repositioning = false;
+                        endReposition();
                     }
                 }
             });
@@ -168,19 +176,29 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 break;
             }
             case MENU_REMOVE: {
-                Item t = null;
-                //lists.remove(t);
+                Item i = getItem(pressedPosition);
+                DatabaseManager manager = new DatabaseManager(this);
+                try {
+                    manager.deleteItem(i);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                resetAdapter();
                 break;
             }
             case MENU_REMOVE_INNER: {
-                Item t = null;
-                //lists.removeInner(t);
+                Item i = getItem(pressedPosition);
+                DatabaseManager manager = new DatabaseManager(this);
+                try {
+                    manager.deleteChildren(i);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                resetAdapter();
                 break;
             }
             case MENU_REPOSITION: {
-                ActionBar bar = getActionBar();
-                // need to save default action bar color
-                bar.setBackgroundDrawable(new ColorDrawable(Color.RED));
+                setActionBarColor(repositioningBarColor);
                 getListView().setSelection(pressedPosition);
                 repositioning = true;
                 break;
@@ -274,9 +292,30 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     void endReposition() {
         repositioning = false;
-
+        setActionBarColor(defaultBarColor);
     }
 
+    void setActionBarColor(int color) {
+        ActionBar bar = getActionBar();
+        if (bar == null) return;
+        bar.setBackgroundDrawable(new ColorDrawable(color));
+    }
+
+    void setActionBarTitle() {
+        ActionBar bar = getActionBar();
+        if (bar == null) return;
+        String title = "Root";
+        if (parentId != ROOT_ID) {
+            DatabaseManager manager = new DatabaseManager(this);
+            try {
+                Item item = manager.getItem(parentId);
+                title = item.title;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+        bar.setTitle(title);
+    }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -285,6 +324,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             endReposition();
             return;
         }
+        resetAdapter();
         Intent intent = new Intent(this, MainActivity.class);
         Item item = getItem(position);
         intent.putExtra(EXTRA_PARENT_ID, item.id);

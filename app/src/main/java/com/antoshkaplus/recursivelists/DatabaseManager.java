@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
- * Created by antoshkaplus on 11/3/14.
+ * well can think of deleting items better,
+ * but user is too slow... creating data
  */
 public class DatabaseManager implements DataSet {
     private static final String TAG = "DatabaseManager";

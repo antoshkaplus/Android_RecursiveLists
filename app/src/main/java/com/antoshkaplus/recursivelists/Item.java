@@ -18,7 +18,6 @@ public class Item {
     public static final String FIELD_NAME_PARENT_ID = "parent_id";
     public static final String FIELD_NAME_ID = "id";
 
-
     @DatabaseField(columnName = FIELD_NAME_TITLE)
     public String title;
     @DatabaseField(columnName = FIELD_NAME_ORDER)
