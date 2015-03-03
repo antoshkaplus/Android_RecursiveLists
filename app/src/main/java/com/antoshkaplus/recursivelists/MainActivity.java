@@ -39,7 +39,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private final static int MENU_REMOVE_INNER = 5;
     private final static int MENU_EDIT = 2;
     private final static int MENU_REPOSITION = 3;
-    private final static int MENU_RECURSE = 4;
 
     private final static int ROOT_ID  = -1;
 
@@ -59,38 +58,40 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (savedInstanceState == null) {
             Intent intent = getIntent();
             parentId = intent.getIntExtra(EXTRA_PARENT_ID, ROOT_ID);
-            setActionBarTitle();
-            resetAdapter();
-            registerForContextMenu(getListView());
-            getListView().setOnItemClickListener(this);
-            getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-                @Override
-                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                    pressedPosition = position;
-                    return false;
-                }
-            });
-            View container = findViewById(R.id.container);
-            container.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    pressedPosition = getListView().getAdapter().getCount();
-                    ShowAddNewDialog();
-                    return true;
-                }
-            });
-            container.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (repositioning) {
-                        reposition(pressedPosition, getItemCount());
-                        endReposition();
-                    }
-                }
-            });
-            registerForContextMenu(container);
-            registerForContextMenu(getListView());
+        } else {
+            parentId = savedInstanceState.getInt(EXTRA_PARENT_ID);
         }
+        setActionBarTitle();
+        resetAdapter();
+        registerForContextMenu(getListView());
+        getListView().setOnItemClickListener(this);
+        getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                pressedPosition = position;
+                return false;
+            }
+        });
+        View container = findViewById(R.id.container);
+        container.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                pressedPosition = getListView().getAdapter().getCount();
+                ShowAddNewDialog();
+                return true;
+            }
+        });
+        container.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (repositioning) {
+                    reposition(pressedPosition, getItemCount());
+                    endReposition();
+                }
+            }
+        });
+        registerForContextMenu(container);
+        registerForContextMenu(getListView());
     }
 
     ListView getListView() {
@@ -116,7 +117,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        // no menu for now
+        // getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
@@ -127,8 +129,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             menu.add(0, MENU_ADD_NEW, 0, "Add New");
             if (getItemCount() != pressedPosition) {
                 // click on item // and not blank?
-                if (true) menu.add("Remove");
-                if (true) menu.add("Remove Inner");
+                menu.add(0, MENU_REMOVE, 0, "Remove");
+                menu.add(0, MENU_REMOVE_INNER, 0, "Remove Inner");
                 menu.add(0, MENU_EDIT, 0, "Edit");
                 if (getItemCount() > 1) menu.add(0, MENU_REPOSITION, 0, "Reposition");
             }
@@ -138,63 +140,21 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         // can also change color of items around
-
         switch (item.getItemId()) {
             case MENU_ADD_NEW: {
                 ShowAddNewDialog();
                 break;
             }
             case MENU_EDIT: {
-                FragmentTransaction ft = getFragmentManager().beginTransaction();
-                EditStringDialog dialog = new EditStringDialog();
-                Bundle args = new Bundle();
-                args.putString(EditStringDialog.ARG_TITLE, "Edit:");
-                args.putString(EditStringDialog.ARG_HINT, "Item");
-                dialog.setArguments(args);
-                dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
-                    @Override
-                    public void onEditStringDialogSuccess(CharSequence string) {
-                        DatabaseManager manager = new DatabaseManager(MainActivity.this);
-                        try {
-                            Item item = manager.getItem(getItem(pressedPosition).id);
-                            item.title = string.toString();
-                            manager.updateItem(item);
-                            resetAdapter();
-                            // update current list
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        manager.close();
-                        // should know position of this item
-                        //lists.getItem(9);
-                        // update current list
-                    }
-                    @Override
-                    public void onEditStringDialogCancel() {}
-                });
-                dialog.show(ft, "dialog");
+                onMenuEdit();
                 break;
             }
             case MENU_REMOVE: {
-                Item i = getItem(pressedPosition);
-                DatabaseManager manager = new DatabaseManager(this);
-                try {
-                    manager.deleteItem(i);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                resetAdapter();
+                onMenuRemove();
                 break;
             }
             case MENU_REMOVE_INNER: {
-                Item i = getItem(pressedPosition);
-                DatabaseManager manager = new DatabaseManager(this);
-                try {
-                    manager.deleteChildren(i);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                resetAdapter();
+                onMenuRemoveInner();
                 break;
             }
             case MENU_REPOSITION: {
@@ -204,11 +164,60 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 break;
             }
             default: {
-                // do nothing
-                // or throw exception
+                throw new IllegalArgumentException("Unknown menu item identifier");
             }
         }
         return super.onContextItemSelected(item);
+    }
+
+    void onMenuRemove() {
+        Item i = getItem(pressedPosition);
+        DatabaseManager manager = new DatabaseManager(this);
+        try {
+            manager.deleteItem(i);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        resetAdapter();
+    }
+
+    void onMenuRemoveInner() {
+        Item i = getItem(pressedPosition);
+        DatabaseManager manager = new DatabaseManager(this);
+        try {
+            manager.deleteChildren(i);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        resetAdapter();
+    }
+
+    void onMenuEdit() {
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        EditStringDialog dialog = new EditStringDialog();
+        Bundle args = new Bundle();
+        args.putString(EditStringDialog.ARG_TITLE, "Edit:");
+        args.putString(EditStringDialog.ARG_HINT, "Item");
+        dialog.setArguments(args);
+        dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
+            @Override
+            public void onEditStringDialogSuccess(CharSequence string) {
+                DatabaseManager manager = new DatabaseManager(MainActivity.this);
+                try {
+                    Item item = manager.getItem(getItem(pressedPosition).id);
+                    item.title = string.toString();
+                    manager.updateItem(item);
+                    resetAdapter();
+                    // update current list
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                manager.close();
+            }
+            @Override
+            public void onEditStringDialogCancel() {}
+        });
+        dialog.show(ft, "dialog");
     }
 
 
@@ -315,6 +324,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             }
         }
         bar.setTitle(title);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(EXTRA_PARENT_ID, parentId);
     }
 
     @Override

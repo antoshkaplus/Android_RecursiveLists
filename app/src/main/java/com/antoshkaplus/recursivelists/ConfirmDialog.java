@@ -1,28 +1,35 @@
 package com.antoshkaplus.recursivelists;
 
+import android.app.DialogFragment;
+import android.os.Bundle;
+import android.app.Dialog;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.view.WindowManager;
+
+
 /**
  * Created by antoshkaplus on 3/3/15.
  */
-public class ConfirmDialog {
-    private static final String TAG = "NoYesDialog";
+public class ConfirmDialog extends DialogFragment {
+    private static final String TAG = "ConfirmDialog";
+
+    public static final String ARG_TITLE = "arg_title";
+    public static final String ARG_MESSAGE = "arg_message";
+
+    private static final int TOP_INPUT_PADDING_DP = 15;
 
     private CharSequence title;
     private CharSequence message;
 
-    private static final int TOP_INPUT_PADDING_DP = 15;
+    private ConfirmDialogListener listener = new DefaultListener();
 
-    private YesDialogListener listener = new YesDialogAdapter();
-
-    public static YesDialog newInstance(CharSequence title, CharSequence message) {
-        YesDialog dialog = new YesDialog();
-        dialog.title = title;
-        dialog.message = message;
-        return dialog;
-    }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void setArguments(Bundle args) {
+        super.setArguments(args);
+        title = args.getString(ARG_TITLE, "");
+        message = args.getString(ARG_MESSAGE, "");
     }
 
     @Override
@@ -33,14 +40,14 @@ public class ConfirmDialog {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        listener.onDialogYes();
+                        listener.onClickYes();
                         dismiss();
                     }
                 }))
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        listener.onDialogNo();
+                        listener.onClickCancel();
                         dismiss();
                     }
                 })
@@ -50,21 +57,21 @@ public class ConfirmDialog {
         return dialog;
     }
 
-    public void setYesDialogListener(YesDialogListener listener) {
+    public void setConfirmDialogListener(ConfirmDialogListener listener) {
         this.listener = listener;
     }
 
-    public interface YesDialogListener {
-        void onDialogNo();
-        void onDialogYes();
+    public interface ConfirmDialogListener {
+        void onClickCancel();
+        void onClickYes();
     }
 
     // using empty implementations
-    public static class YesDialogAdapter implements YesDialogListener {
+    public static class DefaultListener implements ConfirmDialogListener {
         @Override
-        public void onDialogNo() {}
+        public void onClickCancel() {}
         @Override
-        public void onDialogYes() {}
+        public void onClickYes() {}
     }
 
 }

@@ -3,6 +3,7 @@ package com.antoshkaplus.recursivelists;
 import android.content.Context;
 
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.DeleteBuilder;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -38,11 +39,10 @@ public class DatabaseManager implements DataSet {
 
     @Override
     public void deleteChildren(Item item) throws Exception {
-        helper.getItemDao()
-                .deleteBuilder()
-                .where()
-                .eq(Item.FIELD_NAME_PARENT_ID, item.id)
-                .query();
+        DeleteBuilder<Item, Integer> builder = helper.getItemDao().deleteBuilder();
+        builder.where()
+               .eq(Item.FIELD_NAME_PARENT_ID, item.id);
+        builder.delete();
     }
 
     @Override
@@ -72,7 +72,6 @@ public class DatabaseManager implements DataSet {
             }
         });
     }
-
 
     public void close() {
         helper.close();
