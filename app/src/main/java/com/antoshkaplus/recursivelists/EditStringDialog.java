@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -59,16 +60,16 @@ public class EditStringDialog extends DialogFragment {
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                Log.d(TAG, " " + keyEvent.getAction());
+                if (BuildConfig.DEBUG) Log.d(TAG, " " + keyEvent.getAction());
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
-                        Log.d(TAG, "pressed Edit button");
+                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Edit button");
                         listener.onEditStringDialogSuccess(input.getText());
                         dismiss();
                         return true;
                     }
                     if (i == KeyEvent.KEYCODE_BACK) {
-                        Log.d(TAG, "pressed Back button");
+                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Back button");
                         listener.onEditStringDialogCancel();
                         dismiss();
                         return true;

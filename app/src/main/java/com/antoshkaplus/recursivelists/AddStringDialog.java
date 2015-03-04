@@ -58,16 +58,16 @@ public class AddStringDialog extends DialogFragment {
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                Log.d(TAG, " " + keyEvent.getAction());
+                if (BuildConfig.DEBUG) Log.d(TAG, " " + keyEvent.getAction());
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
-                        Log.d(TAG, "pressed Add button");
+                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Add button");
                         listener.onAddStringDialogSuccess(input.getText());
                         dismiss();
                         return true;
                     }
                     if (i == KeyEvent.KEYCODE_BACK) {
-                        Log.d(TAG, "pressed Back button");
+                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Back button");
                         listener.onAddStringDialogCancel();
                         dismiss();
                         return true;
