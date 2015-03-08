@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.dialog;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -7,10 +7,17 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+
+import com.antoshkaplus.recursivelists.BuildConfig;
+import com.antoshkaplus.recursivelists.R;
+import com.antoshkaplus.recursivelists.Utils;
 
 /**
  * Created by antoshkaplus on 10/30/14.
@@ -25,8 +32,6 @@ public class AddStringDialog extends DialogFragment {
     private CharSequence title;
     private CharSequence hint;
     private EditText input;
-
-    private static final int TOP_INPUT_PADDING_DP = 15;
 
     private AddStringDialogListener listener = new DefaultListener();
 
@@ -44,16 +49,8 @@ public class AddStringDialog extends DialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        input = new EditText(getActivity());
-        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        input.setPadding(
-                input.getPaddingLeft(),
-                (int)Utils.dpToPx(getResources(), TOP_INPUT_PADDING_DP),
-                input.getPaddingRight(),
-                input.getPaddingBottom());
-        input.setLayoutParams(params);
+        View view = getActivity().getLayoutInflater().inflate(R.layout.view_add_string_gialog, null);
+        input = (EditText)view.findViewById(R.id.input);
         input.setHint(hint);
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
@@ -81,7 +78,7 @@ public class AddStringDialog extends DialogFragment {
         input.requestFocus();
         Dialog dialog = (new AlertDialog.Builder(getActivity())
                 .setTitle(title)
-                .setView(input)
+                .setView(view)
                 .setPositiveButton("Add", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {

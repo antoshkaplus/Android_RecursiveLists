@@ -4,8 +4,12 @@ Those lists sometimes grouped by category. And also we want to support subcatego
 So recursive lists are very good for those things.
 
 TODO
-- [ ] don't allow user to use empty string as item name
-- [ ] increase right-left text edit padding in dialog box
+- [x] don't allow user to use empty string as item name
+- [x] increase right-left text edit padding in dialog box
+- [ ] keep user history (about removals only ??) (only last removal)
+- [ ] refactoring
+- [ ] remove selected items
+
 
 Screenshots
 

@@ -2,28 +2,23 @@ package com.antoshkaplus.recursivelists;
 
 import android.app.Activity;
 import android.app.ActionBar;
-import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.app.ListActivity;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.view.ContextMenu;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
-import android.view.ViewParent;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+
+import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
+import com.antoshkaplus.recursivelists.dialog.RetryDialog;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -257,7 +252,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void ShowAddNewDialog() {
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        final FragmentTransaction ft = getFragmentManager().beginTransaction();
         AddStringDialog dialog = new AddStringDialog();
         Bundle args = new Bundle();
         args.putString(AddStringDialog.ARG_TITLE, "Add new:");
@@ -266,8 +261,44 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         dialog.setAddStringDialogListener(new AddStringDialog.AddStringDialogListener() {
             @Override
             public void onAddStringDialogSuccess(CharSequence string) {
-                // need to add value at special location
+                // empty string
+                if (string.toString().isEmpty()) {
+                    // show dialog with on retry
+                    final FragmentTransaction ft = getFragmentManager().beginTransaction();
+                    final RetryDialog dialog = RetryDialog.newInstance("Error", "Item can't be empty string");
+                    dialog.setRetryDialogListener(new RetryDialog.RetryDialogListener() {
+                        @Override
+                        public void onDialogCancel() {}
+
+                        @Override
+                        public void onDialogRetry() {
+                            ShowAddNewDialog();
+                        }
+                    });
+                    dialog.show(ft, "dialog");
+                    return;
+                }
+                // item already exists
                 DatabaseManager manager = new DatabaseManager(MainActivity.this);
+                for (Item i : getItems()) {
+                    if (i.title.contentEquals(string)) {
+                        final FragmentTransaction ft = getFragmentManager().beginTransaction();
+                        final RetryDialog dialog = RetryDialog.newInstance("Error", "Such item name already exists");
+                        dialog.setRetryDialogListener(new RetryDialog.RetryDialogListener() {
+                            @Override
+                            public void onDialogCancel() {}
+
+                            @Override
+                            public void onDialogRetry() {
+                                ShowAddNewDialog();
+                            }
+                        });
+                        dialog.show(ft, "dialog");
+                        return;
+                    }
+                }
+
+                // need to add value at special location
                 try {
                     manager.addItem(new Item(string.toString(), pressedPosition, parentId));
                     resetAdapter();

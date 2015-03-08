@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.dialog;
 
 import android.app.DialogFragment;
 import android.os.Bundle;
@@ -16,8 +16,6 @@ public class ConfirmDialog extends DialogFragment {
 
     public static final String ARG_TITLE = "arg_title";
     public static final String ARG_MESSAGE = "arg_message";
-
-    private static final int TOP_INPUT_PADDING_DP = 15;
 
     private CharSequence title;
     private CharSequence message;
