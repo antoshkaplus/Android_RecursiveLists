@@ -1,11 +1,8 @@
 package com.antoshkaplus.recursivelists;
 
-import com.j256.ormlite.dao.Dao;
+import com.antoshkaplus.recursivelists.model.Item;
 
-import java.net.URL;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Created by antoshkaplus on 11/6/14.

@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.dialog;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -12,6 +12,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
+
+import com.antoshkaplus.recursivelists.BuildConfig;
+import com.antoshkaplus.recursivelists.Utils;
 
 /**
  * Created by antoshkaplus on 2/25/15.
@@ -52,7 +55,7 @@ public class EditStringDialog extends DialogFragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         input.setPadding(
                 input.getPaddingLeft(),
-                (int)Utils.dpToPx(getResources(), TOP_INPUT_PADDING_DP),
+                (int) Utils.dpToPx(getResources(), TOP_INPUT_PADDING_DP),
                 input.getPaddingRight(),
                 input.getPaddingBottom());
         input.setLayoutParams(params);

@@ -2,10 +2,18 @@ package com.antoshkaplus.recursivelists;
 
 import android.content.Context;
 
+import com.antoshkaplus.recursivelists.model.Item;
+import com.antoshkaplus.recursivelists.model.RemovedItem;
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.ColumnArg;
 import com.j256.ormlite.stmt.DeleteBuilder;
 
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -23,26 +31,43 @@ public class DatabaseManager implements DataSet {
     }
 
     public Item getItem(int id) throws Exception {
-        return helper.getItemDao().queryForId(id);
+        Dao<Item, Integer> dao = helper.getDao(Item.class);
+        return dao.queryForId(id);
     }
 
     public List<Item> getChildren(int id) throws SQLException {
-        return helper.getItemDao().queryBuilder()
+        return helper.getDao(Item.class).queryBuilder()
                 .orderBy(Item.FIELD_NAME_ORDER, true)
                 .where().eq(Item.FIELD_NAME_PARENT_ID, id)
+                .and()
+                .notIn(Item.FIELD_NAME_ID, helper.getDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM))
                 .query();
     }
 
     public void deleteItem(Item item) throws SQLException {
-        helper.getItemDao().delete(item);
+        Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
+        RemovedItem removedItem = new RemovedItem(item);
+        dao.create(removedItem);
     }
 
     @Override
     public void deleteChildren(Item item) throws Exception {
-        DeleteBuilder<Item, Integer> builder = helper.getItemDao().deleteBuilder();
-        builder.where()
-               .eq(Item.FIELD_NAME_PARENT_ID, item.id);
-        builder.delete();
+        List<Item> items = getChildren(item.id);
+        final List<RemovedItem> removedItems = new ArrayList<RemovedItem>();
+        Date date = new Date();
+        for (Item i : items) {
+            removedItems.add(new RemovedItem(i, date));
+        }
+        final Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
+        dao.callBatchTasks(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                for (RemovedItem r : removedItems) {
+                    dao.create(r);
+                }
+                return null;
+            }
+        });
     }
 
     @Override
@@ -53,15 +78,15 @@ public class DatabaseManager implements DataSet {
             ++i.order;
             updateItem(i);
         }
-        helper.getItemDao().create(item);
+        helper.getDao(Item.class).create(item);
     }
 
     public void updateItem(Item item) throws Exception {
-        helper.getItemDao().update(item);
+        helper.getDao(Item.class).update(item);
     }
 
     public void updateItems(final List<Item> items) throws Exception {
-        final Dao<Item, Integer> dao = helper.getItemDao();
+        final Dao<Item, Integer> dao = helper.getDao(Item.class);
         dao.callBatchTasks(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
@@ -71,6 +96,16 @@ public class DatabaseManager implements DataSet {
                 return null;
             }
         });
+    }
+
+    public void undoLastRemoval() throws Exception {
+        Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
+        String[] result = dao.queryBuilder().selectRaw("MAX(" + RemovedItem.FIELD_DELETION_DATE + ")").queryRawFirst();
+        String[] name = new String[] { RemovedItem.FIELD_DELETION_DATE };
+        RemovedItem i = dao.getRawRowMapper().mapRow(name, result);
+        DeleteBuilder<RemovedItem, Integer> builder = dao.deleteBuilder();
+        builder.where().eq(RemovedItem.FIELD_DELETION_DATE, i.deletionDate);
+        builder.delete();
     }
 
     public void close() {

@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,8 +19,13 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
+import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.recursivelists.dialog.RetryDialog;
+import com.antoshkaplus.recursivelists.model.Item;
 
+import org.json.JSONObject;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +43,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private final static int MENU_REPOSITION = 3;
 
     private final static int ROOT_ID  = -1;
+
+    private final static String REMOVED_ITEM_KEY = "removed_item";
+    private final static String REMOVED_INNER_ITEMS_KEY = "removed_inner_items";
 
     private int parentId;
     private int pressedPosition = 0;
@@ -111,9 +121,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        // no menu for now
-        // getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
@@ -224,7 +232,18 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_undo_last_removal) {
+            DatabaseManager manager = new DatabaseManager(this);
+            try {
+                manager.undoLastRemoval();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            // retrive item from preferences
+            // sometimes can be many of them
+
+            resetAdapter();
+
             return true;
         }
         return super.onOptionsItemSelected(item);

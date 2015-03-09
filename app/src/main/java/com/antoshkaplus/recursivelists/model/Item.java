@@ -1,17 +1,19 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.model;
 
 import org.json.JSONObject;
 import org.json.JSONException;
+
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
 
 /**
  * Created by antoshkaplus on 2/22/15.
  */
 
-import com.j256.ormlite.field.DatabaseField;
-import com.j256.ormlite.table.DatabaseTable;
-
-@DatabaseTable
+@DatabaseTable(tableName = Item.TABLE_NAME)
 public class Item {
+
+    public static final String TABLE_NAME = "item";
 
     public static final String FIELD_NAME_TITLE = "title";
     public static final String FIELD_NAME_ORDER = "order";
@@ -37,6 +39,14 @@ public class Item {
         this.parentId = parentId;
     }
 
+    public Item(JSONObject json) throws JSONException {
+        title = json.getString(FIELD_NAME_TITLE);
+        order = json.getInt(FIELD_NAME_ORDER);
+        parentId = json.getInt(FIELD_NAME_PARENT_ID);
+        id = json.getInt(FIELD_NAME_ID);
+    }
+
+    // should be called by orm
     public Item() {}
 
     @Override
@@ -46,10 +56,10 @@ public class Item {
 
     JSONObject toJson() throws JSONException {
         JSONObject jsonObject= new JSONObject();
-        jsonObject.put("title", title);
-        jsonObject.put("order", order);
-        jsonObject.put("parentId", parentId);
-        jsonObject.put("key", id);
+        jsonObject.put(FIELD_NAME_TITLE, title);
+        jsonObject.put(FIELD_NAME_ORDER, order);
+        jsonObject.put(FIELD_NAME_PARENT_ID, parentId);
+        jsonObject.put(FIELD_NAME_ID, id);
         return jsonObject;
     }
 
