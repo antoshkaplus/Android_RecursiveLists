@@ -25,10 +25,11 @@ import com.antoshkaplus.recursivelists.model.Item;
 
 import org.json.JSONObject;
 
-import java.sql.SQLException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-
+import java.util.Objects;
 
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
@@ -47,6 +48,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private final static String REMOVED_ITEM_KEY = "removed_item";
     private final static String REMOVED_INNER_ITEMS_KEY = "removed_inner_items";
 
+    private final static String PREF_FIRST_LAUNCH = "first_launch";
+
+
     private int parentId;
     private int pressedPosition = 0;
     private boolean repositioning = false;
@@ -58,6 +62,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        firstLaunchPopulation();
         setContentView(R.layout.activity_main);
         setActionBarColor(defaultBarColor);
         if (savedInstanceState == null) {
@@ -99,29 +104,55 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         registerForContextMenu(getListView());
     }
 
-    ListView getListView() {
-        return (ListView)findViewById(R.id.content);
+    private void firstLaunchPopulation()  {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+//        if (prefs.contains(PREF_FIRST_LAUNCH)) {
+//            return;
+//        }
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(PREF_FIRST_LAUNCH, true);
+        editor.apply();
+        // need to create multiple list probably better use json
+        InputStream input = getResources().openRawResource(R.raw.default_data);
+        try {
+            JSONObject json = Utils.readDefaultData(input);
+            DatabaseManager manager = new DatabaseManager(this);
+            manager.clear();
+            recursion(manager, ROOT_ID, json);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
-    View getContainer() {
-        return findViewById(R.id.container);
+    void recursion(DatabaseManager manager, int parentId, JSONObject json) throws Exception {
+        int order = manager.getChildrenCount(parentId);
+        Iterator<String> iter = json.keys();
+        while (iter.hasNext()) {
+            String k = iter.next();
+            Item item = new Item(k, order++, parentId);
+            manager.addItem(item);
+            recursion(manager, item.id, (JSONObject)json.get(k));
+        }
     }
 
-    void setListAdapter(ListAdapter adapter) {
-        getListView().setAdapter(adapter);
-    }
-
-    // should be called after every change
-    void resetAdapter() {
-        ArrayAdapter<Item> adapter = new ArrayAdapter<Item>(
-                this, android.R.layout.simple_list_item_1,
-                android.R.id.text1, getItems());
-        setListAdapter(adapter);
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        MenuItem item = menu.findItem(R.id.action_undo_removal);
+        DatabaseManager manager = new DatabaseManager(this);
+        try {
+            item.setVisible(manager.hasRemovedItems());
+        } catch (Exception ex) {
+            item.setVisible(false);
+            ex.printStackTrace();
+        }
         return true;
     }
 
@@ -223,7 +254,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         dialog.show(ft, "dialog");
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -232,10 +262,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_undo_last_removal) {
+        if (id == R.id.action_undo_removal) {
             DatabaseManager manager = new DatabaseManager(this);
             try {
                 manager.undoLastRemoval();
+                item.setVisible(manager.hasRemovedItems());
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -247,6 +278,46 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(EXTRA_PARENT_ID, parentId);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (repositioning) {
+            reposition(pressedPosition, position);
+            endReposition();
+            return;
+        }
+        resetAdapter();
+        Intent intent = new Intent(this, MainActivity.class);
+        Item item = getItem(position);
+        intent.putExtra(EXTRA_PARENT_ID, item.id);
+        startActivity(intent);
+    }
+
+    // should be called after every change
+    private void resetAdapter() {
+        ArrayAdapter<Item> adapter = new ArrayAdapter<Item>(
+                this, android.R.layout.simple_list_item_1,
+                android.R.id.text1, getItems());
+        setListAdapter(adapter);
+    }
+
+    private ListView getListView() {
+        return (ListView)findViewById(R.id.content);
+    }
+
+    private View getContainer() {
+        return findViewById(R.id.container);
+    }
+
+    private void setListAdapter(ListAdapter adapter) {
+        getListView().setAdapter(adapter);
     }
 
     private Item getItem(int position) {
@@ -332,7 +403,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         dialog.show(ft, "dialog");
     }
 
-    void reposition(int positionBefore, int positionAfter) {
+    private void reposition(int positionBefore, int positionAfter) {
         List<Item> items = getItems();
         Item item = items.remove(positionBefore);
         if (positionBefore <= positionAfter) --positionAfter;
@@ -349,18 +420,18 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         resetAdapter();
     }
 
-    void endReposition() {
+    private void endReposition() {
         repositioning = false;
         setActionBarColor(defaultBarColor);
     }
 
-    void setActionBarColor(int color) {
+    private void setActionBarColor(int color) {
         ActionBar bar = getActionBar();
         if (bar == null) return;
         bar.setBackgroundDrawable(new ColorDrawable(color));
     }
 
-    void setActionBarTitle() {
+    private void setActionBarTitle() {
         ActionBar bar = getActionBar();
         if (bar == null) return;
         String title = "Root";
@@ -375,27 +446,5 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
         bar.setTitle(title);
     }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(EXTRA_PARENT_ID, parentId);
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (repositioning) {
-            reposition(pressedPosition, position);
-            endReposition();
-            return;
-        }
-        resetAdapter();
-        Intent intent = new Intent(this, MainActivity.class);
-        Item item = getItem(position);
-        intent.putExtra(EXTRA_PARENT_ID, item.id);
-        startActivity(intent);
-    }
-
-
 
 }

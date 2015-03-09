@@ -44,6 +44,10 @@ public class DatabaseManager implements DataSet {
                 .query();
     }
 
+    public int getChildrenCount(int id) throws SQLException {
+        return (int)helper.getDao(Item.class).countOf();
+    }
+
     public void deleteItem(Item item) throws SQLException {
         Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
         RemovedItem removedItem = new RemovedItem(item);
@@ -68,6 +72,11 @@ public class DatabaseManager implements DataSet {
                 return null;
             }
         });
+    }
+
+    public void clear() throws SQLException {
+        helper.getDao(Item.class).deleteBuilder().delete();
+        helper.getDao(RemovedItem.class).deleteBuilder().delete();
     }
 
     @Override
@@ -106,6 +115,10 @@ public class DatabaseManager implements DataSet {
         DeleteBuilder<RemovedItem, Integer> builder = dao.deleteBuilder();
         builder.where().eq(RemovedItem.FIELD_DELETION_DATE, i.deletionDate);
         builder.delete();
+    }
+
+    public boolean hasRemovedItems() throws SQLException {
+        return helper.getDao(RemovedItem.class).countOf() > 0;
     }
 
     public void close() {

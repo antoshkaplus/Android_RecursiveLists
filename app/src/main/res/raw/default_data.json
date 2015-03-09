@@ -1,0 +1,41 @@
+{
+    "food": {
+        "fruit": {
+            "apple": {},
+            "banana": {},
+            "orange": {},
+            "watermelon": {}
+        },
+        "vegetable": {
+            "onion": {},
+            "potato": {},
+            "tomato": {}
+        }
+    },
+    "programming": {
+        "linear": {},
+        "non-linear": {},
+        "languages": {
+            "C++": {},
+            "C#": {},
+            "Java": {},
+            "JavaScript": {},
+            "Cobol": {},
+            "Python": {},
+            "Lisp": {},
+            "SQL": {},
+            "HTML": {},
+            "CoffeeScript": {},
+            "TypeScript": {},
+            "Go": {},
+            "Objective-C": {},
+            "C": {},
+            "Clojure": {},
+            "Erlang": {},
+            "Haskell": {},
+            "Ruby": {},
+            "Matlab": {},
+            "Octave": {}
+        }
+    }
+}

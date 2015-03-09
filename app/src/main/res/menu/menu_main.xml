@@ -13,8 +13,8 @@
         />
 
     <item
-        android:id="@+id/action_undo_last_removal"
-        android:title="@string/action_undo_last_removal"
+        android:id="@+id/action_undo_removal"
+        android:title="@string/action_undo_removal"
         />
 
 
