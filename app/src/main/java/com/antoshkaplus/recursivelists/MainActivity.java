@@ -72,7 +72,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             parentId = savedInstanceState.getInt(EXTRA_PARENT_ID);
         }
         setActionBarTitle();
-        resetAdapter();
+        getListView().setAdapter(new ItemAdapter(this, parentId));
         registerForContextMenu(getListView());
         getListView().setOnItemClickListener(this);
         getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -169,6 +169,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 if (getItemCount() > 1) menu.add(0, MENU_REPOSITION, 0, "Reposition");
             }
         }
+    }
+
+    @Override
+    public void onContextMenuClosed(Menu menu) {
+        super.onContextMenuClosed(menu);
+
     }
 
     @Override
@@ -287,13 +293,21 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        getListView().clearChoices();
+        resetAdapter();
+    }
+
+    @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         if (repositioning) {
             reposition(pressedPosition, position);
             endReposition();
             return;
         }
-        resetAdapter();
+        getListView().clearChoices();
+        getListView().requestLayout();
         Intent intent = new Intent(this, MainActivity.class);
         Item item = getItem(position);
         intent.putExtra(EXTRA_PARENT_ID, item.id);
@@ -302,10 +316,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     // should be called after every change
     private void resetAdapter() {
-        ArrayAdapter<Item> adapter = new ArrayAdapter<Item>(
-                this, android.R.layout.simple_list_item_1,
-                android.R.id.text1, getItems());
-        setListAdapter(adapter);
+        ItemAdapter adapter = (ItemAdapter)getListView().getAdapter();
+        adapter.notifyDataSetChanged();
     }
 
     private ListView getListView() {
