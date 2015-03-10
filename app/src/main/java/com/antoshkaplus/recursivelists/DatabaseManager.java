@@ -45,7 +45,10 @@ public class DatabaseManager implements DataSet {
     }
 
     public int getChildrenCount(int id) throws SQLException {
-        return (int)helper.getDao(Item.class).countOf();
+        return (int)helper.getDao(Item.class)
+                .queryBuilder()
+                .where().eq(Item.FIELD_NAME_PARENT_ID, id)
+                .countOf();
     }
 
     public void deleteItem(Item item) throws SQLException {

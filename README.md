@@ -4,13 +4,13 @@ Those lists sometimes grouped by category. And also we want to support subcatego
 So recursive lists are very good for those things.
 
 TODO
-- [ ] refactoring
 - [-] remove selected items
-- [ ] send logs to server. printErrorTrace to file probably and sometimes on console???
-- [ ] test data
+- [ ] refactoring
 - [ ] backup ???
 - [ ] to be able to add item to the end of the list even if list is full
-
+- [ ] create adapter for view
+- [ ] create item view with background color other than white
+- [ ] custom logger, to be able to have only one if (BuildConfig.DEBUG)
 
 Screenshots
 

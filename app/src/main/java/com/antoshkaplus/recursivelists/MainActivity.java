@@ -62,13 +62,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        firstLaunchPopulation();
         setContentView(R.layout.activity_main);
         setActionBarColor(defaultBarColor);
         if (savedInstanceState == null) {
             Intent intent = getIntent();
             parentId = intent.getIntExtra(EXTRA_PARENT_ID, ROOT_ID);
         } else {
+            firstLaunchPopulation();
             parentId = savedInstanceState.getInt(EXTRA_PARENT_ID);
         }
         setActionBarTitle();
@@ -124,7 +124,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
-    void recursion(DatabaseManager manager, int parentId, JSONObject json) throws Exception {
+    private void recursion(DatabaseManager manager, int parentId, JSONObject json) throws Exception {
         int order = manager.getChildrenCount(parentId);
         Iterator<String> iter = json.keys();
         while (iter.hasNext()) {
