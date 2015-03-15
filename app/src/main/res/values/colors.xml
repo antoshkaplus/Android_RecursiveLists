@@ -12,6 +12,6 @@
     <item name="darkorange" type="color">#FFFF8800</item>
     <item name="darkred" type="color">#FFCC0000</item>
 
-    <item name="item_pressed" type="color">#CCFFCC</item>
+    <item name="item_highlighted" type="color">#CCFFCC</item>
 
 </resources>

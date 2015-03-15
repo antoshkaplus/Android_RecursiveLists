@@ -5,19 +5,13 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 
-import com.antoshkaplus.recursivelists.BuildConfig;
+import com.antoshkaplus.recursivelists.Logger;
 import com.antoshkaplus.recursivelists.R;
-import com.antoshkaplus.recursivelists.Utils;
 
 /**
  * Created by antoshkaplus on 10/30/14.
@@ -49,22 +43,22 @@ public class AddStringDialog extends DialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        View view = getActivity().getLayoutInflater().inflate(R.layout.view_add_string_gialog, null);
+        View view = getActivity().getLayoutInflater().inflate(R.layout.view_string_gialog, null);
         input = (EditText)view.findViewById(R.id.input);
         input.setHint(hint);
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                if (BuildConfig.DEBUG) Log.d(TAG, " " + keyEvent.getAction());
+                Logger.log(TAG,  " " + keyEvent.getAction());
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
-                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Add button");
+                        Logger.log(TAG, "pressed Add button");
                         listener.onAddStringDialogSuccess(input.getText());
                         dismiss();
                         return true;
                     }
                     if (i == KeyEvent.KEYCODE_BACK) {
-                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Back button");
+                        Logger.log(TAG, "pressed Back button");
                         listener.onAddStringDialogCancel();
                         dismiss();
                         return true;

@@ -24,12 +24,10 @@ public class ItemAdapter extends BaseAdapter {
     public ItemAdapter(Context context, int parentId) {
         this.context = context;
         this.parentId = parentId;
-        notifyDataSetChanged();
+        ReloadItems();
     }
 
-    @Override
-    public void notifyDataSetChanged() {
-        super.notifyDataSetChanged();
+    private void ReloadItems() {
         try {
             DatabaseManager manager = new DatabaseManager(context);
             items = manager.getChildren(parentId);
@@ -39,10 +37,16 @@ public class ItemAdapter extends BaseAdapter {
     }
 
     @Override
+    public void notifyDataSetChanged() {
+        super.notifyDataSetChanged();
+        ReloadItems();
+    }
+
+    @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
-            convertView = inflater.inflate(android.R.layout.simple_list_item_1, null);
+            convertView = inflater.inflate(R.layout.view_item, null);
         }
         Item item = (Item)getItem(position);
         TextView textView = (TextView)convertView.findViewById(android.R.id.text1);

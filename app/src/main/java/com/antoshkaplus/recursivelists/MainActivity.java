@@ -43,11 +43,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     private final static int ROOT_ID  = -1;
 
-    private final static String REMOVED_ITEM_KEY = "removed_item";
-    private final static String REMOVED_INNER_ITEMS_KEY = "removed_inner_items";
-
     private final static String PREF_FIRST_LAUNCH = "first_launch";
 
+    Menu optionsMenu;
 
     private int parentId;
     private int pressedPosition = 0;
@@ -77,6 +75,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 pressedPosition = position;
+                getListView().setItemChecked(pressedPosition, true);
                 return false;
             }
         });
@@ -137,7 +136,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        optionsMenu = menu;
         return true;
+    }
+
+    private void setUndoRemovalVisible(boolean b) {
+        MenuItem item = optionsMenu.findItem(R.id.action_undo_removal);
+        item.setVisible(b);
     }
 
     @Override
@@ -197,8 +202,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             }
             case MENU_REPOSITION: {
                 setActionBarColor(repositioningBarColor);
-                getListView().setSelection(pressedPosition);
-                updateListView();
                 repositioning = true;
                 break;
             }
@@ -214,10 +217,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         DatabaseManager manager = new DatabaseManager(this);
         try {
             manager.deleteItem(i);
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
         updateListView();
+        setUndoRemovalVisible(true);
     }
 
     void onMenuRemoveInner() {
@@ -225,10 +230,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         DatabaseManager manager = new DatabaseManager(this);
         try {
             manager.deleteChildren(i);
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+        // clear choices
         updateListView();
+        setUndoRemovalVisible(true);
     }
 
     void onMenuEdit() {
@@ -305,7 +313,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             endReposition();
             return;
         }
-        getListView().clearChoices();
         updateListView();
         Intent intent = new Intent(this, MainActivity.class);
         Item item = getItem(position);
@@ -313,8 +320,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         startActivity(intent);
     }
 
-    // should be called after every change
+    // should be called after every change in list structure
+    // and when want to clear selections
     private void updateListView() {
+        getListView().clearChoices();
         ItemAdapter adapter = (ItemAdapter)getListView().getAdapter();
         adapter.notifyDataSetChanged();
     }
@@ -325,10 +334,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     private View getContainer() {
         return findViewById(R.id.container);
-    }
-
-    private void setListAdapter(ListAdapter adapter) {
-        getListView().setAdapter(adapter);
     }
 
     private Item getItem(int position) {
@@ -433,6 +438,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     private void endReposition() {
         repositioning = false;
+        getListView().clearChoices();
         setActionBarColor(defaultBarColor);
     }
 

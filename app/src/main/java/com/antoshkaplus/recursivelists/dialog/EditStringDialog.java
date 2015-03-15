@@ -4,17 +4,14 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 
-import com.antoshkaplus.recursivelists.BuildConfig;
-import com.antoshkaplus.recursivelists.Utils;
+import com.antoshkaplus.recursivelists.Logger;
+import com.antoshkaplus.recursivelists.R;
 
 /**
  * Created by antoshkaplus on 2/25/15.
@@ -30,8 +27,6 @@ public class EditStringDialog extends DialogFragment {
     private CharSequence title;
     private CharSequence hint;
     private EditText input;
-
-    private static final int TOP_INPUT_PADDING_DP = 15;
 
     private EditStringDialogListener listener = new DefaultListener();
 
@@ -49,30 +44,22 @@ public class EditStringDialog extends DialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        input = new EditText(getActivity());
-        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        input.setPadding(
-                input.getPaddingLeft(),
-                (int) Utils.dpToPx(getResources(), TOP_INPUT_PADDING_DP),
-                input.getPaddingRight(),
-                input.getPaddingBottom());
-        input.setLayoutParams(params);
+        View view = getActivity().getLayoutInflater().inflate(R.layout.view_string_gialog, null);
+        input = (EditText)view.findViewById(R.id.input);
         input.setHint(hint);
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                if (BuildConfig.DEBUG) Log.d(TAG, " " + keyEvent.getAction());
+                Logger.log(TAG, " " + keyEvent.getAction());
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
-                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Edit button");
+                        Logger.log(TAG, "pressed Edit button");
                         listener.onEditStringDialogSuccess(input.getText());
                         dismiss();
                         return true;
                     }
                     if (i == KeyEvent.KEYCODE_BACK) {
-                        if (BuildConfig.DEBUG) Log.d(TAG, "pressed Back button");
+                        Logger.log(TAG, "pressed Back button");
                         listener.onEditStringDialogCancel();
                         dismiss();
                         return true;
@@ -86,7 +73,7 @@ public class EditStringDialog extends DialogFragment {
         input.requestFocus();
         Dialog dialog = (new AlertDialog.Builder(getActivity())
                 .setTitle(title)
-                .setView(input)
+                .setView(view)
                 .setPositiveButton("Edit", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
