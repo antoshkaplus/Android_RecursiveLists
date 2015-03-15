@@ -14,7 +14,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
@@ -29,7 +28,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
@@ -62,13 +60,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        firstLaunchPopulation();
         setContentView(R.layout.activity_main);
         setActionBarColor(defaultBarColor);
         if (savedInstanceState == null) {
             Intent intent = getIntent();
             parentId = intent.getIntExtra(EXTRA_PARENT_ID, ROOT_ID);
         } else {
-            firstLaunchPopulation();
             parentId = savedInstanceState.getInt(EXTRA_PARENT_ID);
         }
         setActionBarTitle();
@@ -106,9 +104,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     private void firstLaunchPopulation()  {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-//        if (prefs.contains(PREF_FIRST_LAUNCH)) {
-//            return;
-//        }
+        if (prefs.contains(PREF_FIRST_LAUNCH)) {
+            return;
+        }
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(PREF_FIRST_LAUNCH, true);
         editor.apply();
@@ -200,6 +198,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             case MENU_REPOSITION: {
                 setActionBarColor(repositioningBarColor);
                 getListView().setSelection(pressedPosition);
+                updateListView();
                 repositioning = true;
                 break;
             }
@@ -218,7 +217,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        resetAdapter();
+        updateListView();
     }
 
     void onMenuRemoveInner() {
@@ -229,7 +228,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        resetAdapter();
+        updateListView();
     }
 
     void onMenuEdit() {
@@ -247,7 +246,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     Item item = manager.getItem(getItem(pressedPosition).id);
                     item.title = string.toString();
                     manager.updateItem(item);
-                    resetAdapter();
+                    updateListView();
                     // update current list
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -279,7 +278,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             // retrive item from preferences
             // sometimes can be many of them
 
-            resetAdapter();
+            updateListView();
 
             return true;
         }
@@ -296,7 +295,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     protected void onResume() {
         super.onResume();
         getListView().clearChoices();
-        resetAdapter();
+        updateListView();
     }
 
     @Override
@@ -307,7 +306,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             return;
         }
         getListView().clearChoices();
-        getListView().requestLayout();
+        updateListView();
         Intent intent = new Intent(this, MainActivity.class);
         Item item = getItem(position);
         intent.putExtra(EXTRA_PARENT_ID, item.id);
@@ -315,7 +314,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     // should be called after every change
-    private void resetAdapter() {
+    private void updateListView() {
         ItemAdapter adapter = (ItemAdapter)getListView().getAdapter();
         adapter.notifyDataSetChanged();
     }
@@ -403,7 +402,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 // need to add value at special location
                 try {
                     manager.addItem(new Item(string.toString(), pressedPosition, parentId));
-                    resetAdapter();
+                    updateListView();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -429,7 +428,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        resetAdapter();
+        updateListView();
     }
 
     private void endReposition() {
