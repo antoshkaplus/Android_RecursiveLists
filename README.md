@@ -18,7 +18,7 @@ So recursive lists are very good for those things.
 * in action bar options find action to undo removal operations
 
 ## Bugs
-* not found
+* after long clicking position, selection stays after user didn't pick anything in context menu.
 
 ## TODO 
 - [ ] remove selected items
