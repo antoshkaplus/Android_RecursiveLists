@@ -19,6 +19,7 @@ So recursive lists are very good for those things.
 
 ## Bugs
 * after long clicking position, selection stays after user didn't pick anything in context menu.
+* add current string on edit item
 
 ## TODO 
 - [ ] remove selected items
