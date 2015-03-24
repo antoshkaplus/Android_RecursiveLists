@@ -50,6 +50,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private int parentId;
     private int pressedPosition = 0;
     private boolean repositioning = false;
+    private boolean contextMenuItemSelected = false;
 
     // those can be constants
     private int repositioningBarColor = Color.YELLOW;
@@ -162,6 +163,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
+        contextMenuItemSelected = false;
         if ((v == getListView() || v == getContainer()) && menu.size() == 0) {
             menu.add(0, MENU_ADD_NEW, 0, "Add New");
             if (getItemCount() != pressedPosition) {
@@ -177,11 +179,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public void onContextMenuClosed(Menu menu) {
         super.onContextMenuClosed(menu);
-
+        // un selecting selected item
+        if (!contextMenuItemSelected) updateListView();
     }
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        contextMenuItemSelected = true;
         // can also change color of items around
         switch (item.getItemId()) {
             case MENU_ADD_NEW: {
@@ -245,6 +249,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         Bundle args = new Bundle();
         args.putString(EditStringDialog.ARG_TITLE, "Edit:");
         args.putString(EditStringDialog.ARG_HINT, "Item");
+        args.putString(EditStringDialog.ARG_TEXT, getItem(pressedPosition).title);
         dialog.setArguments(args);
         dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
             @Override

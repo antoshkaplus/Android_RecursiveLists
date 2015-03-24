@@ -23,8 +23,10 @@ public class EditStringDialog extends DialogFragment {
 
     public static final String ARG_TITLE = "arg_title";
     public static final String ARG_HINT = "arg_hint";
+    public static final String ARG_TEXT = "arg_text";
 
     private CharSequence title;
+    private CharSequence text;
     private CharSequence hint;
     private EditText input;
 
@@ -34,6 +36,7 @@ public class EditStringDialog extends DialogFragment {
     public void setArguments(Bundle args) {
         super.setArguments(args);
         title = args.getString(ARG_TITLE, "");
+        text = args.getString(ARG_TEXT, "");
         hint = args.getString(ARG_HINT, "");
     }
 
@@ -47,6 +50,7 @@ public class EditStringDialog extends DialogFragment {
         View view = getActivity().getLayoutInflater().inflate(R.layout.view_string_gialog, null);
         input = (EditText)view.findViewById(R.id.input);
         input.setHint(hint);
+        input.setText(text);
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
