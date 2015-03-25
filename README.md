@@ -27,6 +27,7 @@ So recursive lists are very good for those things.
 - [ ] add food to reduce copy pasting of files
 - [ ] add string and edit dialogs should be merged somehow in one 
         class and placed somewhere in the library
+- [ ] ability to move items in and out of lists
 
 Screenshots
 
