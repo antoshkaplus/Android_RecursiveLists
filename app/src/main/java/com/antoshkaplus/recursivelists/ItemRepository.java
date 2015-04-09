@@ -15,27 +15,28 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**
  * well can think of deleting items better,
  * but user is too slow... creating data
  */
-public class DatabaseManager implements DataSet {
+public class ItemRepository {
     private static final String TAG = "DatabaseManager";
 
     private DatabaseHelper helper;
 
-    public DatabaseManager(Context ctx) {
+    public ItemRepository(Context ctx) {
         helper = new DatabaseHelper(ctx);
     }
 
-    public Item getItem(int id) throws Exception {
-        Dao<Item, Integer> dao = helper.getDao(Item.class);
+    public Item getItem(UUID id) throws Exception {
+        Dao<Item, UUID> dao = helper.getDao(Item.class);
         return dao.queryForId(id);
     }
 
-    public List<Item> getChildren(int id) throws SQLException {
+    public List<Item> getChildren(UUID id) throws SQLException {
         return helper.getDao(Item.class).queryBuilder()
                 .orderBy(Item.FIELD_NAME_ORDER, true)
                 .where().eq(Item.FIELD_NAME_PARENT_ID, id)
@@ -44,7 +45,7 @@ public class DatabaseManager implements DataSet {
                 .query();
     }
 
-    public int getChildrenCount(int id) throws SQLException {
+    public int getChildrenCount(UUID id) throws SQLException {
         return (int)helper.getDao(Item.class)
                 .queryBuilder()
                 .where().eq(Item.FIELD_NAME_PARENT_ID, id)
@@ -57,7 +58,6 @@ public class DatabaseManager implements DataSet {
         dao.create(removedItem);
     }
 
-    @Override
     public void deleteChildren(Item item) throws Exception {
         List<Item> items = getChildren(item.id);
         final List<RemovedItem> removedItems = new ArrayList<RemovedItem>();
@@ -82,7 +82,6 @@ public class DatabaseManager implements DataSet {
         helper.getDao(RemovedItem.class).deleteBuilder().delete();
     }
 
-    @Override
     public void addItem(Item item) throws Exception {
         List<Item> items = getChildren(item.parentId);
         items = items.subList(item.order, items.size());
@@ -123,6 +122,15 @@ public class DatabaseManager implements DataSet {
     public boolean hasRemovedItems() throws SQLException {
         return helper.getDao(RemovedItem.class).countOf() > 0;
     }
+
+    public List<Item> getAllItems() throws Exception {
+        return helper.getDao(Item.class).queryForAll();
+    }
+
+    public List<RemovedItem> getAllRemovedItems() throws Exception {
+        return helper.getDao(RemovedItem.class).queryForAll();
+    }
+
 
     public void close() {
         helper.close();

@@ -1,8 +1,19 @@
 <menu
-
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainActivity">
+
+    <item
+        android:id="@+id/action_upload"
+        android:title="@string/action_upload"
+        android:visible="true"
+        />
+
+    <item
+        android:id="@+id/action_download"
+        android:title="@string/action_download"
+        android:visible="true"
+        />
 
     <item
         android:id="@+id/action_settings"
@@ -11,6 +22,7 @@
         android:showAsAction="never"
         android:visible="false"
         />
+
 
     <item
         android:id="@+id/action_undo_removal"

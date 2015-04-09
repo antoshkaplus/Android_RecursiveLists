@@ -11,6 +11,7 @@ import com.antoshkaplus.recursivelists.model.Item;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by Anton.Logunov on 3/10/2015.
@@ -18,10 +19,10 @@ import java.util.List;
 public class ItemAdapter extends BaseAdapter {
 
     Context context;
-    int parentId;
+    UUID parentId;
     List<Item> items = new ArrayList<>();
 
-    public ItemAdapter(Context context, int parentId) {
+    public ItemAdapter(Context context, UUID parentId) {
         this.context = context;
         this.parentId = parentId;
         ReloadItems();
@@ -29,7 +30,7 @@ public class ItemAdapter extends BaseAdapter {
 
     private void ReloadItems() {
         try {
-            DatabaseManager manager = new DatabaseManager(context);
+            ItemRepository manager = new ItemRepository(context);
             items = manager.getChildren(parentId);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -61,7 +62,7 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return items.get(position).id;
+        return items.get(position).id.getLeastSignificantBits();
     }
 
     @Override

@@ -14,9 +14,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.antoshkaplus.recursivelists.backend.userItemsApi.UserItemsApi;
+import com.antoshkaplus.recursivelists.backend.userItemsApi.model.RemovedItem;
+import com.antoshkaplus.recursivelists.backend.userItemsApi.model.UserItems;
 import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.recursivelists.dialog.RetryDialog;
@@ -28,11 +30,13 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
 
     // should think about good naming of those variables
+    // have UUID as string inside
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
 
     private final static int MENU_ADD_NEW = 0;
@@ -41,13 +45,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private final static int MENU_EDIT = 2;
     private final static int MENU_REPOSITION = 3;
 
-    private final static int ROOT_ID  = -1;
+    private final static UUID ROOT_ID  = new UUID(0, 0);
 
     private final static String PREF_FIRST_LAUNCH = "first_launch";
 
     Menu optionsMenu;
 
-    private int parentId;
+    private UUID parentId;
     private int pressedPosition = 0;
     private boolean repositioning = false;
     private boolean contextMenuItemSelected = false;
@@ -64,9 +68,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         setActionBarColor(defaultBarColor);
         if (savedInstanceState == null) {
             Intent intent = getIntent();
-            parentId = intent.getIntExtra(EXTRA_PARENT_ID, ROOT_ID);
+            parentId = (UUID)intent.getSerializableExtra(EXTRA_PARENT_ID);
+            if (parentId == null) {
+                parentId = ROOT_ID;
+            }
         } else {
-            parentId = savedInstanceState.getInt(EXTRA_PARENT_ID);
+            parentId = (UUID)savedInstanceState.getSerializable(EXTRA_PARENT_ID);
         }
         setActionBarTitle();
         getListView().setAdapter(new ItemAdapter(this, parentId));
@@ -114,7 +121,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         InputStream input = getResources().openRawResource(R.raw.default_data);
         try {
             JSONObject json = Utils.readDefaultData(input);
-            DatabaseManager manager = new DatabaseManager(this);
+            ItemRepository manager = new ItemRepository(this);
             manager.clear();
             recursion(manager, ROOT_ID, json);
         } catch (Exception ex) {
@@ -122,7 +129,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
-    private void recursion(DatabaseManager manager, int parentId, JSONObject json) throws Exception {
+    private void recursion(ItemRepository manager, UUID parentId, JSONObject json) throws Exception {
         int order = manager.getChildrenCount(parentId);
         Iterator<String> iter = json.keys();
         while (iter.hasNext()) {
@@ -150,7 +157,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
         MenuItem item = menu.findItem(R.id.action_undo_removal);
-        DatabaseManager manager = new DatabaseManager(this);
+        ItemRepository manager = new ItemRepository(this);
         try {
             item.setVisible(manager.hasRemovedItems());
         } catch (Exception ex) {
@@ -216,9 +223,40 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         return super.onContextItemSelected(item);
     }
 
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case R.id.action_upload:
+                // do upload
+                ItemRepository manager = new ItemRepository(this);
+
+                UserItems userItems = new UserItems();
+                List<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> apiItems = new ArrayList<>();
+                List<RemovedItem> apiRemovedItems = new ArrayList<>();
+                try {
+                    for (Item item : manager.getAllItems()) {
+                        apiItems.add(Utils.toBackendItem(item));
+                    }
+                    for (com.antoshkaplus.recursivelists.model.RemovedItem removedItem : manager.getAllRemovedItems()) {
+                        apiRemovedItems.add(Utils.toBackendRemovedItem(removedItem));
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                userItems.setItems(apiItems);
+                userItems.setRemovedItems(apiRemovedItems);
+                UserItemsApi endpoint = new UserItemsApi();.InsertUserItems()
+                return true;
+            case R.id.action_download:
+                // do download
+                return true;
+        }
+        return super.onMenuItemSelected(featureId, item);
+    }
+
     void onMenuRemove() {
         Item i = getItem(pressedPosition);
-        DatabaseManager manager = new DatabaseManager(this);
+        ItemRepository manager = new ItemRepository(this);
         try {
             manager.deleteItem(i);
 
@@ -231,7 +269,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     void onMenuRemoveInner() {
         Item i = getItem(pressedPosition);
-        DatabaseManager manager = new DatabaseManager(this);
+        ItemRepository manager = new ItemRepository(this);
         try {
             manager.deleteChildren(i);
 
@@ -254,7 +292,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
             @Override
             public void onEditStringDialogSuccess(CharSequence string) {
-                DatabaseManager manager = new DatabaseManager(MainActivity.this);
+                ItemRepository manager = new ItemRepository(MainActivity.this);
                 try {
                     Item item = manager.getItem(getItem(pressedPosition).id);
                     item.title = string.toString();
@@ -281,7 +319,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_undo_removal) {
-            DatabaseManager manager = new DatabaseManager(this);
+            ItemRepository manager = new ItemRepository(this);
             try {
                 manager.undoLastRemoval();
                 item.setVisible(manager.hasRemovedItems());
@@ -301,7 +339,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt(EXTRA_PARENT_ID, parentId);
+        outState.putSerializable(EXTRA_PARENT_ID, parentId);
     }
 
     @Override
@@ -346,7 +384,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private List<Item> getItems() {
-        DatabaseManager manager = new DatabaseManager(this);
+        ItemRepository manager = new ItemRepository(this);
         List<Item> items = new ArrayList<>();
         try {
             items = manager.getChildren(parentId);
@@ -390,7 +428,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     return;
                 }
                 // item already exists
-                DatabaseManager manager = new DatabaseManager(MainActivity.this);
+                ItemRepository manager = new ItemRepository(MainActivity.this);
                 for (Item i : getItems()) {
                     if (i.title.contentEquals(string)) {
                         final FragmentTransaction ft = getFragmentManager().beginTransaction();
@@ -432,7 +470,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         for (int i = 0; i < items.size(); ++i) {
             items.get(i).order = i;
         }
-        DatabaseManager manager = new DatabaseManager(MainActivity.this);
+        ItemRepository manager = new ItemRepository(MainActivity.this);
         try {
             manager.updateItems(items);
         } catch (Exception ex) {
@@ -458,7 +496,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (bar == null) return;
         String title = "Root";
         if (parentId != ROOT_ID) {
-            DatabaseManager manager = new DatabaseManager(this);
+            ItemRepository manager = new ItemRepository(this);
             try {
                 Item item = manager.getItem(parentId);
                 title = item.title;

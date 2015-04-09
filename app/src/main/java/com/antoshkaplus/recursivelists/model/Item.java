@@ -6,6 +6,8 @@ import org.json.JSONException;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
+import java.util.UUID;
+
 /**
  * Created by antoshkaplus on 2/22/15.
  */
@@ -26,24 +28,18 @@ public class Item {
     public int order;
 
     // should not forget to assign
-    @DatabaseField(columnName = FIELD_NAME_PARENT_ID)
-    public int parentId;
+    @DatabaseField(columnName = FIELD_NAME_PARENT_ID, index = true)
+    public UUID parentId;
 
-    @DatabaseField(columnName = FIELD_NAME_ID, generatedId = true)
-    public int id;
+    @DatabaseField(columnName = FIELD_NAME_ID, id = true)
+    public UUID id;
 
 
-    public Item(String title, int order, int parentId) {
+    public Item(String title, int order, UUID parentId) {
+        this.id = UUID.randomUUID();
         this.title = title;
         this.order = order;
         this.parentId = parentId;
-    }
-
-    public Item(JSONObject json) throws JSONException {
-        title = json.getString(FIELD_NAME_TITLE);
-        order = json.getInt(FIELD_NAME_ORDER);
-        parentId = json.getInt(FIELD_NAME_PARENT_ID);
-        id = json.getInt(FIELD_NAME_ID);
     }
 
     // should be called by orm
@@ -52,15 +48,6 @@ public class Item {
     @Override
     public String toString() {
         return title;
-    }
-
-    JSONObject toJson() throws JSONException {
-        JSONObject jsonObject= new JSONObject();
-        jsonObject.put(FIELD_NAME_TITLE, title);
-        jsonObject.put(FIELD_NAME_ORDER, order);
-        jsonObject.put(FIELD_NAME_PARENT_ID, parentId);
-        jsonObject.put(FIELD_NAME_ID, id);
-        return jsonObject;
     }
 
 }
