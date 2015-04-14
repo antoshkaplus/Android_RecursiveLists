@@ -12,6 +12,9 @@ So recursive lists are very good for those things.
 * adding new
 * recursion on items
 * undo delete operations
+* keep data on the server
+* moving items in and out
+
 
 ## Usage
 * long press on list item or free space on activity and follow options
@@ -21,13 +24,13 @@ So recursive lists are very good for those things.
 * Everything fixed
 
 ## TODO 
-- [ ] remove selected items
+- [ ] remove selected items (maybe still do it separately)
 - [ ] refactoring
-- [ ] keep data somewhere on the server
-- [ ] add food to reduce copy pasting of files
+- [ ] data synchronization (number one priority)
+- [ ] add food to reduce copy pasting of files (don't know what should be inside food)
 - [ ] add string and edit dialogs should be merged somehow in one 
         class and placed somewhere in the library
-- [ ] ability to move items in and out of lists
+- [ ] choose login setting
 
 Screenshots
 

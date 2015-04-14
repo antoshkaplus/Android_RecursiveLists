@@ -92,6 +92,20 @@ public class ItemRepository {
         helper.getDao(Item.class).create(item);
     }
 
+    public void addItemList(final List<Item> items) throws Exception {
+        final Dao<Item, UUID> dao = helper.getDao(Item.class);
+        dao.callBatchTasks(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                for (Item i : items) {
+                    dao.create(i);
+                }
+                return null;
+            }
+        });
+    }
+
+
     public void updateItem(Item item) throws Exception {
         helper.getDao(Item.class).update(item);
     }
@@ -131,6 +145,20 @@ public class ItemRepository {
         return helper.getDao(RemovedItem.class).queryForAll();
     }
 
+    public void init(List<Item> items, final List<RemovedItem> removedItems) throws Exception{
+        clear();
+        addItemList(items);
+        final Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
+        dao.callBatchTasks(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                for (RemovedItem i : removedItems) {
+                    dao.create(i);
+                }
+                return null;
+            }
+        });
+    }
 
     public void close() {
         helper.close();

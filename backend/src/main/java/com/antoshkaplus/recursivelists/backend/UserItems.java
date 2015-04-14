@@ -1,8 +1,11 @@
 package com.antoshkaplus.recursivelists.backend;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.jdo.annotations.FetchGroup;
+import javax.jdo.annotations.FetchPlan;
 import javax.jdo.annotations.IdentityType;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
@@ -14,9 +17,11 @@ public class UserItems {
     @PrimaryKey
     @Persistent
     private String userId;
-    @Persistent
+
+    @Persistent(mappedBy = "userItems", defaultFetchGroup = "true")
     private List<Item> items;
-    @Persistent
+
+    @Persistent(mappedBy = "userItems", defaultFetchGroup = "true")
     private List<RemovedItem> removedItems;
 
     public String getUserId() {

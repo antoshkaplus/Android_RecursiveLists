@@ -1,5 +1,7 @@
 package com.antoshkaplus.recursivelists.backend;
 
+import com.google.appengine.api.datastore.Key;
+
 import java.util.UUID;
 
 import javax.jdo.annotations.IdGeneratorStrategy;
@@ -9,37 +11,41 @@ import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 
 /**
- * Created by Anton.Logunov on 4/9/2015.
+ * better use UUID as a Key
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION)
 public class Item {
     @PrimaryKey
+    @Persistent(valueStrategy = IdGeneratorStrategy.IDENTITY)
+    private Key key;
     @Persistent
-    private UUID id;
+    private String id;
     @Persistent
     private String title;
     @Persistent
     private Integer order;
     // should not forget to assign
     @Persistent
-    private UUID parentId;
+    private String parentId;
 
+    @Persistent
+    private UserItems userItems;
 
-    public Item(UUID id, String title, int order, UUID parentId) {
+    public Item(String id, String parentId, String title, int order) {
         this.id = id;
+        this.parentId = parentId;
         this.title = title;
         this.order = order;
-        this.parentId = parentId;
     }
 
     // should be called by orm
     public Item() {}
 
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -59,11 +65,11 @@ public class Item {
         this.order = order;
     }
 
-    public UUID getParentId() {
+    public String getParentId() {
         return parentId;
     }
 
-    public void setParentId(UUID parentId) {
+    public void setParentId(String parentId) {
         this.parentId = parentId;
     }
 

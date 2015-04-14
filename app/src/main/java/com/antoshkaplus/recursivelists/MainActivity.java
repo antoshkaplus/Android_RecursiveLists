@@ -23,9 +23,13 @@ import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.recursivelists.dialog.RetryDialog;
 import com.antoshkaplus.recursivelists.model.Item;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.extensions.android.json.AndroidJsonFactory;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,12 +43,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     // have UUID as string inside
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
 
-    private final static int MENU_ADD_NEW = 0;
-    private final static int MENU_REMOVE = 1;
-    private final static int MENU_REMOVE_INNER = 5;
-    private final static int MENU_EDIT = 2;
-    private final static int MENU_REPOSITION = 3;
-
     private final static UUID ROOT_ID  = new UUID(0, 0);
 
     private final static String PREF_FIRST_LAUNCH = "first_launch";
@@ -54,10 +52,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private UUID parentId;
     private int pressedPosition = 0;
     private boolean repositioning = false;
+    private boolean movingIn = false;
     private boolean contextMenuItemSelected = false;
 
     // those can be constants
-    private int repositioningBarColor = Color.YELLOW;
+    private int repositionBarColor = Color.YELLOW;
+    private int moveInBarColor = Color.GREEN;
     private int defaultBarColor = Color.LTGRAY;
 
     @Override
@@ -172,13 +172,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onCreateContextMenu(menu, v, menuInfo);
         contextMenuItemSelected = false;
         if ((v == getListView() || v == getContainer()) && menu.size() == 0) {
-            menu.add(0, MENU_ADD_NEW, 0, "Add New");
+            menu.add(0, R.string.ctx__add_new, 0, getString(R.string.ctx__add_new));
             if (getItemCount() != pressedPosition) {
                 // click on item // and not blank?
-                menu.add(0, MENU_REMOVE, 0, "Remove");
-                menu.add(0, MENU_REMOVE_INNER, 0, "Remove Inner");
-                menu.add(0, MENU_EDIT, 0, "Edit");
-                if (getItemCount() > 1) menu.add(0, MENU_REPOSITION, 0, "Reposition");
+                menu.add(0, R.string.ctx__remove, 0, getString(R.string.ctx__remove));
+                menu.add(0, R.string.ctx__remove_inner, 0, getString(R.string.ctx__remove_inner));
+                menu.add(0, R.string.ctx__edit, 0, getString(R.string.ctx__edit));
+                if (getItemCount() > 1) menu.add(0, R.string.ctx__reposition, 0, getString(R.string.ctx__reposition));
+                if (!parentId.equals(ROOT_ID)) {
+                    menu.add(0, R.string.ctx__move_out, 0, getString(R.string.ctx__move_out));
+                }
+                if (getItemCount() > 1) menu.add(0, R.string.ctx__move_in, 0, getString(R.string.ctx__move_in));
             }
         }
     }
@@ -195,32 +199,51 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         contextMenuItemSelected = true;
         // can also change color of items around
         switch (item.getItemId()) {
-            case MENU_ADD_NEW: {
+            case R.string.ctx__add_new: {
                 ShowAddNewDialog();
-                break;
+                return true;
             }
-            case MENU_EDIT: {
+            case R.string.ctx__edit: {
                 onMenuEdit();
-                break;
+                return true;
             }
-            case MENU_REMOVE: {
+            case R.string.ctx__remove: {
                 onMenuRemove();
-                break;
+                return true;
             }
-            case MENU_REMOVE_INNER: {
+            case R.string.ctx__remove_inner: {
                 onMenuRemoveInner();
-                break;
+                return true;
             }
-            case MENU_REPOSITION: {
-                setActionBarColor(repositioningBarColor);
+            case R.string.ctx__reposition: {
+                setActionBarColor(repositionBarColor);
                 repositioning = true;
-                break;
+                return true;
+            }
+            case R.string.ctx__move_out: {
+                // need to get parent id of current parent
+                ItemRepository repo = new ItemRepository(this);
+                Item moveItem = getItem(pressedPosition);
+                Item currentParent = null;
+                try {
+                    currentParent = repo.getItem(parentId);
+                    moveItem.parentId = currentParent.parentId;
+                    repo.updateItem(moveItem);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                updateListView();
+                return true;
+            }
+            case R.string.ctx__move_in: {
+                setActionBarColor(moveInBarColor);
+                movingIn = true;
+                return true;
             }
             default: {
                 throw new IllegalArgumentException("Unknown menu item identifier");
             }
         }
-        return super.onContextItemSelected(item);
     }
 
     @Override
@@ -228,30 +251,78 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         switch (menuItem.getItemId()) {
             case R.id.action_upload:
                 // do upload
-                ItemRepository manager = new ItemRepository(this);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        final ItemRepository manager = new ItemRepository(MainActivity.this);
 
-                UserItems userItems = new UserItems();
-                List<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> apiItems = new ArrayList<>();
-                List<RemovedItem> apiRemovedItems = new ArrayList<>();
-                try {
-                    for (Item item : manager.getAllItems()) {
-                        apiItems.add(Utils.toBackendItem(item));
+                        final UserItems userItems = new UserItems();
+                        List<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> apiItems = new ArrayList<>();
+                        List<RemovedItem> apiRemovedItems = new ArrayList<>();
+                        try {
+                            for (Item item : manager.getAllItems()) {
+                                apiItems.add(Utils.toBackendItem(item));
+                            }
+                            for (com.antoshkaplus.recursivelists.model.RemovedItem removedItem : manager.getAllRemovedItems()) {
+                                apiRemovedItems.add(Utils.toBackendRemovedItem(removedItem));
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                        userItems.setItems(apiItems);
+                        userItems.setRemovedItems(apiRemovedItems);
+                        try {
+                            UserItemsApi endpoint = CreateUserItemsEndpoint();
+                            endpoint.insertUserItems(userItems).execute();
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
                     }
-                    for (com.antoshkaplus.recursivelists.model.RemovedItem removedItem : manager.getAllRemovedItems()) {
-                        apiRemovedItems.add(Utils.toBackendRemovedItem(removedItem));
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                userItems.setItems(apiItems);
-                userItems.setRemovedItems(apiRemovedItems);
-                UserItemsApi endpoint = new UserItemsApi();.InsertUserItems()
+                }).start();
                 return true;
             case R.id.action_download:
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        UserItemsApi endpoint = CreateUserItemsEndpoint();
+                        UserItems userItems = new UserItems();
+                        try {
+                            userItems = endpoint.getUserItems().execute();
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                        ItemRepository manager = new ItemRepository(MainActivity.this);
+                        try {
+                            manager.clear();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                        List<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> apiItems = userItems.getItems();
+                        List<RemovedItem> apiRemovedItems = userItems.getRemovedItems();
+                        List<Item> items = new ArrayList<>();
+                        if (apiItems != null) {
+                            for (com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item i : apiItems) {
+                                items.add(Utils.toClientItem(i));
+                            }
+                        }
+                        List<com.antoshkaplus.recursivelists.model.RemovedItem> removedItems = new ArrayList<>();
+                        if (apiRemovedItems != null) {
+                            for (RemovedItem i : apiRemovedItems) {
+                                removedItems.add(Utils.toClientRemovedItem(i));
+                            }
+                        }
+                        try {
+                            manager.init(items, removedItems);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                }).start();
                 // do download
                 return true;
         }
-        return super.onMenuItemSelected(featureId, item);
+        return super.onMenuItemSelected(featureId, menuItem);
     }
 
     void onMenuRemove() {
@@ -354,6 +425,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (repositioning) {
             reposition(pressedPosition, position);
             endReposition();
+            return;
+        }
+        if (movingIn) {
+            moveIn(pressedPosition, position);
+            endMoveIn();
             return;
         }
         updateListView();
@@ -463,6 +539,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void reposition(int positionBefore, int positionAfter) {
+        // did a better way of doing it
         List<Item> items = getItems();
         Item item = items.remove(positionBefore);
         if (positionBefore <= positionAfter) --positionAfter;
@@ -479,8 +556,27 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         updateListView();
     }
 
+    private void moveIn(int positionWhich, int positionWhere) {
+        Item which = getItem(positionWhich);
+        Item where = getItem(positionWhere);
+        which.parentId = where.id;
+        try {
+            ItemRepository repo = new ItemRepository(this);
+            repo.updateItem(which);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        updateListView();
+    }
+
     private void endReposition() {
         repositioning = false;
+        getListView().clearChoices();
+        setActionBarColor(defaultBarColor);
+    }
+
+    private void endMoveIn() {
+        movingIn = false;
         getListView().clearChoices();
         setActionBarColor(defaultBarColor);
     }
@@ -505,6 +601,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             }
         }
         bar.setTitle(title);
+    }
+
+    private UserItemsApi CreateUserItemsEndpoint() {
+        GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(this,
+                "server:client_id:582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com");
+        credential.setSelectedAccountName("antoshkaplus@gmail.com");
+        UserItemsApi.Builder builder = new UserItemsApi.Builder(
+                AndroidHttp.newCompatibleTransport(),
+                new AndroidJsonFactory(), credential);
+        return builder.build();
     }
 
 }

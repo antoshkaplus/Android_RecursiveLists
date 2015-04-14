@@ -8,4 +8,12 @@
     <string name="action_upload">Upload</string>
     <string name="action_download">Download</string>
 
+    <string name="ctx__add_new">Add New</string>
+    <string name="ctx__remove">Remove</string>
+    <string name="ctx__remove_inner">Remove inner</string>
+    <string name="ctx__edit">Edit</string>
+    <string name="ctx__reposition">Reposition</string>
+    <string name="ctx__move_out">Move out</string>
+    <string name="ctx__move_in">Move in</string>
+
 </resources>

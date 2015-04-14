@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Date;
 
 /**
  * Created by antoshkaplus on 10/30/14.
@@ -41,20 +42,39 @@ public final class Utils {
         return apiUUID;
     }
 
+    public static java.util.UUID toClientUUID(UUID uuid) {
+        return new java.util.UUID(
+                uuid.getMostSignificantBits(),
+                uuid.getLeastSignificantBits());
+    }
 
     public static com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item toBackendItem(Item item) {
         com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item apiItem = new com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item();
-        apiItem.setId(toBackendUUID(item.id));
+        apiItem.setId(item.id.toString());
         apiItem.setTitle(item.title);
         apiItem.setOrder(item.order);
-        apiItem.setParentId(toBackendUUID(item.parentId));
+        apiItem.setParentId(item.parentId.toString());
         return apiItem;
     }
 
     public static com.antoshkaplus.recursivelists.backend.userItemsApi.model.RemovedItem toBackendRemovedItem(RemovedItem removedItem) {
         com.antoshkaplus.recursivelists.backend.userItemsApi.model.RemovedItem apiRemovedItem = new com.antoshkaplus.recursivelists.backend.userItemsApi.model.RemovedItem();
         apiRemovedItem.setDeletionDate(new DateTime(removedItem.deletionDate));
-        apiRemovedItem.setItem(toBackendItem(removedItem.item));
+        com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item item = new com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item();
+        item.setId(removedItem.item.id.toString());
+        apiRemovedItem.setItem(item);
         return apiRemovedItem;
+    }
+
+    public static Item toClientItem(com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item item) {
+        Item clientItem = new Item(item.getTitle(), item.getOrder(), java.util.UUID.fromString(item.getParentId()));
+        clientItem.id = java.util.UUID.fromString(item.getId());
+        return clientItem;
+    }
+
+    public static RemovedItem toClientRemovedItem(com.antoshkaplus.recursivelists.backend.userItemsApi.model.RemovedItem removedItem) {
+        Item item = new Item();
+        item.id = java.util.UUID.fromString(removedItem.getItem().getId());
+        return new RemovedItem(item, new Date(removedItem.getDeletionDate().getValue()));
     }
 }
