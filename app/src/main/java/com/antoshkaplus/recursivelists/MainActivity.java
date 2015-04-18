@@ -249,77 +249,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public boolean onMenuItemSelected(int featureId, MenuItem menuItem) {
         switch (menuItem.getItemId()) {
-            case R.id.action_upload:
-                // do upload
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        final ItemRepository manager = new ItemRepository(MainActivity.this);
-
-                        final UserItems userItems = new UserItems();
-                        List<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> apiItems = new ArrayList<>();
-                        List<RemovedItem> apiRemovedItems = new ArrayList<>();
-                        try {
-                            for (Item item : manager.getAllItems()) {
-                                apiItems.add(Utils.toBackendItem(item));
-                            }
-                            for (com.antoshkaplus.recursivelists.model.RemovedItem removedItem : manager.getAllRemovedItems()) {
-                                apiRemovedItems.add(Utils.toBackendRemovedItem(removedItem));
-                            }
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        userItems.setItems(apiItems);
-                        userItems.setRemovedItems(apiRemovedItems);
-                        try {
-                            UserItemsApi endpoint = CreateUserItemsEndpoint();
-                            endpoint.insertUserItems(userItems).execute();
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                }).start();
-                return true;
-            case R.id.action_download:
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        UserItemsApi endpoint = CreateUserItemsEndpoint();
-                        UserItems userItems = new UserItems();
-                        try {
-                            userItems = endpoint.getUserItems().execute();
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-                        ItemRepository manager = new ItemRepository(MainActivity.this);
-                        try {
-                            manager.clear();
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        List<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> apiItems = userItems.getItems();
-                        List<RemovedItem> apiRemovedItems = userItems.getRemovedItems();
-                        List<Item> items = new ArrayList<>();
-                        if (apiItems != null) {
-                            for (com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item i : apiItems) {
-                                items.add(Utils.toClientItem(i));
-                            }
-                        }
-                        List<com.antoshkaplus.recursivelists.model.RemovedItem> removedItems = new ArrayList<>();
-                        if (apiRemovedItems != null) {
-                            for (RemovedItem i : apiRemovedItems) {
-                                removedItems.add(Utils.toClientRemovedItem(i));
-                            }
-                        }
-                        try {
-                            manager.init(items, removedItems);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                }).start();
-                // do download
+            case R.id.action_sync:
+                new Thread(new SyncTask(this, new ItemRepository(this), CreateUserItemsEndpoint())).start();
                 return true;
         }
         return super.onMenuItemSelected(featureId, menuItem);

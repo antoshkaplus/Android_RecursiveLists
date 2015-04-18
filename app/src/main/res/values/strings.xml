@@ -7,6 +7,7 @@
     <string name="action_undo_removal">Undo Removal</string>
     <string name="action_upload">Upload</string>
     <string name="action_download">Download</string>
+    <string name="action_sync">Sync</string>
 
     <string name="ctx__add_new">Add New</string>
     <string name="ctx__remove">Remove</string>

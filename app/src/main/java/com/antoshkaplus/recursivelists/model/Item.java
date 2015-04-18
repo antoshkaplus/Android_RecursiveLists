@@ -12,6 +12,8 @@ import java.util.UUID;
  * Created by antoshkaplus on 2/22/15.
  */
 
+// we don't use here boolean deleted field, because
+// we want to have deletionDate or something like this
 @DatabaseTable(tableName = Item.TABLE_NAME)
 public class Item {
 

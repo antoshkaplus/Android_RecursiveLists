@@ -4,6 +4,12 @@
     tools:context=".MainActivity">
 
     <item
+        android:id="@+id/action_sync"
+        android:title="@string/action_sync"
+        android:visible="true"
+        />
+
+    <item
         android:id="@+id/action_upload"
         android:title="@string/action_upload"
         android:visible="true"

@@ -18,11 +18,11 @@ public class UserItems {
     @Persistent
     private String userId;
 
-    @Persistent(mappedBy = "userItems", defaultFetchGroup = "true")
-    private List<Item> items;
+    @Persistent
+    private Integer version;
 
-    @Persistent(mappedBy = "userItems", defaultFetchGroup = "true")
-    private List<RemovedItem> removedItems;
+    @Persistent(mappedBy = "userItems", defaultFetchGroup = "true", dependentElement = "true")
+    private List<Item> items;
 
     public String getUserId() {
         return userId;
@@ -40,12 +40,12 @@ public class UserItems {
         this.items = items;
     }
 
-    public List<RemovedItem> getRemovedItems() {
-        return removedItems;
+    public Integer getVersion() {
+        return version;
     }
 
-    public void setRemovedItems(List<RemovedItem> removedItems) {
-        this.removedItems = removedItems;
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
 }

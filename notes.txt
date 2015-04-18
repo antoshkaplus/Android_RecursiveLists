@@ -1,0 +1,10 @@
+
+better to sync on client side and only after that
+try to update database on server side in transaction,
+returning some kind of result...
+
+if update was rejected do synchronization again with new instance
+of database on server side
+
+update instance in PersistenceManager by first retrieving this instance.
+PersistenceManager watches your changes on instances that you retrieved

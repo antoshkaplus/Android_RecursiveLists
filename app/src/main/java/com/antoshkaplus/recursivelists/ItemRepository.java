@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
  * but user is too slow... creating data
  */
 public class ItemRepository {
-    private static final String TAG = "DatabaseManager";
+    private static final String TAG = "ItemRepository";
 
     private DatabaseHelper helper;
 
@@ -98,6 +98,19 @@ public class ItemRepository {
             @Override
             public Object call() throws Exception {
                 for (Item i : items) {
+                    dao.create(i);
+                }
+                return null;
+            }
+        });
+    }
+
+    public void addRemovedItemList(final List<RemovedItem> removedItems) throws Exception {
+        final Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
+        dao.callBatchTasks(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                for (RemovedItem i : removedItems) {
                     dao.create(i);
                 }
                 return null;

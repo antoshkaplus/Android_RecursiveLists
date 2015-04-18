@@ -3,14 +3,15 @@ package com.antoshkaplus.recursivelists.backend;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
+import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.users.User;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.UUID;
+import java.util.List;
 import java.util.logging.Logger;
 
-import javax.inject.Named;
 import javax.jdo.JDOObjectNotFoundException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Transaction;
@@ -45,10 +46,7 @@ public class UserItemsEndpoint {
         try {
             items = mgr.getObjectById(UserItems.class, user.getEmail());
         } catch (JDOObjectNotFoundException ex){
-            items = new UserItems();
-            items.setUserId(user.getEmail());
-            items.setItems(new ArrayList<Item>());
-            items.setRemovedItems(new ArrayList<RemovedItem>());
+            items = createNewUserItems(user.getEmail());
             mgr.makePersistent(items);
         } finally {
             mgr.close();
@@ -56,28 +54,63 @@ public class UserItemsEndpoint {
         return items;
     }
 
-    @ApiMethod(name = "insertUserItems")
-    public void insertUserItems(UserItems userItems, User user) throws OAuthRequestException{
+    @ApiMethod(name = "deleteUserItems")
+    public void deleteUserItems(User user) throws OAuthRequestException {
         if (user == null) {
             throw new OAuthRequestException("");
         }
         PersistenceManager mgr = getPersistenceManager();
-        userItems.setUserId(user.getEmail());
+        try {
+            mgr.deletePersistent(mgr.getObjectById(UserItems.class, user.getEmail()));
+        } catch (JDOObjectNotFoundException ex) {
+            // everything is fine
+        } finally {
+            mgr.close();
+        }
+    }
+
+    @ApiMethod(name = "updateUserItems")
+    public void updateUserItems(UserItems userItems, User user) throws OAuthRequestException, InvalidParameterException {
+        if (user == null) {
+            throw new OAuthRequestException("");
+        }
+
+        PersistenceManager mgr = getPersistenceManager();
         Transaction tx = mgr.currentTransaction();
         try {
             tx.begin();
-            mgr.makePersistent(userItems);
-            mgr.makePersistentAll(userItems.getItems());
-            mgr.makePersistentAll(userItems.getRemovedItems());
+            UserItems curUI;
+            try {
+                curUI = mgr.getObjectById(UserItems.class, user.getEmail());
+            } catch (JDOObjectNotFoundException ex) {
+                // shouldn't be empty somehow
+                curUI = null;
+            }
+            if (curUI != null && !curUI.getVersion().equals(userItems.getVersion())) {
+                throw new InvalidParameterException("version update is invalid");
+            }
+            curUI.setVersion(curUI.getVersion() + 1);
+            curUI.setItems(userItems.getItems());
+            mgr.makePersistentAll(curUI.getItems());
             tx.commit();
+        } catch (Exception ex) {
+            tx.rollback();
+            throw ex;
         } finally {
-            if (tx.isActive()) tx.rollback();
+            mgr.close();
         }
-        mgr.close();
     }
 
+    UserItems createNewUserItems(String id) {
+        UserItems items = new UserItems();
+        items.setUserId(id);
+        items.setVersion(0);
+        return items;
+    }
 
     private static PersistenceManager getPersistenceManager() {
         return PMF.get().getPersistenceManager();
     }
+
+
 }

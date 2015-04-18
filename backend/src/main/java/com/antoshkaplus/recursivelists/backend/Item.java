@@ -2,10 +2,11 @@ package com.antoshkaplus.recursivelists.backend;
 
 import com.google.appengine.api.datastore.Key;
 
-import java.util.UUID;
+import java.util.Date;
 
 import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.IdentityType;
+import javax.jdo.annotations.Index;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
@@ -15,10 +16,12 @@ import javax.jdo.annotations.PrimaryKey;
  */
 @PersistenceCapable(identityType = IdentityType.APPLICATION)
 public class Item {
+
     @PrimaryKey
     @Persistent(valueStrategy = IdGeneratorStrategy.IDENTITY)
     private Key key;
     @Persistent
+    @Index
     private String id;
     @Persistent
     private String title;
@@ -30,6 +33,11 @@ public class Item {
 
     @Persistent
     private UserItems userItems;
+
+    @Persistent
+    private Date deletionDate;
+
+
 
     public Item(String id, String parentId, String title, int order) {
         this.id = id;
@@ -71,6 +79,30 @@ public class Item {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public UserItems getUserItems() {
+        return userItems;
+    }
+
+    public void setUserItems(UserItems userItems) {
+        this.userItems = userItems;
+    }
+
+    public Key getKey() {
+        return key;
+    }
+
+    public void setKey(Key key) {
+        this.key = key;
+    }
+
+    public Date getDeletionDate() {
+        return deletionDate;
+    }
+
+    public void setDeletionDate(Date deletionDate) {
+        this.deletionDate = deletionDate;
     }
 
 }
