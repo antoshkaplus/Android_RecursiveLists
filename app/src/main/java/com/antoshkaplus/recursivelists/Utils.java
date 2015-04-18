@@ -66,10 +66,4 @@ public final class Utils {
         return clientItem;
     }
 
-
-    public static RemovedItem toClientRemovedItem(com.antoshkaplus.recursivelists.backend.userItemsApi.model.RemovedItem removedItem) {
-        Item item = new Item();
-        item.id = java.util.UUID.fromString(removedItem.getItem().getId());
-        return new RemovedItem(item, new Date(removedItem.getDeletionDate().getValue()));
-    }
 }

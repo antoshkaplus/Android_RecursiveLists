@@ -22,25 +22,9 @@ public class ItemAdapter extends BaseAdapter {
     UUID parentId;
     List<Item> items = new ArrayList<>();
 
-    public ItemAdapter(Context context, UUID parentId) {
+    public ItemAdapter(Context context, List<Item> items) {
         this.context = context;
-        this.parentId = parentId;
-        ReloadItems();
-    }
-
-    private void ReloadItems() {
-        try {
-            ItemRepository manager = new ItemRepository(context);
-            items = manager.getChildren(parentId);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    @Override
-    public void notifyDataSetChanged() {
-        super.notifyDataSetChanged();
-        ReloadItems();
+        this.items = items;
     }
 
     @Override
@@ -69,6 +53,4 @@ public class ItemAdapter extends BaseAdapter {
     public int getCount() {
         return items.size();
     }
-
-    
 }

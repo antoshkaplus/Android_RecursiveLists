@@ -10,7 +10,7 @@ import android.view.WindowManager;
 /**
  * Created by Anton.Logunov on 3/8/2015.
  */
-public class RetryDialog extends DialogFragment {
+public class RetryDialog extends RetainedDialog {
     private static final String TAG = "CancelRetryDialog";
 
     private CharSequence title;

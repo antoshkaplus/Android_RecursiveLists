@@ -13,6 +13,7 @@ So recursive lists are very good for those things.
 * recursion on items
 * undo delete operations
 * keep data on the server
+* sync between multiple devices
 * moving items in and out
 
 
@@ -24,13 +25,12 @@ So recursive lists are very good for those things.
 * Everything fixed
 
 ## TODO 
-- [ ] remove selected items (maybe still do it separately)
-- [ ] refactoring
-- [ ] data synchronization (number one priority)
-- [ ] add food to reduce copy pasting of files (don't know what should be inside food)
+- [ ] progress on action bar while syncing 
+- [ ] debug everything
 - [ ] add string and edit dialogs should be merged somehow in one 
         class and placed somewhere in the library
-- [ ] choose login setting
+- [ ] work on authorization in repository
+- [ ] debug everything
 
 Screenshots
 

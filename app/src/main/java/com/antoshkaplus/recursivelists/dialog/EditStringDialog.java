@@ -10,13 +10,12 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 
-import com.antoshkaplus.recursivelists.Logger;
 import com.antoshkaplus.recursivelists.R;
 
 /**
  * Created by antoshkaplus on 2/25/15.
  */
-public class EditStringDialog extends DialogFragment {
+public class EditStringDialog extends RetainedDialog {
 
 
     private static final String TAG = "EditStringDialog";
@@ -54,16 +53,13 @@ public class EditStringDialog extends DialogFragment {
         input.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                Logger.log(TAG, " " + keyEvent.getAction());
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
-                        Logger.log(TAG, "pressed Edit button");
                         listener.onEditStringDialogSuccess(input.getText());
                         dismiss();
                         return true;
                     }
                     if (i == KeyEvent.KEYCODE_BACK) {
-                        Logger.log(TAG, "pressed Back button");
                         listener.onEditStringDialogCancel();
                         dismiss();
                         return true;

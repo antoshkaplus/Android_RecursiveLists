@@ -8,3 +8,10 @@ of database on server side
 
 update instance in PersistenceManager by first retrieving this instance.
 PersistenceManager watches your changes on instances that you retrieved
+
+adapter should receive the whole object, not parts of it, that he needs.
+let him what he needs and what he doesn't
+
+can use singleTop activity probably
+
+onMenuItemSelected - more generic, should not usually be used

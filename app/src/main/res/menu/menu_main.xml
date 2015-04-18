@@ -10,23 +10,10 @@
         />
 
     <item
-        android:id="@+id/action_upload"
-        android:title="@string/action_upload"
-        android:visible="true"
-        />
-
-    <item
-        android:id="@+id/action_download"
-        android:title="@string/action_download"
-        android:visible="true"
-        />
-
-    <item
         android:id="@+id/action_settings"
         android:title="@string/action_settings"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:visible="false"
         />
 
 

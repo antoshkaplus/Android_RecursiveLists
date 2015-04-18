@@ -1,7 +1,9 @@
 package com.antoshkaplus.recursivelists;
 
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.ActionBar;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,6 +11,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,8 +20,6 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.antoshkaplus.recursivelists.backend.userItemsApi.UserItemsApi;
-import com.antoshkaplus.recursivelists.backend.userItemsApi.model.RemovedItem;
-import com.antoshkaplus.recursivelists.backend.userItemsApi.model.UserItems;
 import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.recursivelists.dialog.RetryDialog;
@@ -29,8 +30,8 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -39,12 +40,12 @@ import java.util.UUID;
 
 public class MainActivity extends Activity implements AdapterView.OnItemClickListener {
 
+    private final static int REQUEST_ACCOUNT_PICKER = 11;
+
     // should think about good naming of those variables
     // have UUID as string inside
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
-
     private final static UUID ROOT_ID  = new UUID(0, 0);
-
     private final static String PREF_FIRST_LAUNCH = "first_launch";
 
     Menu optionsMenu;
@@ -60,6 +61,19 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private int moveInBarColor = Color.GREEN;
     private int defaultBarColor = Color.LTGRAY;
 
+    // should always be ordered
+    private List<Item> items = new ArrayList<>();
+    private ItemRepository repository;
+
+    SharedPreferences settings;
+
+    GoogleAccountCredential credential;
+
+    // populate first launch data inside database
+    // define parentId
+    // assign context menus and events
+    // assign repository and items
+    // populate listview
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,9 +89,37 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         } else {
             parentId = (UUID)savedInstanceState.getSerializable(EXTRA_PARENT_ID);
         }
-        setActionBarTitle();
-        getListView().setAdapter(new ItemAdapter(this, parentId));
-        registerForContextMenu(getListView());
+
+        String account = retrieveAccount();
+        if (account == null) {
+            chooseAccount();
+        } else {
+            repository = new ItemRepository(this, account);
+            setActionBarTitle();
+            try {
+                // should cklear and add
+                items = repository.getChildren(parentId);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            // should probably sort items
+            onItemsChanged();
+        }
+        settings = PreferenceManager.getDefaultSharedPreferences(this);
+        settings.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if (key.equals(getString(R.string.pref__account__key))) {
+                    onAccountChanged();
+                }
+            }
+        });
+        prepareViews();
+    }
+
+    // setting up listeners and context menus
+    private void prepareViews() {
+        getListView().setAdapter(new ItemAdapter(this, items));
         getListView().setOnItemClickListener(this);
         getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
@@ -92,7 +134,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             @Override
             public boolean onLongClick(View v) {
                 pressedPosition = getListView().getAdapter().getCount();
-                ShowAddNewDialog();
+                showAddNewDialog();
                 return true;
             }
         });
@@ -100,7 +142,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             @Override
             public void onClick(View v) {
                 if (repositioning) {
-                    reposition(pressedPosition, getItemCount());
+                    reposition(pressedPosition, items.size());
                     endReposition();
                 }
             }
@@ -109,6 +151,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         registerForContextMenu(getListView());
     }
 
+    // should be called after user chooses account
     private void firstLaunchPopulation()  {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if (prefs.contains(PREF_FIRST_LAUNCH)) {
@@ -121,25 +164,24 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         InputStream input = getResources().openRawResource(R.raw.default_data);
         try {
             JSONObject json = Utils.readDefaultData(input);
-            ItemRepository manager = new ItemRepository(this);
-            manager.clear();
-            recursion(manager, ROOT_ID, json);
+            List<Item> result = new ArrayList<>();
+            recursion(result, ROOT_ID, json);
+            repository.addItemList(result);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    private void recursion(ItemRepository manager, UUID parentId, JSONObject json) throws Exception {
-        int order = manager.getChildrenCount(parentId);
+    private void recursion(List<Item> result, UUID parentId, JSONObject json) throws Exception {
+        int order = 0;
         Iterator<String> iter = json.keys();
         while (iter.hasNext()) {
             String k = iter.next();
             Item item = new Item(k, order++, parentId);
-            manager.addItem(item);
-            recursion(manager, item.id, (JSONObject)json.get(k));
+            result.add(item);
+            recursion(result, item.id, (JSONObject)json.get(k));
         }
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -148,16 +190,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         return true;
     }
 
-    private void setUndoRemovalVisible(boolean b) {
-        MenuItem item = optionsMenu.findItem(R.id.action_undo_removal);
-        item.setVisible(b);
-    }
-
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
         MenuItem item = menu.findItem(R.id.action_undo_removal);
-        ItemRepository manager = new ItemRepository(this);
+        // can be not initialized...
+        ItemRepository manager = repository;
         try {
             item.setVisible(manager.hasRemovedItems());
         } catch (Exception ex) {
@@ -173,16 +211,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         contextMenuItemSelected = false;
         if ((v == getListView() || v == getContainer()) && menu.size() == 0) {
             menu.add(0, R.string.ctx__add_new, 0, getString(R.string.ctx__add_new));
-            if (getItemCount() != pressedPosition) {
+            if (items.size() != pressedPosition) {
                 // click on item // and not blank?
                 menu.add(0, R.string.ctx__remove, 0, getString(R.string.ctx__remove));
                 menu.add(0, R.string.ctx__remove_inner, 0, getString(R.string.ctx__remove_inner));
                 menu.add(0, R.string.ctx__edit, 0, getString(R.string.ctx__edit));
-                if (getItemCount() > 1) menu.add(0, R.string.ctx__reposition, 0, getString(R.string.ctx__reposition));
+                if (items.size() > 1) menu.add(0, R.string.ctx__reposition, 0, getString(R.string.ctx__reposition));
                 if (!parentId.equals(ROOT_ID)) {
                     menu.add(0, R.string.ctx__move_out, 0, getString(R.string.ctx__move_out));
                 }
-                if (getItemCount() > 1) menu.add(0, R.string.ctx__move_in, 0, getString(R.string.ctx__move_in));
+                if (items.size() > 1) menu.add(0, R.string.ctx__move_in, 0, getString(R.string.ctx__move_in));
             }
         }
     }
@@ -200,11 +238,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         // can also change color of items around
         switch (item.getItemId()) {
             case R.string.ctx__add_new: {
-                ShowAddNewDialog();
+                showAddNewDialog();
                 return true;
             }
             case R.string.ctx__edit: {
-                onMenuEdit();
+                showEditDialog();
                 return true;
             }
             case R.string.ctx__remove: {
@@ -221,18 +259,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 return true;
             }
             case R.string.ctx__move_out: {
-                // need to get parent id of current parent
-                ItemRepository repo = new ItemRepository(this);
-                Item moveItem = getItem(pressedPosition);
-                Item currentParent = null;
-                try {
-                    currentParent = repo.getItem(parentId);
-                    moveItem.parentId = currentParent.parentId;
-                    repo.updateItem(moveItem);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                updateListView();
+                moveOut(pressedPosition);
                 return true;
             }
             case R.string.ctx__move_in: {
@@ -246,108 +273,92 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
+    private void moveOut(int position) {
+        Item moveItem = items.remove(pressedPosition);
+        for (int i = moveItem.order; i < items.size(); ++i) {
+            items.get(i).order = i;
+        }
+        try {
+            Item currentParent = repository.getItem(parentId);
+            moveItem.parentId = currentParent.parentId;
+            repository.updateItem(moveItem);
+            repository.updateAllItems(items.subList(moveItem.order, items.size()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        updateListView();
+    }
+
+
+    private void onMenuRemove() {
+        Item item = items.remove(pressedPosition);
+        for (int i = item.order; i < items.size(); ++i) {
+            items.get(i).order = i;
+        }
+        try {
+            repository.deleteItem(item);
+            repository.updateAllItems(items.subList(item.order, items.size()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        updateListView();
+        // to allow undo deletion
+        invalidateOptionsMenu();
+    }
+
+    private void onMenuRemoveInner() {
+        Item i = items.get(pressedPosition);
+        try {
+            repository.deleteChildren(i);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        updateListView();
+        invalidateOptionsMenu();
+    }
+
     @Override
-    public boolean onMenuItemSelected(int featureId, MenuItem menuItem) {
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.action_sync:
-                new Thread(new SyncTask(this, new ItemRepository(this), CreateUserItemsEndpoint())).start();
+                // hiding existence of user
+                // need new repository to avoid concurrency
+                new Thread(new SyncTask(this, new ItemRepository(this, retrieveAccount()), CreateUserItemsEndpoint())).start();
                 return true;
-        }
-        return super.onMenuItemSelected(featureId, menuItem);
-    }
-
-    void onMenuRemove() {
-        Item i = getItem(pressedPosition);
-        ItemRepository manager = new ItemRepository(this);
-        try {
-            manager.deleteItem(i);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        updateListView();
-        setUndoRemovalVisible(true);
-    }
-
-    void onMenuRemoveInner() {
-        Item i = getItem(pressedPosition);
-        ItemRepository manager = new ItemRepository(this);
-        try {
-            manager.deleteChildren(i);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        // clear choices
-        updateListView();
-        setUndoRemovalVisible(true);
-    }
-
-    void onMenuEdit() {
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        EditStringDialog dialog = new EditStringDialog();
-        Bundle args = new Bundle();
-        args.putString(EditStringDialog.ARG_TITLE, "Edit:");
-        args.putString(EditStringDialog.ARG_HINT, "Item");
-        args.putString(EditStringDialog.ARG_TEXT, getItem(pressedPosition).title);
-        dialog.setArguments(args);
-        dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
-            @Override
-            public void onEditStringDialogSuccess(CharSequence string) {
-                ItemRepository manager = new ItemRepository(MainActivity.this);
+            case R.id.action_settings:
+                Intent i = new Intent(this, SettingsActivity.class);
+                startActivity(i);
+                return true;
+            case R.id.action_undo_removal:
                 try {
-                    Item item = manager.getItem(getItem(pressedPosition).id);
-                    item.title = string.toString();
-                    manager.updateItem(item);
-                    updateListView();
-                    // update current list
+                    repository.undoLastRemoval();
+                    if (repository.getChildrenCount(parentId) != items.size()) {
+                        loadItems();
+                        onItemsChanged();
+                    }
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-                manager.close();
-            }
-            @Override
-            public void onEditStringDialogCancel() {}
-        });
-        dialog.show(ft, "dialog");
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_undo_removal) {
-            ItemRepository manager = new ItemRepository(this);
-            try {
-                manager.undoLastRemoval();
-                item.setVisible(manager.hasRemovedItems());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            // retrive item from preferences
-            // sometimes can be many of them
-
-            updateListView();
-
-            return true;
+                return true;
         }
-        return super.onOptionsItemSelected(item);
+        return super.onOptionsItemSelected(menuItem);
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable(EXTRA_PARENT_ID, parentId);
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        // will try to fill in items here
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
-        getListView().clearChoices();
         updateListView();
     }
 
@@ -363,10 +374,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             endMoveIn();
             return;
         }
+        // clearing any selections on current activity
+        // to return on cleared one
         updateListView();
         Intent intent = new Intent(this, MainActivity.class);
-        Item item = getItem(position);
-        intent.putExtra(EXTRA_PARENT_ID, item.id);
+        intent.putExtra(EXTRA_PARENT_ID, items.get(position).id);
         startActivity(intent);
     }
 
@@ -386,82 +398,118 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         return findViewById(R.id.container);
     }
 
-    private Item getItem(int position) {
-        return (Item)getListView().getAdapter().getItem(position);
-    }
-
-    private List<Item> getItems() {
-        ItemRepository manager = new ItemRepository(this);
-        List<Item> items = new ArrayList<>();
+    // returns items for current activity from repository
+    private void loadItems() {
         try {
-            items = manager.getChildren(parentId);
+            items = repository.getChildren(parentId);
         } catch (Exception ex) {
             // just use finally
             ex.printStackTrace();
         }
-        manager.close();
-        return items;
     }
 
-    private int getItemCount() {
-        return getListView().getAdapter().getCount();
+    void showEditDialog() {
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        EditStringDialog dialog = new EditStringDialog();
+        Bundle args = new Bundle();
+        args.putString(EditStringDialog.ARG_TITLE, "Edit:");
+        args.putString(EditStringDialog.ARG_TEXT, items.get(pressedPosition).title);
+        dialog.setArguments(args);
+        // TODO should also make an empty string or duplicate
+        dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
+            @Override
+            public void onEditStringDialogSuccess(CharSequence string) {
+                RetryDialog.RetryDialogListener listener = new RetryDialog.RetryDialogListener() {
+                    @Override
+                    public void onDialogCancel() { }
+                    @Override
+                    public void onDialogRetry() {
+                        showEditDialog();
+                    }
+                };
+                // empty string
+                if (string.toString().isEmpty()) {
+                    // show dialog with on retry
+                    showRetryDialog(
+                            getString(R.string.dialog__empty__title),
+                            getString(R.string.dialog__empty__text),
+                            listener);
+                    return;
+                }
+                // item already exists
+                boolean exists = false;
+                for (Item i : items) {
+                    if (i.order != pressedPosition && i.title.contentEquals(string)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (exists) {
+                    showRetryDialog(
+                            getString(R.string.dialog__exists__title),
+                            getString(R.string.dialog__exists__text),
+                            listener);
+                    return;
+                }
+
+                try {
+                    Item item = items.get(pressedPosition);
+                    item.title = string.toString();
+                    repository.updateItem(item);
+                    updateListView();
+                    // update current list
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            @Override
+            public void onEditStringDialogCancel() {}
+        });
+        dialog.show(ft, "dialog");
     }
 
-    private void ShowAddNewDialog() {
+    private void showAddNewDialog() {
         final FragmentTransaction ft = getFragmentManager().beginTransaction();
         AddStringDialog dialog = new AddStringDialog();
         Bundle args = new Bundle();
-        args.putString(AddStringDialog.ARG_TITLE, "Add new:");
-        args.putString(AddStringDialog.ARG_HINT, "Item");
+        args.putString(AddStringDialog.ARG_TITLE, getString(R.string.dialog__add_title));
         dialog.setArguments(args);
         dialog.setAddStringDialogListener(new AddStringDialog.AddStringDialogListener() {
             @Override
             public void onAddStringDialogSuccess(CharSequence string) {
+                RetryDialog.RetryDialogListener listener = new RetryDialog.RetryDialogListener() {
+                    @Override
+                    public void onDialogCancel() { }
+                    @Override
+                    public void onDialogRetry() {
+                        showAddNewDialog();
+                    }
+                };
                 // empty string
                 if (string.toString().isEmpty()) {
                     // show dialog with on retry
-                    final FragmentTransaction ft = getFragmentManager().beginTransaction();
-                    final RetryDialog dialog = RetryDialog.newInstance("Error", "Item can't be empty string");
-                    dialog.setRetryDialogListener(new RetryDialog.RetryDialogListener() {
-                        @Override
-                        public void onDialogCancel() {}
-
-                        @Override
-                        public void onDialogRetry() {
-                            ShowAddNewDialog();
-                        }
-                    });
-                    dialog.show(ft, "dialog");
+                    showRetryDialog(
+                            getString(R.string.dialog__empty__title),
+                            getString(R.string.dialog__empty__text),
+                            listener);
                     return;
                 }
                 // item already exists
-                ItemRepository manager = new ItemRepository(MainActivity.this);
-                for (Item i : getItems()) {
+                boolean exists = false;
+                for (Item i : items) {
                     if (i.title.contentEquals(string)) {
-                        final FragmentTransaction ft = getFragmentManager().beginTransaction();
-                        final RetryDialog dialog = RetryDialog.newInstance("Error", "Such item name already exists");
-                        dialog.setRetryDialogListener(new RetryDialog.RetryDialogListener() {
-                            @Override
-                            public void onDialogCancel() {}
-
-                            @Override
-                            public void onDialogRetry() {
-                                ShowAddNewDialog();
-                            }
-                        });
-                        dialog.show(ft, "dialog");
-                        return;
+                        exists = true;
+                        break;
                     }
                 }
-
-                // need to add value at special location
-                try {
-                    manager.addItem(new Item(string.toString(), pressedPosition, parentId));
-                    updateListView();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                if (exists) {
+                    showRetryDialog(
+                            getString(R.string.dialog__exists__title),
+                            getString(R.string.dialog__exists__text),
+                            listener);
+                    return;
                 }
-                manager.close();
+                addNewItem(string.toString(), pressedPosition);
             }
             @Override
             public void onAddStringDialogCancel() {}
@@ -469,35 +517,75 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         dialog.show(ft, "dialog");
     }
 
-    private void reposition(int positionBefore, int positionAfter) {
-        // did a better way of doing it
-        List<Item> items = getItems();
-        Item item = items.remove(positionBefore);
-        if (positionBefore <= positionAfter) --positionAfter;
-        items.add(positionAfter, item);
-        for (int i = 0; i < items.size(); ++i) {
-            items.get(i).order = i;
+    private void showRetryDialog(String title, String text, RetryDialog.RetryDialogListener listener) {
+        RetryDialog dialog = (RetryDialog)getFragmentManager().findFragmentByTag("retry_dialog");
+        if (dialog == null) {
+            RetryDialog.newInstance(title, text);
         }
-        ItemRepository manager = new ItemRepository(MainActivity.this);
+        dialog.setRetryDialogListener(listener);
+        dialog.show(getFragmentManager(), "retry_dialog");
+    }
+
+    private void addNewItem(String title, int position) {
+        Item item = new Item(title, position, parentId);
         try {
-            manager.updateItems(items);
+            items.add(position, item);
+            for (int i = position+1; i < items.size(); ++i) {
+                items.get(i).order = i;
+            }
+            // should return updated item
+            // TODO is true
+            repository.addItem(item);
+            repository.updateAllItems(items.subList(position+1, items.size()));
+            onItemsChanged();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        updateListView();
+    }
+
+
+    private void reposition(int positionBefore, int positionAfter) {
+        // did a better way of doing it
+        Item item = items.remove(positionBefore);
+        int from, to;
+        if (positionBefore < positionAfter) {
+            items.add(positionAfter - 1, item);
+            from = positionBefore;
+            to = positionAfter+1;
+        } else {
+            items.add(positionAfter, item);
+            from = positionAfter;
+            to = positionBefore+1;
+        }
+        for (int i = from; i < to; ++i) {
+            items.get(i).order = i;
+        }
+        try {
+            repository.updateAllItems(items.subList(from, to));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        onItemsChanged();
     }
 
     private void moveIn(int positionWhich, int positionWhere) {
-        Item which = getItem(positionWhich);
-        Item where = getItem(positionWhere);
+        Item which = items.get(positionWhich);
+        Item where = items.get(positionWhere);
         which.parentId = where.id;
+        // need to update order in current list
+        // and make last one in where
+        items.remove(positionWhich);
+        for (int i = positionWhich; i < items.size(); ++i) {
+            items.get(i).order = i;
+        }
         try {
-            ItemRepository repo = new ItemRepository(this);
-            repo.updateItem(which);
+            repository.updateAllItems(items.subList(positionWhich, items.size()));
+            which.order = repository.getChildrenCount(where.id);
+            repository.updateItem(which);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        updateListView();
+        onItemsChanged();
     }
 
     private void endReposition() {
@@ -518,14 +606,14 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         bar.setBackgroundDrawable(new ColorDrawable(color));
     }
 
+    // need repository to be set
     private void setActionBarTitle() {
         ActionBar bar = getActionBar();
         if (bar == null) return;
         String title = "Root";
         if (parentId != ROOT_ID) {
-            ItemRepository manager = new ItemRepository(this);
             try {
-                Item item = manager.getItem(parentId);
+                Item item = repository.getItem(parentId);
                 title = item.title;
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -535,13 +623,50 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private UserItemsApi CreateUserItemsEndpoint() {
-        GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(this,
-                "server:client_id:582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com");
-        credential.setSelectedAccountName("antoshkaplus@gmail.com");
         UserItemsApi.Builder builder = new UserItemsApi.Builder(
                 AndroidHttp.newCompatibleTransport(),
                 new AndroidJsonFactory(), credential);
         return builder.build();
     }
 
+    private void chooseAccount() {
+        startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case REQUEST_ACCOUNT_PICKER:
+                if (data != null && data.getExtras() != null) {
+                    String accountName =
+                            data.getExtras().getString(
+                                    AccountManager.KEY_ACCOUNT_NAME);
+                    if (accountName != null) {
+                        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+                        editor.putString(getString(R.string.pref__account__key), accountName);
+                        editor.commit();
+                        // account should be already updated
+                        // should also reinitialize repository // somehow
+                        firstLaunchPopulation();
+                    }
+                }
+                break;
+        }
+    }
+
+    private void onAccountChanged() {
+        String account = retrieveAccount();
+        credential.setSelectedAccountName(account);
+        repository = new ItemRepository(this, account);
+    }
+
+    private String retrieveAccount() {
+        return settings.getString(getString(R.string.pref__account__key), null);
+    }
+
+    private void onItemsChanged() {
+        ItemAdapter adapter = (ItemAdapter)getListView().getAdapter();
+        adapter.notifyDataSetChanged();
+    }
 }

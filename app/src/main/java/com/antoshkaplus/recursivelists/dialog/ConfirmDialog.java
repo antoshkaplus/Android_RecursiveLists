@@ -11,7 +11,7 @@ import android.view.WindowManager;
 /**
  * Created by antoshkaplus on 3/3/15.
  */
-public class ConfirmDialog extends DialogFragment {
+public class ConfirmDialog extends RetainedDialog {
     private static final String TAG = "ConfirmDialog";
 
     public static final String ARG_TITLE = "arg_title";

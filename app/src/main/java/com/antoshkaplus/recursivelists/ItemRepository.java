@@ -26,8 +26,9 @@ public class ItemRepository {
     private static final String TAG = "ItemRepository";
 
     private DatabaseHelper helper;
+    private String user;
 
-    public ItemRepository(Context ctx) {
+    public ItemRepository(Context ctx, String user) {
         helper = new DatabaseHelper(ctx);
     }
 
@@ -123,7 +124,7 @@ public class ItemRepository {
         helper.getDao(Item.class).update(item);
     }
 
-    public void updateItems(final List<Item> items) throws Exception {
+    public void updateAllItems(final List<Item> items) throws Exception {
         final Dao<Item, Integer> dao = helper.getDao(Item.class);
         dao.callBatchTasks(new Callable<Object>() {
             @Override
