@@ -2,12 +2,14 @@
 
 ## Story
 Sometimes I just need to write somewhere some kind of list.
-Those lists sometimes grouped by category. And also we want to support subcategories. 
+Those lists sometimes grouped by category. And also we want to support subcategories.
 So recursive lists are very good for those things.
 
+### Final version for offline only usage
+
 ## Features
-* reposition 
-* deletion 
+* reposition
+* deletion
 * renaming
 * adding new
 * recursion on items
@@ -23,9 +25,9 @@ So recursive lists are very good for those things.
 
 ## Bugs
 
-## TODO 
-* when user installs application we provide him with lots of initial data. 
-but he may already have it on the cloud. solution : 
+## TODO
+* when user installs application we provide him with lots of initial data.
+but he may already have it on the cloud. solution :
 1) dialog box to ask if he needs initial data loaded
 2) create some predefined id-s for initial data to make it unique and the same for all devices
 * clear all removed items but leave 10 or another count that are most recent
