@@ -21,10 +21,11 @@ import java.util.UUID;
  */
 public class SyncTask implements Runnable {
 
-    UserItemsApi api;
-    ItemRepository repo;
+    private UserItemsApi api;
+    private ItemRepository repo;
     // needed to use LocalBroadcastManager
-    Context ctx;
+    private Context ctx;
+    private Listener listener = new Adapter();
 
 
     // repository can be an interface
@@ -36,6 +37,8 @@ public class SyncTask implements Runnable {
 
     @Override
     public void run() {
+        listener.onStart();
+        boolean success = true;
         try {
             List<Item> items = repo.getAllItems();
             List<RemovedItem> removedItems = repo.getAllRemovedItems();
@@ -48,8 +51,10 @@ public class SyncTask implements Runnable {
             repo.addItemList(result.newItems);
             repo.addRemovedItemList(result.newRemovedItems);
         } catch (Exception ex) {
+            success = false;
             ex.printStackTrace();
         }
+        listener.onFinish(success);
     }
 
     private UpdateResult update(List<Item> existingItems, List<RemovedItem> existingRemovedItems) throws IOException {
@@ -96,10 +101,30 @@ public class SyncTask implements Runnable {
         return result;
     }
 
+    public Listener getListener() {
+        return listener;
+    }
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
     public class UpdateResult {
         public boolean success;
         public List<Item> newItems;
         public List<RemovedItem> newRemovedItems;
-    };
+    }
+
+    interface Listener {
+        void onStart();
+        void onFinish(boolean success);
+    }
+
+    private class Adapter implements Listener {
+        @Override
+        public void onStart() { }
+        @Override
+        public void onFinish(boolean success) { }
+    }
 
 }

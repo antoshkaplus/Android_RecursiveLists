@@ -6,7 +6,8 @@
     <item
         android:id="@+id/action_sync"
         android:title="@string/action_sync"
-        android:visible="true"
+        android:icon="@drawable/ic_action_refresh"
+        android:showAsAction="ifRoom"
         />
 
     <item
@@ -16,11 +17,11 @@
         android:showAsAction="never"
         />
 
-
     <item
         android:id="@+id/action_undo_removal"
         android:title="@string/action_undo_removal"
         />
+
 
 
 </menu>

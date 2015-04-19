@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
+import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.ColumnArg;
 import com.j256.ormlite.stmt.DeleteBuilder;
@@ -30,6 +31,12 @@ public class ItemRepository {
 
     public ItemRepository(Context ctx, String user) {
         helper = new DatabaseHelper(ctx);
+        this.user = user;
+    }
+
+    public UUID getRootId() throws SQLException {
+        Dao<UserRoot, String> dao = helper.getDao(UserRoot.class);
+        return dao.queryForId(user).rootId;
     }
 
     public Item getItem(UUID id) throws Exception {
@@ -78,12 +85,22 @@ public class ItemRepository {
         });
     }
 
+    // clearing every table from anything of particular userId
     public void clear() throws SQLException {
+        // remove removedItems with join of UserItem
+
+        // remove Items with join of UserItem
+
+        // remove UserItem
+
+        // remove UserRoot
+
         helper.getDao(Item.class).deleteBuilder().delete();
         helper.getDao(RemovedItem.class).deleteBuilder().delete();
     }
 
     public void addItem(Item item) throws Exception {
+        // add item to UserItem
         List<Item> items = getChildren(item.parentId);
         items = items.subList(item.order, items.size());
         for (Item i : items) {
@@ -94,6 +111,7 @@ public class ItemRepository {
     }
 
     public void addItemList(final List<Item> items) throws Exception {
+        // add all of them to UserItem
         final Dao<Item, UUID> dao = helper.getDao(Item.class);
         dao.callBatchTasks(new Callable<Object>() {
             @Override
@@ -119,7 +137,7 @@ public class ItemRepository {
         });
     }
 
-
+    // should not change id by any means
     public void updateItem(Item item) throws Exception {
         helper.getDao(Item.class).update(item);
     }
@@ -161,17 +179,9 @@ public class ItemRepository {
 
     public void init(List<Item> items, final List<RemovedItem> removedItems) throws Exception{
         clear();
+        // need also initialize rootId
         addItemList(items);
-        final Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
-        dao.callBatchTasks(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                for (RemovedItem i : removedItems) {
-                    dao.create(i);
-                }
-                return null;
-            }
-        });
+        addRemovedItemList(removedItems);
     }
 
     public void close() {

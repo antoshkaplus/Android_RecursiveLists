@@ -7,6 +7,8 @@ import android.util.Log;
 
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
+import com.antoshkaplus.recursivelists.model.UserItem;
+import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.android.apptools.OrmLiteSqliteOpenHelper;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.support.ConnectionSource;
@@ -37,6 +39,8 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         try {
             TableUtils.createTable(connectionSource, Item.class);
             TableUtils.createTable(connectionSource, RemovedItem.class);
+            TableUtils.createTable(connectionSource, UserRoot.class);
+            TableUtils.createTable(connectionSource, UserItem.class);
         } catch (SQLException e) {
             Log.e(DatabaseHelper.class.getName(), "Can't create database", e);
             throw new RuntimeException(e);

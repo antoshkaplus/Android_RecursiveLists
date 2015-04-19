@@ -16,12 +16,14 @@ import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.antoshkaplus.recursivelists.backend.userItemsApi.UserItemsApi;
 import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
+import com.antoshkaplus.recursivelists.dialog.OkDialog;
 import com.antoshkaplus.recursivelists.dialog.RetryDialog;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -55,6 +57,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private boolean repositioning = false;
     private boolean movingIn = false;
     private boolean contextMenuItemSelected = false;
+    private boolean syncing = false;
 
     // those can be constants
     private int repositionBarColor = Color.YELLOW;
@@ -77,8 +80,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        firstLaunchPopulation();
         setContentView(R.layout.activity_main);
+        getListView().setAdapter(new ItemAdapter(this, items));
         setActionBarColor(defaultBarColor);
         if (savedInstanceState == null) {
             Intent intent = getIntent();
@@ -89,22 +92,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         } else {
             parentId = (UUID)savedInstanceState.getSerializable(EXTRA_PARENT_ID);
         }
-
-        String account = retrieveAccount();
-        if (account == null) {
-            chooseAccount();
-        } else {
-            repository = new ItemRepository(this, account);
-            setActionBarTitle();
-            try {
-                // should cklear and add
-                items = repository.getChildren(parentId);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-            // should probably sort items
-            onItemsChanged();
-        }
+        // should assign before doing any operations with settings
         settings = PreferenceManager.getDefaultSharedPreferences(this);
         settings.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
@@ -114,7 +102,34 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 }
             }
         });
+        String account = retrieveAccount();
+        credential = CredentialFactory.create(this, account);
+        if (account == null) {
+            chooseAccount();
+        } else {
+            repository = new ItemRepository(this, account);
+            setActionBarTitle();
+            try {
+                items.clear();
+                items.addAll(repository.getChildren(parentId));
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            // should probably sort items
+            onItemsChanged();
+        }
         prepareViews();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        parentId = (UUID)intent.getSerializableExtra(EXTRA_PARENT_ID);
+        if (parentId == null) {
+            parentId = ROOT_ID;
+        }
+        loadItems();
+        onItemsChanged();
     }
 
     // setting up listeners and context menus
@@ -186,7 +201,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
-        optionsMenu = menu;
+        if (syncing) {
+            MenuItem item = menu.findItem(R.id.action_sync);
+            item.setActionView(R.layout.actionbar__indeterminate_progress);
+        }
         return true;
     }
 
@@ -321,9 +339,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     public boolean onOptionsItemSelected(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.action_sync:
-                // hiding existence of user
-                // need new repository to avoid concurrency
-                new Thread(new SyncTask(this, new ItemRepository(this, retrieveAccount()), CreateUserItemsEndpoint())).start();
+                if (!syncing) {
+                    onSync();
+                }
                 return true;
             case R.id.action_settings:
                 Intent i = new Intent(this, SettingsActivity.class);
@@ -342,6 +360,48 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 return true;
         }
         return super.onOptionsItemSelected(menuItem);
+    }
+
+    private void onSync() {
+        SyncTask task = new SyncTask(this, new ItemRepository(this, retrieveAccount()), CreateUserItemsEndpoint());
+        task.setListener(new SyncTask.Listener() {
+            @Override
+            public void onStart() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        syncing = true;
+                        invalidateOptionsMenu();
+                    }
+                });
+            }
+
+            @Override
+            public void onFinish(final boolean success) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        syncing = false;
+                        invalidateOptionsMenu();
+                        FragmentManager mgr = getFragmentManager();
+                        if (!success) {
+                            // show negative message
+                            OkDialog.newInstance(
+                                    getString(R.string.dialog__sync_failure__title),
+                                    getString(R.string.dialog__sync_failure__text)).show(mgr, "success");
+                            loadItems();
+                            onItemsChanged();
+                        } else {
+                            // show positive message
+                            OkDialog.newInstance(
+                                    getString(R.string.dialog__sync_success__title),
+                                    getString(R.string.dialog__sync_success__text)).show(mgr, "failure");
+                        }
+                    }
+                });
+            }
+        });
+        new Thread(task).start();
     }
 
     @Override
@@ -401,7 +461,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     // returns items for current activity from repository
     private void loadItems() {
         try {
-            items = repository.getChildren(parentId);
+            items.clear();
+            items.addAll(repository.getChildren(parentId));
         } catch (Exception ex) {
             // just use finally
             ex.printStackTrace();
@@ -645,9 +706,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     if (accountName != null) {
                         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
                         editor.putString(getString(R.string.pref__account__key), accountName);
-                        editor.commit();
-                        // account should be already updated
-                        // should also reinitialize repository // somehow
+                        editor.apply();
+                        onAccountChanged();
                         firstLaunchPopulation();
                     }
                 }
@@ -659,6 +719,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         String account = retrieveAccount();
         credential.setSelectedAccountName(account);
         repository = new ItemRepository(this, account);
+        parentId = ROOT_ID;
+        loadItems();
+        onItemsChanged();
     }
 
     private String retrieveAccount() {
@@ -668,5 +731,23 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void onItemsChanged() {
         ItemAdapter adapter = (ItemAdapter)getListView().getAdapter();
         adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (parentId.equals(ROOT_ID)) {
+            super.onBackPressed();
+            return;
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        // outer parent id
+        UUID id = null;
+        try {
+            id = repository.getItem(parentId).parentId;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        intent.putExtra(EXTRA_PARENT_ID, id);
+        startActivity(intent);
     }
 }

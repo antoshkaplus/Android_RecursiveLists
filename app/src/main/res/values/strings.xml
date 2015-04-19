@@ -18,13 +18,20 @@
     <string name="ctx__move_in">Move in</string>
 
     <string name="dialog__add_title">Add new:</string>
-
     <string name="dialog__empty__title">Error</string>
-    <string name="dialog__empty__text">Item can't be an empty string</string>
+    <string name="dialog__empty__text">Item can\'t be an empty string</string>
     <string name="dialog__exists__title">Error</string>
     <string name="dialog__exists__text">Such item name already exists</string>
+    <string name="dialog__sync_success__title">Good news</string>
+    <string name="dialog__sync_success__text">Synchronization is successful</string>
+    <string name="dialog__sync_failure__title">Bad news</string>
+    <string name="dialog__sync_failure__text">Synchronization failed</string>
 
     <string name="pref__account__title">Change account</string>
     <string name="pref__account__key">pref__account__key</string>
+
+    <string name="ok">OK</string>
+
+    <string name="activity_settings__title">Settings</string>
 
 </resources>

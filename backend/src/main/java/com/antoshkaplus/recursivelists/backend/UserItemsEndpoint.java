@@ -89,6 +89,8 @@ public class UserItemsEndpoint {
             if (curUI != null && !curUI.getVersion().equals(userItems.getVersion())) {
                 throw new InvalidParameterException("version update is invalid");
             }
+            // need to be copied
+            curUI.setRootId(userItems.getRootId());
             curUI.setVersion(curUI.getVersion() + 1);
             curUI.setItems(userItems.getItems());
             mgr.makePersistentAll(curUI.getItems());

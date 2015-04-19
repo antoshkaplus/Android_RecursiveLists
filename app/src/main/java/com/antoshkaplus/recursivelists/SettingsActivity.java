@@ -46,7 +46,8 @@ public class SettingsActivity extends Activity {
             pref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    GoogleAccountCredential credential = CredentialFactory.create(getActivity());
+                    // maybe current account will be selected if i mention it
+                    GoogleAccountCredential credential = CredentialFactory.create(getActivity(), null);
                     startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
                     return true;
                 }

@@ -21,8 +21,12 @@ public class UserItems {
     @Persistent
     private Integer version;
 
+    @Persistent
+    private String rootId;
+
     @Persistent(mappedBy = "userItems", defaultFetchGroup = "true", dependentElement = "true")
     private List<Item> items;
+
 
     public String getUserId() {
         return userId;
@@ -48,4 +52,11 @@ public class UserItems {
         this.version = version;
     }
 
+    public String getRootId() {
+        return rootId;
+    }
+
+    public void setRootId(String rootId) {
+        this.rootId = rootId;
+    }
 }

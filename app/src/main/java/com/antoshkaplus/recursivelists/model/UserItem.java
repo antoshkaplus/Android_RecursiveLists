@@ -8,6 +8,7 @@ import java.util.UUID;
 /**
  * Created by Anton.Logunov on 4/18/2015.
  */
+// all items of particular user
 @DatabaseTable(tableName = UserItem.TABLE_NAME)
 public class UserItem {
 
@@ -20,7 +21,7 @@ public class UserItem {
     @DatabaseField(columnName = FIELD_NAME_USER)
     public String userId;
 
-    @DatabaseField(columnName = FIELD_NAME_ID, id = true)
-    public UUID id;
+    @DatabaseField(columnName = FIELD_NAME_ID, foreign = true)
+    public Item item;
 
 }

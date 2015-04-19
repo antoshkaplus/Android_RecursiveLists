@@ -24,13 +24,10 @@ So recursive lists are very good for those things.
 ## Bugs
 * Everything fixed
 
-## TODO 
-- [ ] progress on action bar while syncing 
+## TODO
 - [ ] debug everything
-- [ ] add string and edit dialogs should be merged somehow in one 
-        class and placed somewhere in the library
 - [ ] work on authorization in repository
-- [ ] debug everything
+
 
 Screenshots
 
