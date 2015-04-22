@@ -22,4 +22,12 @@ public class UserRoot {
 
     @DatabaseField(columnName = FIELD_NAME_ROOT_ID, unique = true)
     public UUID rootId;
+
+
+    public UserRoot() {}
+
+    public UserRoot(String userId, UUID rootId) {
+        this.userId = userId;
+        this.rootId = rootId;
+    }
 }

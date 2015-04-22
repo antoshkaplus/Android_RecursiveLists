@@ -4,10 +4,12 @@ import android.content.Context;
 
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
+import com.antoshkaplus.recursivelists.model.UserItem;
 import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.ColumnArg;
 import com.j256.ormlite.stmt.DeleteBuilder;
+import com.j256.ormlite.stmt.QueryBuilder;
 
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -36,7 +38,12 @@ public class ItemRepository {
 
     public UUID getRootId() throws SQLException {
         Dao<UserRoot, String> dao = helper.getDao(UserRoot.class);
-        return dao.queryForId(user).rootId;
+        UserRoot userRoot = dao.queryForId(user);
+        if (userRoot == null) {
+            userRoot = new UserRoot(user, UUID.randomUUID());
+            dao.create(userRoot);
+        }
+        return userRoot.rootId;
     }
 
     public Item getItem(UUID id) throws Exception {
@@ -86,38 +93,34 @@ public class ItemRepository {
     }
 
     // clearing every table from anything of particular userId
-    public void clear() throws SQLException {
-        // remove removedItems with join of UserItem
-
-        // remove Items with join of UserItem
-
-        // remove UserItem
-
-        // remove UserRoot
-
-        helper.getDao(Item.class).deleteBuilder().delete();
-        helper.getDao(RemovedItem.class).deleteBuilder().delete();
-    }
+//    public void clear() throws SQLException {
+//        // remove removedItems with join of UserItem
+//
+//        // remove Items with join of UserItem
+//
+//        // remove UserItem
+//
+//        // remove UserRoot
+//
+//        helper.getDao(Item.class).deleteBuilder().delete();
+//        helper.getDao(RemovedItem.class).deleteBuilder().delete();
+//    }
 
     public void addItem(Item item) throws Exception {
-        // add item to UserItem
-        List<Item> items = getChildren(item.parentId);
-        items = items.subList(item.order, items.size());
-        for (Item i : items) {
-            ++i.order;
-            updateItem(i);
-        }
         helper.getDao(Item.class).create(item);
+        helper.getDao(UserItem.class).create(new UserItem(user, item));
     }
 
     public void addItemList(final List<Item> items) throws Exception {
         // add all of them to UserItem
         final Dao<Item, UUID> dao = helper.getDao(Item.class);
+        final Dao<UserItem, Void> userItemDao = helper.getDao(UserItem.class);
         dao.callBatchTasks(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
                 for (Item i : items) {
                     dao.create(i);
+                    userItemDao.create(new UserItem(user, i));
                 }
                 return null;
             }
@@ -155,34 +158,54 @@ public class ItemRepository {
         });
     }
 
+    // here i need to join UserItem table
+
     public void undoLastRemoval() throws Exception {
-        Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
-        String[] result = dao.queryBuilder().selectRaw("MAX(" + RemovedItem.FIELD_DELETION_DATE + ")").queryRawFirst();
-        String[] name = new String[] { RemovedItem.FIELD_DELETION_DATE };
-        RemovedItem i = dao.getRawRowMapper().mapRow(name, result);
-        DeleteBuilder<RemovedItem, Integer> builder = dao.deleteBuilder();
-        builder.where().eq(RemovedItem.FIELD_DELETION_DATE, i.deletionDate);
-        builder.delete();
+        Dao<RemovedItem, Void> dao = helper.getDao(RemovedItem.class);
+        QueryBuilder<RemovedItem, Void> b = getRemovedItemQueryBuilder();
+        b.orderBy(RemovedItem.FIELD_DELETION_DATE, false).limit((long)1);
+        RemovedItem r = b.queryForFirst();
+
+        DeleteBuilder<RemovedItem, Void> deleteBuilder = dao.deleteBuilder();
+        deleteBuilder.where().eq(RemovedItem.FIELD_ITEM, r.item);
+        deleteBuilder.delete();
     }
 
+    private QueryBuilder<RemovedItem, Void> getRemovedItemQueryBuilder() throws SQLException {
+        // must do 3 joins to select removed items of particular user
+        QueryBuilder<Item, UUID> b = getItemQueryBuilder();
+        Dao<RemovedItem, Void> dao = helper.getDao(RemovedItem.class);
+        return dao.queryBuilder().join(b);
+    }
+
+    private QueryBuilder<Item, UUID> getItemQueryBuilder() throws SQLException {
+        Dao<UserItem, Void> userItemDao = helper.getDao(UserItem.class);
+        QueryBuilder<UserItem, Void> b = userItemDao.queryBuilder();
+        b.where().eq(UserItem.FIELD_NAME_USER, user);
+
+        Dao<Item, UUID> itemDao = helper.getDao(Item.class);
+        return itemDao.queryBuilder().join(b);
+    }
+
+
     public boolean hasRemovedItems() throws SQLException {
-        return helper.getDao(RemovedItem.class).countOf() > 0;
+        return getRemovedItemQueryBuilder().countOf() > 0;
     }
 
     public List<Item> getAllItems() throws Exception {
-        return helper.getDao(Item.class).queryForAll();
+        return getItemQueryBuilder().query();
     }
 
     public List<RemovedItem> getAllRemovedItems() throws Exception {
-        return helper.getDao(RemovedItem.class).queryForAll();
+        return getRemovedItemQueryBuilder().query();
     }
 
-    public void init(List<Item> items, final List<RemovedItem> removedItems) throws Exception{
-        clear();
-        // need also initialize rootId
-        addItemList(items);
-        addRemovedItemList(removedItems);
-    }
+//    public void init(List<Item> items, final List<RemovedItem> removedItems) throws Exception{
+//        clear();
+//        // need also initialize rootId
+//        addItemList(items);
+//        addRemovedItemList(removedItems);
+//    }
 
     public void close() {
         helper.close();

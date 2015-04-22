@@ -10,6 +10,7 @@ import com.google.android.gms.games.request.Requests;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -23,16 +24,13 @@ public class SyncTask implements Runnable {
 
     private UserItemsApi api;
     private ItemRepository repo;
-    // needed to use LocalBroadcastManager
-    private Context ctx;
     private Listener listener = new Adapter();
 
 
     // repository can be an interface
-    SyncTask(Context ctx, ItemRepository repo, UserItemsApi api) {
+    SyncTask(ItemRepository repo, UserItemsApi api) {
         this.api = api;
         this.repo = repo;
-        this.ctx = ctx;
     }
 
     @Override
@@ -57,7 +55,7 @@ public class SyncTask implements Runnable {
         listener.onFinish(success);
     }
 
-    private UpdateResult update(List<Item> existingItems, List<RemovedItem> existingRemovedItems) throws IOException {
+    private UpdateResult update(List<Item> existingItems, List<RemovedItem> existingRemovedItems) throws IOException, SQLException {
         UpdateResult result = new UpdateResult();
         result.success = false;
 
@@ -72,10 +70,15 @@ public class SyncTask implements Runnable {
         }
 
         UserItems userItems = api.getUserItems().execute();
+        UUID clientRootId = repo.getRootId();
+        String clientRootIdString = clientRootId.toString();
         if (userItems.getItems() != null) {
             for (com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item i : userItems.getItems()) {
-                // believe that client items most RECENT
+                // believe that client items are most RECENT
                 if (!existingIds.contains(UUID.fromString(i.getId()))) {
+                    if (i.getParentId().equals(userItems.getRootId())) {
+                        i.setParentId(clientRootIdString);
+                    }
                     Item clientItem = Utils.toClientItem(i);
                     items.add(clientItem);
                     newItems.add(clientItem);
@@ -88,9 +91,8 @@ public class SyncTask implements Runnable {
                 }
             }
         }
-
         userItems.setItems(Utils.toBackendItems(items, removedItems));
-
+        userItems.setRootId(clientRootIdString);
         try {
             api.updateUserItems(userItems).execute();
         } catch (InvalidParameterException ex) {

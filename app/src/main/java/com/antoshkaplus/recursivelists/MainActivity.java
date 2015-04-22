@@ -33,6 +33,7 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import org.json.JSONObject;
 
 import java.io.InputStream;
+import java.security.InvalidParameterException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -47,11 +48,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     // should think about good naming of those variables
     // have UUID as string inside
     public final static String EXTRA_PARENT_ID = "ExtraParentId";
-    private final static UUID ROOT_ID  = new UUID(0, 0);
     private final static String PREF_FIRST_LAUNCH = "first_launch";
 
     Menu optionsMenu;
 
+    private UUID rootId;
     private UUID parentId;
     private int pressedPosition = 0;
     private boolean repositioning = false;
@@ -72,6 +73,15 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     GoogleAccountCredential credential;
 
+    SharedPreferences.OnSharedPreferenceChangeListener settingsListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            if (key.equals(getString(R.string.pref__account__key))) {
+                onAccountChanged();
+            }
+        }
+    };
+
     // populate first launch data inside database
     // define parentId
     // assign context menus and events
@@ -83,51 +93,47 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         setContentView(R.layout.activity_main);
         getListView().setAdapter(new ItemAdapter(this, items));
         setActionBarColor(defaultBarColor);
-        if (savedInstanceState == null) {
-            Intent intent = getIntent();
-            parentId = (UUID)intent.getSerializableExtra(EXTRA_PARENT_ID);
-            if (parentId == null) {
-                parentId = ROOT_ID;
-            }
-        } else {
-            parentId = (UUID)savedInstanceState.getSerializable(EXTRA_PARENT_ID);
-        }
         // should assign before doing any operations with settings
         settings = PreferenceManager.getDefaultSharedPreferences(this);
-        settings.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if (key.equals(getString(R.string.pref__account__key))) {
-                    onAccountChanged();
-                }
-            }
-        });
+        settings.registerOnSharedPreferenceChangeListener(settingsListener);
         String account = retrieveAccount();
         credential = CredentialFactory.create(this, account);
         if (account == null) {
             chooseAccount();
         } else {
             repository = new ItemRepository(this, account);
-            setActionBarTitle();
             try {
-                items.clear();
-                items.addAll(repository.getChildren(parentId));
+                rootId = repository.getRootId();
+                if (savedInstanceState == null) {
+                    Intent intent = getIntent();
+                    parentId = (UUID) intent.getSerializableExtra(EXTRA_PARENT_ID);
+                    if (parentId == null) parentId = rootId;
+                } else {
+                    parentId = (UUID) savedInstanceState.getSerializable(EXTRA_PARENT_ID);
+                }
+                // need to know parentId before initializing actionBarTitle
+                setActionBarTitle();
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
-            // should probably sort items
+            loadItems();
             onItemsChanged();
         }
         prepareViews();
     }
 
     @Override
+    protected void onDestroy() {
+        settings.unregisterOnSharedPreferenceChangeListener(settingsListener);
+        super.onDestroy();
+
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         parentId = (UUID)intent.getSerializableExtra(EXTRA_PARENT_ID);
-        if (parentId == null) {
-            parentId = ROOT_ID;
-        }
+        setActionBarTitle();
         loadItems();
         onItemsChanged();
     }
@@ -180,11 +186,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         try {
             JSONObject json = Utils.readDefaultData(input);
             List<Item> result = new ArrayList<>();
-            recursion(result, ROOT_ID, json);
+            recursion(result, rootId, json);
             repository.addItemList(result);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+        loadItems();
+        onItemsChanged();
     }
 
     private void recursion(List<Item> result, UUID parentId, JSONObject json) throws Exception {
@@ -235,7 +243,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 menu.add(0, R.string.ctx__remove_inner, 0, getString(R.string.ctx__remove_inner));
                 menu.add(0, R.string.ctx__edit, 0, getString(R.string.ctx__edit));
                 if (items.size() > 1) menu.add(0, R.string.ctx__reposition, 0, getString(R.string.ctx__reposition));
-                if (!parentId.equals(ROOT_ID)) {
+                if (!parentId.equals(rootId)) {
                     menu.add(0, R.string.ctx__move_out, 0, getString(R.string.ctx__move_out));
                 }
                 if (items.size() > 1) menu.add(0, R.string.ctx__move_in, 0, getString(R.string.ctx__move_in));
@@ -363,7 +371,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void onSync() {
-        SyncTask task = new SyncTask(this, new ItemRepository(this, retrieveAccount()), CreateUserItemsEndpoint());
+        SyncTask task = new SyncTask(new ItemRepository(this, retrieveAccount()), CreateUserItemsEndpoint());
         task.setListener(new SyncTask.Listener() {
             @Override
             public void onStart() {
@@ -462,6 +470,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void loadItems() {
         try {
             items.clear();
+            // already sorted
             items.addAll(repository.getChildren(parentId));
         } catch (Exception ex) {
             // just use finally
@@ -476,7 +485,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         args.putString(EditStringDialog.ARG_TITLE, "Edit:");
         args.putString(EditStringDialog.ARG_TEXT, items.get(pressedPosition).title);
         dialog.setArguments(args);
-        // TODO should also make an empty string or duplicate
         dialog.setEditStringDialogListener(new EditStringDialog.EditStringDialogListener() {
             @Override
             public void onEditStringDialogSuccess(CharSequence string) {
@@ -571,6 +579,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     return;
                 }
                 addNewItem(string.toString(), pressedPosition);
+                getListView().clearChoices();
             }
             @Override
             public void onAddStringDialogCancel() {}
@@ -594,8 +603,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             for (int i = position+1; i < items.size(); ++i) {
                 items.get(i).order = i;
             }
-            // should return updated item
-            // TODO is true
             repository.addItem(item);
             repository.updateAllItems(items.subList(position+1, items.size()));
             onItemsChanged();
@@ -609,12 +616,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         // did a better way of doing it
         Item item = items.remove(positionBefore);
         int from, to;
+        items.add(positionAfter, item);
         if (positionBefore < positionAfter) {
-            items.add(positionAfter - 1, item);
             from = positionBefore;
             to = positionAfter+1;
         } else {
-            items.add(positionAfter, item);
             from = positionAfter;
             to = positionBefore+1;
         }
@@ -671,8 +677,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void setActionBarTitle() {
         ActionBar bar = getActionBar();
         if (bar == null) return;
-        String title = "Root";
-        if (parentId != ROOT_ID) {
+        String title = getString(R.string.title_root);
+        if (rootId != null && !parentId.equals(rootId)) {
             try {
                 Item item = repository.getItem(parentId);
                 title = item.title;
@@ -719,7 +725,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         String account = retrieveAccount();
         credential.setSelectedAccountName(account);
         repository = new ItemRepository(this, account);
-        parentId = ROOT_ID;
+        try {
+            parentId = rootId = repository.getRootId();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
         loadItems();
         onItemsChanged();
     }
@@ -735,7 +745,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     @Override
     public void onBackPressed() {
-        if (parentId.equals(ROOT_ID)) {
+        if (rootId == null || parentId.equals(rootId)) {
             super.onBackPressed();
             return;
         }

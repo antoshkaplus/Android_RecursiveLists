@@ -24,9 +24,8 @@ So recursive lists are very good for those things.
 ## Bugs
 * Everything fixed
 
-## TODO
-- [ ] debug everything
-- [ ] work on authorization in repository
+## TODO 
+Everything is done
 
 
 Screenshots

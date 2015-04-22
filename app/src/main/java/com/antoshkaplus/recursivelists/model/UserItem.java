@@ -18,10 +18,18 @@ public class UserItem {
     public static final String FIELD_NAME_ID = "id";
 
 
-    @DatabaseField(columnName = FIELD_NAME_USER)
+    @DatabaseField(columnName = FIELD_NAME_USER, index = true)
     public String userId;
 
     @DatabaseField(columnName = FIELD_NAME_ID, foreign = true)
     public Item item;
+
+
+    public UserItem() {}
+
+    public UserItem(String userId, Item item) {
+        this.userId = userId;
+        this.item = item;
+    }
 
 }

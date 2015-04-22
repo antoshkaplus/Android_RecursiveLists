@@ -92,7 +92,10 @@ public class UserItemsEndpoint {
             // need to be copied
             curUI.setRootId(userItems.getRootId());
             curUI.setVersion(curUI.getVersion() + 1);
-            curUI.setItems(userItems.getItems());
+
+            curUI.getItems().clear();
+            curUI.getItems().addAll(userItems.getItems());
+            //curUI.setItems(userItems.getItems());
             mgr.makePersistentAll(curUI.getItems());
             tx.commit();
         } catch (Exception ex) {
