@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.view.WindowManager;
 
 import com.antoshkaplus.recursivelists.R;
 
@@ -38,7 +37,7 @@ public class OkDialog extends RetainedDialog {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        Dialog dialog = (new AlertDialog.Builder(getActivity())
+        return new AlertDialog.Builder(getActivity())
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
@@ -47,9 +46,8 @@ public class OkDialog extends RetainedDialog {
                         listener.onDialogOk();
                         dismiss();
                     }
-                }))
+                })
                 .create();
-        return dialog;
     }
 
     public void setYesDialogListener(OkDialogListener listener) {

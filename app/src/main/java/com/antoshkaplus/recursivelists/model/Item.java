@@ -1,8 +1,5 @@
 package com.antoshkaplus.recursivelists.model;
 
-import org.json.JSONObject;
-import org.json.JSONException;
-
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 

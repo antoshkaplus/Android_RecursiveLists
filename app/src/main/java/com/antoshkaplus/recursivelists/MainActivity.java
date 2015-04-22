@@ -1,8 +1,8 @@
 package com.antoshkaplus.recursivelists;
 
 import android.accounts.AccountManager;
-import android.app.Activity;
 import android.app.ActionBar;
+import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Intent;
@@ -16,7 +16,6 @@ import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
@@ -33,7 +32,6 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import org.json.JSONObject;
 
 import java.io.InputStream;
-import java.security.InvalidParameterException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;

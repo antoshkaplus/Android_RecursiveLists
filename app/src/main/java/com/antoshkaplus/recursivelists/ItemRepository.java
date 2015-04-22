@@ -7,16 +7,12 @@ import com.antoshkaplus.recursivelists.model.RemovedItem;
 import com.antoshkaplus.recursivelists.model.UserItem;
 import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.stmt.ColumnArg;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
 
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -75,7 +71,7 @@ public class ItemRepository {
 
     public void deleteChildren(Item item) throws Exception {
         List<Item> items = getChildren(item.id);
-        final List<RemovedItem> removedItems = new ArrayList<RemovedItem>();
+        final List<RemovedItem> removedItems = new ArrayList<>();
         Date date = new Date();
         for (Item i : items) {
             removedItems.add(new RemovedItem(i, date));

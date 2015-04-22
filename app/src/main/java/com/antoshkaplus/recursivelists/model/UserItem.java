@@ -3,8 +3,6 @@ package com.antoshkaplus.recursivelists.model;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
-import java.util.UUID;
-
 /**
  * Created by Anton.Logunov on 4/18/2015.
  */
