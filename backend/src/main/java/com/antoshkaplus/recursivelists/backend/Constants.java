@@ -13,7 +13,7 @@ public class Constants {
     public static final String API_EXPLORER_CLIENT_ID = Constant.API_EXPLORER_CLIENT_ID;
 
     // this one is invalid
-    public static final String ANDROID_CLIENT_ID_RELEASE = "955907089846-vrecqngobngm2c0ci99mjq8iki87i3ul.apps.googleusercontent.com";
+    public static final String ANDROID_CLIENT_ID_RELEASE = "582892993246-b6vkda03kf774bf0td12sr6vd9n4sr6s.apps.googleusercontent.com";
 
     public static final String EMAIL_SCOPE = "https://www.googleapis.com/auth/userinfo.email";
 }

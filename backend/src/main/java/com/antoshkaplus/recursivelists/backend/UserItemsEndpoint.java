@@ -28,7 +28,7 @@ import javax.jdo.Transaction;
                 ownerName = "backend.recursivelists.antoshkaplus.com"
         ),
         scopes = {Constants.EMAIL_SCOPE},
-        clientIds = {Constants.WEB_CLIENT_ID, Constants.ANDROID_CLIENT_ID_HOME,
+        clientIds = {Constants.WEB_CLIENT_ID, Constants.ANDROID_CLIENT_ID_HOME, Constants.ANDROID_CLIENT_ID_RELEASE,
                 Constants.API_EXPLORER_CLIENT_ID, Constants.ANDROID_CLIENT_ID_WORK},
         audiences = {Constants.ANDROID_AUDIENCE}
 )

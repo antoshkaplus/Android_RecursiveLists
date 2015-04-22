@@ -394,14 +394,14 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                             // show negative message
                             OkDialog.newInstance(
                                     getString(R.string.dialog__sync_failure__title),
-                                    getString(R.string.dialog__sync_failure__text)).show(mgr, "success");
-                            loadItems();
-                            onItemsChanged();
+                                    getString(R.string.dialog__sync_failure__text)).show(mgr, "failure");
                         } else {
                             // show positive message
                             OkDialog.newInstance(
                                     getString(R.string.dialog__sync_success__title),
-                                    getString(R.string.dialog__sync_success__text)).show(mgr, "failure");
+                                    getString(R.string.dialog__sync_success__text)).show(mgr, "success");
+                            loadItems();
+                            onItemsChanged();
                         }
                     }
                 });
