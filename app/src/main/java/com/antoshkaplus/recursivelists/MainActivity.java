@@ -130,7 +130,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        parentId = (UUID)intent.getSerializableExtra(EXTRA_PARENT_ID);
+        UUID parentId = (UUID)intent.getSerializableExtra(EXTRA_PARENT_ID);
+        if (parentId == null) {
+            // relaunching application
+            return;
+        }
+        this.parentId = parentId;
         setActionBarTitle();
         loadItems();
         onItemsChanged();
