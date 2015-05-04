@@ -29,7 +29,7 @@ So recursive lists are very good for those things.
 but he may already have it on the cloud. solution : 
 1) dialog box to ask if he needs initial data loaded
 2) create some predefined id-s for initial data to make it unique and the same for all devices
-
+* clear all removed items but leave 10 or another count that are most recent
 * purge ???
 
 
