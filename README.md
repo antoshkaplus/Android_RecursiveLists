@@ -22,7 +22,7 @@ So recursive lists are very good for those things.
 * in action bar options find action to undo removal operations
 
 ## Bugs
-* Everything fixed
+* application goes down after pressing word duplicates
 
 ## TODO 
 * when user installs application we provide him with lots of initial data. 
