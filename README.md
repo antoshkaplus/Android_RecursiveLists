@@ -23,6 +23,7 @@ So recursive lists are very good for those things.
 
 ## Bugs
 * application goes down after pressing word duplicates
+* application goes down after try to reposition in empty bottom space
 
 ## TODO 
 * when user installs application we provide him with lots of initial data. 
