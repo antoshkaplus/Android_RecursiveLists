@@ -593,7 +593,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void showRetryDialog(String title, String text, RetryDialog.RetryDialogListener listener) {
         RetryDialog dialog = (RetryDialog)getFragmentManager().findFragmentByTag("retry_dialog");
         if (dialog == null) {
-            RetryDialog.newInstance(title, text);
+            dialog = RetryDialog.newInstance(title, text);
         }
         dialog.setRetryDialogListener(listener);
         dialog.show(getFragmentManager(), "retry_dialog");
@@ -616,6 +616,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
 
     private void reposition(int positionBefore, int positionAfter) {
+        // position after can be equal to items count
+        if (items.size() == positionAfter) {
+            --positionAfter;
+        }
         // did a better way of doing it
         Item item = items.remove(positionBefore);
         int from, to;

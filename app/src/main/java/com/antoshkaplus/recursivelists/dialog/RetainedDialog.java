@@ -11,7 +11,8 @@ public class RetainedDialog extends DialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRetainInstance(true);
+        // don't know why but after removing this call dialog stays after rotation
+        //setRetainInstance(true);
     }
 
 }
