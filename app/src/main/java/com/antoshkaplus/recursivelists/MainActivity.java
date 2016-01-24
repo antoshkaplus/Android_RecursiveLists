@@ -376,6 +376,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void onSync() {
         SyncTask task = new SyncTask(new ItemRepository(this, retrieveAccount()), CreateUserItemsEndpoint());
         task.setListener(new SyncTask.Listener() {
+            // should've used async task instead. no need for runOnUiThread in that case
             @Override
             public void onStart() {
                 runOnUiThread(new Runnable() {
