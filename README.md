@@ -5,6 +5,8 @@ Sometimes I just need to write somewhere some kind of list.
 Those lists sometimes grouped by category. And also we want to support subcategories. 
 So recursive lists are very good for those things.
 
+### Final version for offline only usage
+
 ## Features
 * reposition 
 * deletion 
@@ -12,25 +14,10 @@ So recursive lists are very good for those things.
 * adding new
 * recursion on items
 * undo delete operations
-* keep data on the server
-* sync between multiple devices
-* moving items in and out
-
 
 ## Usage
 * long press on list item or free space on activity and follow options
 * in action bar options find action to undo removal operations
-
-## Bugs
-
-## TODO 
-* when user installs application we provide him with lots of initial data. 
-but he may already have it on the cloud. solution : 
-1) dialog box to ask if he needs initial data loaded
-2) create some predefined id-s for initial data to make it unique and the same for all devices
-* clear all removed items but leave 10 or another count that are most recent
-* purge ???
-
 
 Screenshots
 
