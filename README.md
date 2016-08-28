@@ -2,7 +2,7 @@
 
 ## Story
 Sometimes I just need to write somewhere some kind of list.
-Those lists sometimes grouped by category. And also we want to support subcategories.
+Those lists sometimes grouped by category. And also we want to support subcategories. 
 So recursive lists are very good for those things.
 
 ### Final version for offline only usage
@@ -17,7 +17,6 @@ So recursive lists are very good for those things.
 * keep data on the server
 * sync between multiple devices
 * moving items in and out
-
 
 ## Usage
 * long press on list item or free space on activity and follow options
