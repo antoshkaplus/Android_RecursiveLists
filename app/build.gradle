@@ -17,6 +17,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    productFlavors {
+        local {
+            buildConfigField 'String', 'HOST', '"http://25.230.57.193:8080/_ah/api"'
+        }
+
+        remote {
+            buildConfigField 'String', 'HOST', '"https://antoshkaplus-recursivelists.appspot.com/_ah/api"'
+        }
+    }
 }
 
 dependencies {

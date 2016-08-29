@@ -12,6 +12,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.v7.appcompat.*;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +29,9 @@ import com.antoshkaplus.recursivelists.model.Item;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpTransport;
 
 import org.json.JSONObject;
 
@@ -701,6 +705,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         UserItemsApi.Builder builder = new UserItemsApi.Builder(
                 AndroidHttp.newCompatibleTransport(),
                 new AndroidJsonFactory(), credential);
+        builder.setRootUrl(BuildConfig.HOST);
+        builder.setHttpRequestInitializer(new HttpRequestInitializer() {
+            @Override
+            public void initialize(HttpRequest httpRequest) {
+                credential.initialize(httpRequest);
+                httpRequest.setConnectTimeout(20 * 1000);  // 3 seconds connect timeout
+                httpRequest.setReadTimeout(20 * 1000);  // 3 seconds read timeout
+            }
+        });
+        HttpTransport t;
         return builder.build();
     }
 
