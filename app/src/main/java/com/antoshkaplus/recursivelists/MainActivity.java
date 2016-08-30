@@ -20,11 +20,11 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.antoshkaplus.fly.dialog.RetryDialog;
 import com.antoshkaplus.recursivelists.backend.userItemsApi.UserItemsApi;
 import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
-import com.antoshkaplus.recursivelists.dialog.OkDialog;
-import com.antoshkaplus.recursivelists.dialog.RetryDialog;
+import com.antoshkaplus.fly.dialog.OkDialog;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
@@ -402,6 +402,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                         FragmentManager mgr = getFragmentManager();
                         if (!success) {
                             // show negative message
+
+
                             OkDialog.newInstance(
                                     getString(R.string.dialog__sync_failure__title),
                                     getString(R.string.dialog__sync_failure__text)).show(mgr, "failure");

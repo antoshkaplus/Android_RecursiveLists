@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
 
     defaultConfig {
         applicationId "com.antoshkaplus.recursivelists"
-        minSdkVersion 19
-        targetSdkVersion 21
+        minSdkVersion 23
+        targetSdkVersion 23
         versionCode 31
         versionName "3.1"
     }
@@ -19,6 +19,8 @@ android {
     }
     productFlavors {
         local {
+            // buildConfigField 'String', 'HOST', '"http://10.48.98.43:8080/_ah/api"'
+            // big mac
             buildConfigField 'String', 'HOST', '"http://25.230.57.193:8080/_ah/api"'
         }
 
@@ -30,9 +32,10 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(path: ':fly')
     compile project(path: ':backend', configuration: 'android-endpoints')
     compile 'com.google.http-client:google-http-client-android:1.12.0-beta'
-    compile 'com.google.android.gms:play-services:7.5.0'
+    compile 'com.google.android.gms:play-services:9.4.0'
     compile 'com.j256.ormlite:ormlite-core:4.48'
     compile 'com.j256.ormlite:ormlite-android:4.48'
 }

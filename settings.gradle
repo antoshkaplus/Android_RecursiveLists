@@ -1,1 +1,5 @@
 include ':app', ':backend'
+
+include ':fly'
+
+project(':fly').projectDir = new File('fly/fly')

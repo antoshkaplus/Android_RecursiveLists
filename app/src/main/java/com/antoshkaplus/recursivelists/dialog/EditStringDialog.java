@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 
+import com.antoshkaplus.fly.dialog.RetainedDialog;
 import com.antoshkaplus.recursivelists.R;
 
 /**

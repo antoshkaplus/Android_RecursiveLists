@@ -6,6 +6,8 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.WindowManager;
 
+import com.antoshkaplus.fly.dialog.RetainedDialog;
+
 
 /**
  * Created by antoshkaplus on 3/3/15.

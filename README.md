@@ -25,12 +25,21 @@ So recursive lists are very good for those things.
 ## Bugs
 
 ## TODO
+
+### App
+* make synchronization process better (use tips from words application)
 * when user installs application we provide him with lots of initial data.
 but he may already have it on the cloud. solution :
 1) dialog box to ask if he needs initial data loaded
 2) create some predefined id-s for initial data to make it unique and the same for all devices
 * clear all removed items but leave 10 or another count that are most recent
 * purge ???
+* add task lists. right can be as usual lists but may need improvement later on.
+even right now need ability to mark as completed. list containters should probably have properties too.
+different classes.
+
+### Backend
+
 
 
 Screenshots
