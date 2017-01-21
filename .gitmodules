@@ -1,3 +1,4 @@
 [submodule "fly"]
 	path = fly
 	url = https://github.com/antoshkaplus/Android_Fly.git
+	branch = master
