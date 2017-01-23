@@ -5,6 +5,10 @@ Sometimes I just need to write somewhere some kind of list.
 Those lists sometimes grouped by category. And also we want to support subcategories. 
 So recursive lists are very good for those things.
 
+Now it's also about keeping your tasks there. We decided not to write multiple applications,
+but use one.
+
+
 ### Final version for offline only usage
 
 ## Features
@@ -25,8 +29,18 @@ So recursive lists are very good for those things.
 ## Bugs
 
 ## TODO
+* item creation date
+* unite removed and usual items
+
+* if you have task group store them inside an item. 
+* if you have task and subtasks, store them inside a task. this big task can be completed only after all leaf tasks are completed
+* you can't create items inside a task
+* have a setting that shows for how long to show completed tasks.
+
 
 ### App
+# FIX ACCOUNT PICKING. DO IT SMART.
+
 * make synchronization process better (use tips from words application)
 * when user installs application we provide him with lots of initial data.
 but he may already have it on the cloud. solution :
