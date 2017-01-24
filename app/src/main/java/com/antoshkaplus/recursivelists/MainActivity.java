@@ -716,7 +716,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 httpRequest.setReadTimeout(20 * 1000);  // 3 seconds read timeout
             }
         });
-        HttpTransport t;
+        // TODO may need this line
+        //builder.setApplicationName("antoshkaplus-recursivelists");
         return builder.build();
     }
 

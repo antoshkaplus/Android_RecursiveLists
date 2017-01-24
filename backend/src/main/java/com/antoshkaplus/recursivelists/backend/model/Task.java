@@ -12,6 +12,8 @@ public class Task extends Item {
 
     private Date completeDate;
     private int priority;
+    private Subtask subtask;
+
 
     public Date getCompleteDate() {
         return completeDate;
@@ -27,5 +29,17 @@ public class Task extends Item {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public void subtaskIncrease() {
+        ++subtask.totalCount;
+    }
+
+    public void subtaskComplete() {
+        ++subtask.completedCount;
+    }
+
+    public boolean subtaskAllCompleted() {
+        return subtask.completedCount == subtask.totalCount;
     }
 }

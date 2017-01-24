@@ -10,10 +10,20 @@ var CLIENT_ID = "582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleuserco
 var SCOPES = "https://www.googleapis.com/auth/userinfo.email"
 var API_KEY = "AIzaSyD81UMLvDPOz_gOov_9fuaWZopCNwWrS-4"
 
+function Parent(uuid, kind) {
+    this.uuid = uuid
+    this.kind = kind
+}
+Parent.prototype.isTask = function() {
+    return this.kind == "Task"
+}
+
+
+
 $(function() {
     viewModel = {
         itemList: ko.observable([]),
-        parentUuid: ko.observable(""),
+        parent: ko.observable(new Parent(null, null)),
         parentUuidPath: [],
 
     }
@@ -21,8 +31,8 @@ $(function() {
         return kind == "Task" ? "task" : "item";
     }, viewModel);
 
-    viewModel.parentUuid.subscribe(fillItemList)
-    viewModel.parentUuid.subscribe(function (val) {
+    viewModel.parent.subscribe(fillItemList)
+    viewModel.parent.subscribe(function (val) {
         //if (!val) return
 
     }, null, "beforeChange")
@@ -45,14 +55,14 @@ function completeTask(task) {
 }
 
 function back() {
-    if (viewModel.parentUuidPath.length == 0) return;
-    uuid = viewModel.parentUuidPath.pop()
-    viewModel.parentUuid(uuid)
+    if (viewModel.parentPath.length == 0) return;
+    p = viewModel.parentPath.pop()
+    viewModel.parent(p)
 }
 
 function onItemClick(item) {
-    viewModel.parentUuidPath.push(viewModel.parentUuid())
-    viewModel.parentUuid(item.uuid)
+    viewModel.parentPath.push(viewModel.parent())
+    viewModel.parent(new Parent(item.uuid, item.kind))
 }
 
 function guid() {
@@ -120,7 +130,8 @@ function loadApi() {
                     return
                 }
                 console.log(resp.uuid)
-                viewModel.parentUuid(resp.uuid)
+                // root is always item
+                viewModel.parent(new Parent(resp.uuid, "Item"))
                 console.log("root uuid set")
             })
             console.log("api loaded")
@@ -137,7 +148,7 @@ function Item(title) {
     this.createDate = new Date()
     this.kind = "Item"
     this.uuid = guid()
-    this.parentUuid = viewModel.parentUuid()
+    this.parentUuid = viewModel.parent().uuid
 }
 
 function addTask() {
@@ -148,6 +159,7 @@ function addTask() {
 }
 
 function addItem() {
+    if (viewModel.parent().isTask()) throw "Can't insert Item into Task."
     title = $('#item').val()
     item = new Item(title)
     item.kind = "Item"
@@ -155,7 +167,7 @@ function addItem() {
 }
 
 function fillItemList() {
-    gapi.client.itemsApi.getChildrenItems({parentUuid: viewModel.parentUuid()}).execute(function(resp) {
+    gapi.client.itemsApi.getChildrenItems({parentUuid: viewModel.parent().uuid}).execute(function(resp) {
         if (resp.error != null) {
             // need to show some kind of sign to reload browser window
             // later on may try to reload by myself

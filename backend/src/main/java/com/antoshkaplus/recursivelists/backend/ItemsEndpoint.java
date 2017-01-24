@@ -1,6 +1,7 @@
 package com.antoshkaplus.recursivelists.backend;
 
 import com.antoshkaplus.recursivelists.backend.model.BackendUser;
+import com.antoshkaplus.recursivelists.backend.model.ItemKind;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 import com.antoshkaplus.recursivelists.backend.model.Item;
 import com.google.api.server.spi.config.Api;
@@ -14,6 +15,7 @@ import com.googlecode.objectify.VoidWork;
 
 
 import java.security.InvalidParameterException;
+import java.util.Date;
 import java.util.logging.Logger;
 import java.util.List;
 
@@ -110,6 +112,35 @@ public class ItemsEndpoint {
             }
         });
     }
+
+    public void updateTask() {
+        // while updating one element check db version
+        // DB version always has to increased, backend user resaved
+        // how to force it?
+
+    }
+
+
+    public void addNewTask() {
+
+
+    }
+
+
+    void completeTask(Task task) {
+        task.setCompleteDate(new Date());
+        Item parent = getParent(task);
+        if (parent.getKind() == ItemKind.Item) {
+            return;
+        }
+        Task t = (Task)parent;
+        t.subtaskComplete();
+        if (t.subtaskAllCompleted()) {
+            t.setCompleteDate(task.getCompleteDate());
+        }
+        completeTask(t);
+    }
+
 
     private BackendUser retrieveBackendUser(User user) {
         BackendUser newUser = new BackendUser(user.getEmail());
