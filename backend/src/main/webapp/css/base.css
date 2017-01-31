@@ -6,3 +6,13 @@
 .task {
     background-color: #ffffcc;
 }
+
+.g-completed {
+    background-color: #a5ffcc;
+    color: red;
+}
+
+.g-deleted {
+    background-color: #ff837a;
+    color: red;
+}

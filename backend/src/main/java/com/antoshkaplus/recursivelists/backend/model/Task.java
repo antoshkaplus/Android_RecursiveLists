@@ -31,15 +31,12 @@ public class Task extends Item {
         this.priority = priority;
     }
 
-    public void subtaskIncrease() {
-        ++subtask.totalCount;
+    public Subtask getSubtask() {
+        if (subtask == null) subtask = new Subtask();
+        return subtask;
     }
 
-    public void subtaskComplete() {
-        ++subtask.completedCount;
-    }
-
-    public boolean subtaskAllCompleted() {
-        return subtask.completedCount == subtask.totalCount;
+    public void setSubtask(Subtask subtask) {
+        this.subtask = subtask;
     }
 }

@@ -49,6 +49,10 @@ public class Item {
     // should be called by orm
     public Item() {}
 
+    public boolean isTask() {
+        return kind == ItemKind.Task;
+    }
+
     public String getTitle() {
         return title;
     }

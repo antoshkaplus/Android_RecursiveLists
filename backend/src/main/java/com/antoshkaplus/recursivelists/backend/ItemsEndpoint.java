@@ -1,15 +1,19 @@
 package com.antoshkaplus.recursivelists.backend;
 
 import com.antoshkaplus.recursivelists.backend.model.BackendUser;
-import com.antoshkaplus.recursivelists.backend.model.ItemKind;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 import com.antoshkaplus.recursivelists.backend.model.Item;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
+import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.users.User;
+import com.google.appengine.repackaged.org.codehaus.jackson.map.ser.BeanSerializer;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
 
@@ -18,6 +22,10 @@ import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.logging.Logger;
 import java.util.List;
+
+import com.google.api.services.tasks.model.*;
+import com.google.api.services.tasks.Tasks;
+import com.google.api.client.auth.oauth2.Credential;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
@@ -57,8 +65,6 @@ public class ItemsEndpoint {
         List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).filter("parentUuid ==", uuid).list();
         return new ItemList(itemList);
     }
-
-
 
     @ApiMethod(name = "getItems", path = "get_items")
     public ItemList getItems(User user) throws OAuthRequestException {
@@ -100,6 +106,7 @@ public class ItemsEndpoint {
         }
     }
 
+    // have to update if parent is a task itself.
     @ApiMethod(name = "addTaskOnline", path = "add_task_online")
     public void addTaskOnline(final Task task, final User user) {
         ofy().transact(new VoidWork() {
@@ -108,38 +115,58 @@ public class ItemsEndpoint {
                 BackendUser backendUser = retrieveBackendUser(user);
                 task.setOwner(backendUser);
                 task.setDbVersion(backendUser.increaseVersion());
+                if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
+                    // parent is real
+                    Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
+                    if (i.isTask()) {
+                        Task t = (Task)i;
+                        t.getSubtask().incCount();
+                        t.getSubtask().incCompleted();
+                        UncompleteTask ut = new UncompleteTask(backendUser.getVersion());
+                        AncestorTraversal at = new AncestorTraversal(backendUser, ut);
+                        at.traverse(task);
+                        ofy().defer().save().entity(t);
+                    }
+                }
                 ofy().save().entities(backendUser, task).now();
             }
         });
     }
 
+
+    @ApiMethod(name = "completeTask", path = "completeTask")
+    public void completeTask(final Task task, final User user) {
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                Task old = ofy().load().type(Task.class).parent(backendUser).id(task.getUuid()).now();
+                // already set as completed
+                if (old.getCompleteDate() != null) return;
+                int dbVersion = backendUser.increaseVersion();
+                task.setDbVersion(dbVersion);
+                task.setOwner(backendUser);
+                ofy().defer().save().entity(task);
+
+                CompleteTask ct = new CompleteTask(task.getCompleteDate(), dbVersion);
+                AncestorTraversal at = new AncestorTraversal(backendUser, ct);
+                at.traverse(task);
+            }
+        });
+    }
+
+
     public void updateTask() {
         // while updating one element check db version
         // DB version always has to increased, backend user resaved
         // how to force it?
-
     }
-
-
     public void addNewTask() {
-
-
     }
 
 
-    void completeTask(Task task) {
-        task.setCompleteDate(new Date());
-        Item parent = getParent(task);
-        if (parent.getKind() == ItemKind.Item) {
-            return;
-        }
-        Task t = (Task)parent;
-        t.subtaskComplete();
-        if (t.subtaskAllCompleted()) {
-            t.setCompleteDate(task.getCompleteDate());
-        }
-        completeTask(t);
-    }
+
+
 
 
     private BackendUser retrieveBackendUser(User user) {

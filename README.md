@@ -3,15 +3,25 @@
 ## Story
 Sometimes I just need to write somewhere some kind of list.
 Those lists sometimes grouped by category. And also we want to support subcategories. 
-So recursive lists are very good for those things.
+So recursive lists are very good for those things. You can think of it as a big tree full of different items.
 
-Now it's also about keeping your tasks there. We decided not to write multiple applications,
-but use one.
+Also people like to make lists of tasks they want to complete. And usually those are also divided on categories.
+Sometimes you may want to have a task that consists of multiple small tasks.
 
+With tasks we can implement different statistics to show user his productivity. 
 
-### Final version for offline only usage
+## What's New
+* We are working on web app
+
+## Bugs
+* Not ready
 
 ## Features
+* Not ready
+
+## TODO Android App
+
+### Features
 * reposition
 * deletion
 * renaming
@@ -22,41 +32,30 @@ but use one.
 * sync between multiple devices
 * moving items in and out
 
-## Usage
+### Usage
 * long press on list item or free space on activity and follow options
 * in action bar options find action to undo removal operations
 
-## Bugs
-
-## TODO
-* item creation date
-* unite removed and usual items
-
-* if you have task group store them inside an item. 
-* if you have task and subtasks, store them inside a task. this big task can be completed only after all leaf tasks are completed
-* you can't create items inside a task
-* have a setting that shows for how long to show completed tasks.
-
-
 ### App
-# FIX ACCOUNT PICKING. DO IT SMART.
-
+### FIX ACCOUNT PICKING. DO IT SMART.
 * make synchronization process better (use tips from words application)
 * when user installs application we provide him with lots of initial data.
 but he may already have it on the cloud. solution :
-1) dialog box to ask if he needs initial data loaded
-2) create some predefined id-s for initial data to make it unique and the same for all devices
+    * dialog box to ask if he needs initial data loaded
+    * create some predefined id-s for initial data to make it unique and the same for all devices
 * clear all removed items but leave 10 or another count that are most recent
 * purge ???
 * add task lists. right can be as usual lists but may need improvement later on.
 even right now need ability to mark as completed. list containters should probably have properties too.
 different classes.
 
-### Backend
+## TODO Logic
+* unite removed and usual items
+* have a setting that shows for how long to show completed tasks.
 
 
 
-Screenshots
+## Old Android App Screenshots
 
 <table>
   <tr>

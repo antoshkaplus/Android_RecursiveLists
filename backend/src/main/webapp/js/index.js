@@ -7,7 +7,7 @@
 
 //server:client_id:
 var CLIENT_ID = "582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com"
-var SCOPES = "https://www.googleapis.com/auth/userinfo.email"
+var SCOPES = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/tasks"
 var API_KEY = "AIzaSyD81UMLvDPOz_gOov_9fuaWZopCNwWrS-4"
 
 function Parent(uuid, kind) {
@@ -21,11 +21,17 @@ Parent.prototype.isTask = function() {
 
 
 $(function() {
+
+    $('#g-tasks').multiselect();
+
     viewModel = {
         itemList: ko.observable([]),
         parent: ko.observable(new Parent(null, null)),
-        parentUuidPath: [],
-
+        parentPath: [],
+        gTasks: ko.observableArray(),
+        onlyDeleted: ko.observable(false),
+        onlyCompleted: ko.observable(false),
+        selectedItems: ko.observableArray()
     }
     viewModel.itemKindClass = ko.pureComputed(function(kind) {
         return kind == "Task" ? "task" : "item";
@@ -36,6 +42,14 @@ $(function() {
         //if (!val) return
 
     }, null, "beforeChange")
+
+    viewModel.onlyDeleted.subscribe(function(val) {
+        console.log(val)
+    })
+
+    viewModel.onlyCompleted.subscribe(function(val) {
+        console.log(val)
+    })
 
     ko.applyBindings(viewModel)
 })
@@ -51,7 +65,7 @@ function isTask(kind) {
 
 function completeTask(task) {
     task.completeDate = new Date()
-    gapi.client.itemsApi.addTaskOnline(task).execute()
+    gapi.client.itemsApi.completeTask(task).execute()
 }
 
 function back() {
@@ -139,9 +153,96 @@ function loadApi() {
         function(reason) {
             console.log("api load failure", reason)
         })
-
+    gapi.client.load('tasks', 'v1', listTaskLists);
 
 }
+
+
+function GoogleTaskList(taskList) {
+    this.updated = taskList.updated
+    this.showTasks = ko.observable(false)
+    this.tasks = ko.observableArray()
+    this.title = taskList.title
+}
+GoogleTaskList.prototype.toggleShowTasks = function () {
+    this.showTasks(!this.showTasks())
+}
+
+function GoogleTask(title) {
+    var d = new Date()
+    d.setDate(d.getDate() - 5);
+    this.updated = d
+    this.title = title
+    this.tasklist = "@default"
+    this.fields = "id,updated"
+}
+
+
+
+function addGoogleTask() {
+    title = $('#googleTask').val()
+
+    // i'm inserting new lists here
+    // not tasks
+    req = gapi.client.tasks.tasks.insert(new GoogleTask(title))
+    req.then(function(resp) {
+        console.log(resp.result.updated)
+    })
+}
+
+
+function listTaskLists() {
+    gapi.client.tasks.tasklists.list().then(function(resp) {
+
+        gTasks = viewModel.gTasks
+
+        var taskLists = resp.result.items;
+        if (!taskLists) return;
+        for (var i = 0; i < taskLists.length; ++i) {
+            var taskList = taskLists[i];
+            obj = new GoogleTaskList(taskList)
+
+            gTasks.push(ko.observable(obj));
+
+            (function(obj, taskList) {
+
+                function Request() {
+                    this.showDeleted = true;
+                    this.showHidden = true;
+                    this.fields = "nextPageToken,items(id,deleted,completed,updated,status,title)"
+                }
+
+                var r = new Request()
+                r.tasklist = taskList.id
+                gapi.client.tasks.tasks.list(r).then(function handleResult(resp) {
+                    token = resp.result.nextPageToken
+                    if (token) {
+                        var r = new Request()
+                        r.tasklist = taskList.id
+                        r.pageToken = token
+                        gapi.client.tasks.tasks.list(r).then(handleResult)
+                    }
+                    tasks = resp.result.items
+                    if (!tasks) return;
+
+                    for (var j = 0; j < tasks.length; ++j) {
+                        obj.tasks.push(tasks[j])
+                    }
+                    obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });
+                })
+
+            })(obj, taskList);
+
+        }
+    });
+}
+
+function appendPre(message) {
+    var pre = document.getElementById('output');
+    var textContent = document.createTextNode(message + '\n');
+    pre.appendChild(textContent);
+}
+
 
 function Item(title) {
     this.title = title
@@ -156,6 +257,7 @@ function addTask() {
     item = new Item(title)
     item.kind = "Task"
     gapi.client.itemsApi.addTaskOnline(item).execute()
+
 }
 
 function addItem() {

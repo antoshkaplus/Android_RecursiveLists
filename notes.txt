@@ -16,3 +16,7 @@ can use singleTop activity probably
 
 onMenuItemSelected - more generic, should not usually be used
 
+
+
+Google Tasks API updated date is read only. That means we can track import/sync with this.
+This stays for both task and task list. Have to check what about inner tasks?

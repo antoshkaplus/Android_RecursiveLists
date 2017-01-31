@@ -8,20 +8,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/3.5.0/octicons.min.css">
     <link rel="stylesheet" href="css/base.css">
 
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="libs/bootstrap-multiselect-0.9.13/css/bootstrap-multiselect.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 
     <!-- needed for bootstrap 4 somehow -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
 
-    <script src="http://knockoutjs.com/downloads/knockout-3.4.0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
 
-
+    <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect.js"></script>
+    <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect-collapsible-groups.js"></script>
 </head>
 
 <body>
 
     <button type="button" class="btn btn-primary" id="login">Sign in</button>
+
+
 
     <form class="form-inline">
         <div class="form-group">
@@ -32,27 +37,76 @@
         <button type="button" id="fillItemList" class="btn btn-primary" data-bind="click: fillItemList">Update</button>
         <button type="button" id="back" class="btn btn-primary" data-bind="click: back">Back</button>
         <button type="button" id="addTask" class="btn btn-primary" data-bind="click: addTask">Add Task</button>
+        <button type="button" id="moveRelease" class="btn btn-primary" data-bind="">MoveRelease</button>
     </form>
 
 
-    <div class="container" data-bind="foreach: itemList">
-        <div class="row" data-bind="css: itemKindClass(kind)">
-            <div class="col" data-bind="text: title"></div>
-            <div class="col" data-bind="if: isTask(kind)">
-                <!-- ko if: !$data.completeDate -->
-                <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
-                    Complete
-                </button>
-                <!-- /ko -->
-                <!-- ko if: $data.completeDate -->
-                <div data-bind="text: completeDate"></div>
-                <!-- /ko -->
+    <div class="card card-block">
+        <div class="container" data-bind="foreach: itemList">
+            <div class="row" data-bind="css: itemKindClass(kind)">
+                <input type="checkbox" data-bind="checkedValue: $index, checked: $parent.selectedItems"/>
+                <div class="col" data-bind="text: title"></div>
+                <div class="col" data-bind="if: isTask(kind)">
+                    <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
+                    <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
+                        Complete
+                    </button>
+                    <!-- /ko -->
+                    <!-- ko if: $data.completeDate -->
+                    <div data-bind="text: completeDate"></div>
+                    <!-- /ko -->
+                </div>
+                <div class="col">
+                    <button type="button" class="col btn btn-primary" data-bind="click: onItemClick">
+                        <span class="octicon octicon-triangle-right"></span>
+                    </button>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-block">
+            <form class="form-inline" >
+                <div class="form-group">
+                    <label for="googleTask">Task</label>
+                    <input type="text" class="form-control" id="googleTask" placeholder="eat apple">
+                </div>
+                <button type="button" class="btn btn-primary" data-bind="click: addGoogleTask">Add Google Task</button>
+            </form>
+        </div>
+
+        <div class="row container">
+
+
             <div class="col">
-                <button type="button" class="col btn btn-primary" data-bind="click: onItemClick">
-                    <span class="octicon octicon-triangle-right"></span>
-                </button>
+                <div class="card-block">
+                <div class="list-group" data-bind="foreach: gTasks">
+                    <button type="button" class="btn-primary list-group-item" data-bind="click: toggleShowTasks">
+                        <div class="col" data-bind="text: title"></div>
+                        <div class="col" data-bind="text: updated"></div>
+                    </button>
+                    <div data-bind="visible: showTasks">
+                        <div data-bind="foreach: tasks" id="g-tasks">
+                            <!-- ko if: (!$root.onlyDeleted() && !$root.onlyCompleted()) || ($data.completed && $root.onlyCompleted()) || ($data.deleted && $root.onlyDeleted())  -->
+                            <div class="list-group-item" data-bind="css: { 'g-completed': $data.completed, 'g-deleted': $data.deleted }">
+                                <div class="col" data-bind="text: title"></div>
+                                <div class="col" data-bind="text: status"></div>
+                                <div class="col" data-bind="text: updated"></div>
+                            </div>
+                            <!-- /ko -->
+                        </div>
+                    </div>
+                </div>
+                </div>
             </div>
+
+            <!-- should not use only keyword gtaskShowCompleted, gtaskShowDeleted; on the other hand the way it works is fine -->
+            <div class="col-3">
+                <label><input type="checkbox" data-bind="checked: onlyDeleted">Only Deleted</label>
+                <label><input type="checkbox" data-bind="checked: onlyCompleted">Only Completed</label>
+            </div>
+
         </div>
     </div>
 
