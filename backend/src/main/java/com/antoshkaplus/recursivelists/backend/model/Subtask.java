@@ -10,6 +10,9 @@ public class Subtask {
     private int completedCount = 0;
 
 
+    public void decCount() {
+        --totalCount;
+    }
     public void incCount() {
         ++totalCount;
     }

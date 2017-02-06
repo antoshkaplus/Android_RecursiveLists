@@ -25,13 +25,16 @@ $(function() {
     $('#g-tasks').multiselect();
 
     viewModel = {
-        itemList: ko.observable([]),
+        itemList: ko.observableArray(),
         parent: ko.observable(new Parent(null, null)),
         parentPath: [],
         gTasks: ko.observableArray(),
         onlyDeleted: ko.observable(false),
         onlyCompleted: ko.observable(false),
-        selectedItems: ko.observableArray()
+        selectedItems: ko.observableArray(),
+        waitRelease: ko.observable(false),
+        moveItems: [],
+        moveParent: ""
     }
     viewModel.itemKindClass = ko.pureComputed(function(kind) {
         return kind == "Task" ? "task" : "item";
@@ -39,7 +42,8 @@ $(function() {
 
     viewModel.parent.subscribe(fillItemList)
     viewModel.parent.subscribe(function (val) {
-        //if (!val) return
+
+        viewModel.selectedItems.removeAll()
 
     }, null, "beforeChange")
 
@@ -53,7 +57,6 @@ $(function() {
 
     ko.applyBindings(viewModel)
 })
-
 
 function itemKindClass(kind) {
     return kind == "Task" ? "task" : "item";
@@ -72,6 +75,45 @@ function back() {
     if (viewModel.parentPath.length == 0) return;
     p = viewModel.parentPath.pop()
     viewModel.parent(p)
+}
+
+// we may want to disable other operations
+function moveSelected() {
+    viewModel.waitRelease(true)
+    viewModel.moveItems = viewModel.selectedItems().slice()
+    viewModel.itemList.removeAll(viewModel.moveItems)
+    viewModel.selectedItems.removeAll()
+    viewModel.moveParent = viewModel.parent()
+}
+
+function cancelMove() {
+    viewModel.waitRelease(false)
+    viewModel.moveItems = null
+    viewModel.moveParent = ""
+}
+
+function releaseMove() {
+    // so here we actually move selectedItems to new parent
+    var parentUuid = viewModel.parent().uuid
+    var items = viewModel.moveItems
+    for (var i = 0; i < items.length; ++i) {
+        var t = items[i]
+        function callback(resp) {
+            if (resp.error != null) {
+                console.log("move error", resp)
+            } else {
+                console.log("sucksessful move")
+            }
+        }
+
+        t.parentUuid = parentUuid
+        if (isTask(t.kind)) {
+            gapi.client.itemsApi.moveTask(t).execute(callback)
+        } else {
+            gapi.client.itemsApi.moveItem(t).execute(callback)
+        }
+    }
+    cancelMove()
 }
 
 function onItemClick(item) {
@@ -278,6 +320,8 @@ function fillItemList() {
         }
         // empty items with such parent
         if (!resp) resp.items = []
+
+
 
         viewModel.itemList(resp.items)
         console.log(resp)

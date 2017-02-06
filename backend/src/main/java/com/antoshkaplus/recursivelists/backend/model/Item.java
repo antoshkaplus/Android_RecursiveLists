@@ -108,5 +108,13 @@ public class Item {
     public String getUuid() {
         return uuid;
     }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
 }
 

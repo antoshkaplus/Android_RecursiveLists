@@ -121,6 +121,7 @@ public class ItemsEndpoint {
                     if (i.isTask()) {
                         Task t = (Task)i;
                         t.getSubtask().incCount();
+                        // will uncomplete next
                         t.getSubtask().incCompleted();
                         UncompleteTask ut = new UncompleteTask(backendUser.getVersion());
                         AncestorTraversal at = new AncestorTraversal(backendUser, ut);
@@ -132,6 +133,74 @@ public class ItemsEndpoint {
             }
         });
     }
+
+    @ApiMethod(name = "removeTask", path = "remove_task")
+    public void removeTask(final Task task, final User user) {
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                task.setOwner(backendUser);
+                task.setDbVersion(backendUser.increaseVersion());
+                task.setDisabled(true);
+                if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
+                    // parent is real
+                    Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
+                    if (i.isTask()) {
+                        Task t = (Task)i;
+                        t.getSubtask().decCount();
+                        // will uncomplete next
+                        if (!task.isCompleted()) {
+                            t.getSubtask().decCompleted();
+                            CompleteTask ut = new CompleteTask(new Date(), backendUser.getVersion());
+                            AncestorTraversal at = new AncestorTraversal(backendUser, ut);
+                            at.traverse(task);
+
+                        } else {
+                            t.getSubtask().decCompleted();
+                        }
+                        ofy().defer().save().entity(t);
+                    }
+                }
+                ofy().save().entities(backendUser, task).now();
+            }
+        });
+    }
+
+    // you don't have to supply all the information about item
+    // uuid and new parent uuid should be enough
+    @ApiMethod(name = "moveItem", path = "move_item")
+    public void moveItem(final Item item, final User user) {
+        // this one is super easy
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                Item oldItem = ofy().load().type(Item.class).parent(backendUser).id(item.getUuid()).now();
+                oldItem.setParentUuid(item.getParentUuid());
+                oldItem.setDbVersion(backendUser.increaseVersion());
+                ofy().save().entities(backendUser, item).now();
+            }
+        });
+    }
+
+    // we have to take a look at ancestor and decrease tasks
+    // it;s like removing and adding task again
+    @ApiMethod(name = "moveTask", path = "move_task")
+    public void moveTask(final Task task, final User user) {
+        // so it's similar to calling moveItem
+        // but we have to traverse ancestors first
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                Task t = ofy().load().type(Task.class).parent(backendUser).id(task.getUuid()).now();
+                removeTask(t, user);
+                addTaskOnline(task, user);
+            }
+        });
+    }
+
 
 
     @ApiMethod(name = "completeTask", path = "completeTask")
@@ -160,8 +229,6 @@ public class ItemsEndpoint {
         // while updating one element check db version
         // DB version always has to increased, backend user resaved
         // how to force it?
-    }
-    public void addNewTask() {
     }
 
 

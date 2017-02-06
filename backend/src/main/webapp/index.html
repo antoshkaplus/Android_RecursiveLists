@@ -37,14 +37,22 @@
         <button type="button" id="fillItemList" class="btn btn-primary" data-bind="click: fillItemList">Update</button>
         <button type="button" id="back" class="btn btn-primary" data-bind="click: back">Back</button>
         <button type="button" id="addTask" class="btn btn-primary" data-bind="click: addTask">Add Task</button>
-        <button type="button" id="moveRelease" class="btn btn-primary" data-bind="">MoveRelease</button>
+        <div data-bind="if: !waitRelease()">
+            <button type="button" id="move" class="btn btn-primary" data-bind="enable: selectedItems().length > 0, click: moveSelected">Move</button>
+        </div>
+        <div data-bind="if: waitRelease()">
+            <button type="button" id="release" class="btn btn-primary" data-bind="click: releaseMove">Release</button>
+            <button type="button" id="cancelMove" class="btn btn-primary" data-bind="click: cancelMove">Cancel Move</button>
+        </div>
     </form>
 
 
     <div class="card card-block">
         <div class="container" data-bind="foreach: itemList">
             <div class="row" data-bind="css: itemKindClass(kind)">
-                <input type="checkbox" data-bind="checkedValue: $index, checked: $parent.selectedItems"/>
+
+                <input type="checkbox" data-bind="enable: !$root.waitRelease(), checkedValue: $data, checked: $root.selectedItems"/>
+
                 <div class="col" data-bind="text: title"></div>
                 <div class="col" data-bind="if: isTask(kind)">
                     <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->

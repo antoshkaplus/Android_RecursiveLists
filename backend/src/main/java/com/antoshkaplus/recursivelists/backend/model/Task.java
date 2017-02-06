@@ -19,6 +19,10 @@ public class Task extends Item {
         return completeDate;
     }
 
+    public boolean isCompleted() {
+        return completeDate != null;
+    }
+
     public void setCompleteDate(Date completeDate) {
         this.completeDate = completeDate;
     }
