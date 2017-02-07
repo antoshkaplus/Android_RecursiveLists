@@ -5,6 +5,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,6 +18,8 @@ public class BackendUser {
     private String userId;
     private int version;
     private String rootUuid;
+
+    private Date googleTaskLastUpdate;
 
     public BackendUser() {}
 
@@ -54,5 +57,13 @@ public class BackendUser {
 
     public void setRootUuid(String rootId) {
         this.rootUuid = rootId;
+    }
+
+    public Date getGoogleTaskLastUpdate() {
+        return googleTaskLastUpdate;
+    }
+
+    public void setGoogleTaskLastUpdate(Date googleTaskLastUpdate) {
+        this.googleTaskLastUpdate = googleTaskLastUpdate;
     }
 }

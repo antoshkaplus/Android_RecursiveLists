@@ -13,6 +13,5 @@ public class GoogleTaskTrack {
 
     String googleId;
     String uuid;
-    Date lastUpdated;
 
 }

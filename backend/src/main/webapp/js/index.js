@@ -22,8 +22,6 @@ Parent.prototype.isTask = function() {
 
 $(function() {
 
-    $('#g-tasks').multiselect();
-
     viewModel = {
         itemList: ko.observableArray(),
         parent: ko.observable(new Parent(null, null)),
@@ -230,6 +228,72 @@ function addGoogleTask() {
     req.then(function(resp) {
         console.log(resp.result.updated)
     })
+}
+
+
+function importGoogleTasks() {
+    // get last update date from our server
+    gapi.client.itemsApi.getGoogleTaskLastUpdate().execute(function(resp) {
+        if (resp.code) {
+            console.log(resp)
+            return
+        }
+        lastUpdate = resp.result.value
+
+        gapi.client.tasks.tasklists.list().then(function(resp) {
+            if (resp.code) {
+                console.log(resp)
+                return
+            }
+
+            var taskLists = resp.result.items;
+            if (!taskLists) return;
+            for (var i = 0; i < taskLists.length; ++i) {
+                if (updated.getTime() < lastUpdate) return;
+
+
+                (function(obj, taskList) {
+
+                function Request() {
+                    this.showDeleted = true;
+                    this.showHidden = true;
+                    this.fields = "nextPageToken,items(id,deleted,completed,updated,status,title)"
+                }
+
+                var r = new Request()
+                r.tasklist = taskList.id
+
+
+                gapi.client.tasks.tasks.list(r).then(function handleResult(resp) {
+
+
+                    token = resp.result.nextPageToken
+                    if (token) {
+                        var r = new Request()
+                        r.tasklist = taskList.id
+                        r.pageToken = token
+                        gapi.client.tasks.tasks.list(r).then(handleResult)
+                    }
+                    tasks = resp.result.items
+                    if (!tasks) return;
+
+                    for (var j = 0; j < tasks.length; ++j) {
+                        obj.tasks.push(tasks[j])
+                    }
+                    obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });
+                })
+
+
+
+            })(obj, taskList);
+            }
+        })
+
+    })
+    // get all updates with min date from g server... iterate over lists
+
+    // gather everything and send to our server
+
 }
 
 

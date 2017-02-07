@@ -88,6 +88,13 @@ public class ItemsEndpoint {
         return new Uuid(backendUser.getRootUuid());
     }
 
+    @ApiMethod(name = "getGoogleTaskLastUpdate", path = "get_google_task_last_update")
+    public ResourceDate getGoogleTaskLastUpdate(User user) {
+
+        BackendUser backendUser = retrieveBackendUser(user);
+        return new ResourceDate(backendUser.getGoogleTaskLastUpdate());
+    }
+
     @ApiMethod(name = "addItemOnline", path = "add_item_online")
     public void addItemOnline(final Item item, final User user)
             throws OAuthRequestException, InvalidParameterException {
