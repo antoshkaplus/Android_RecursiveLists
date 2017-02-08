@@ -209,9 +209,7 @@ GoogleTaskList.prototype.toggleShowTasks = function () {
 }
 
 function GoogleTask(title) {
-    var d = new Date()
-    d.setDate(d.getDate() - 5);
-    this.updated = d
+    this.updated = new Date()
     this.title = title
     this.tasklist = "@default"
     this.fields = "id,updated"
@@ -238,57 +236,24 @@ function importGoogleTasks() {
             console.log(resp)
             return
         }
-        lastUpdate = resp.result.value
+        lastUpdate = new Date(resp.result.value)
 
-        gapi.client.tasks.tasklists.list().then(function(resp) {
-            if (resp.code) {
-                console.log(resp)
-                return
+        Gtask.forEachList({}, function(taskList) {
+
+            var options = {
+                tasklist: taskList.id,
+                showDeleted: true,
+                showHidden: true,
+                updatedMin: lastUpdate
             }
+            Gtask.forTasks(options, function(tasks) {
 
-            var taskLists = resp.result.items;
-            if (!taskLists) return;
-            for (var i = 0; i < taskLists.length; ++i) {
-                if (updated.getTime() < lastUpdate) return;
+                // so we get a list of tasks
 
 
-                (function(obj, taskList) {
+            })
 
-                function Request() {
-                    this.showDeleted = true;
-                    this.showHidden = true;
-                    this.fields = "nextPageToken,items(id,deleted,completed,updated,status,title)"
-                }
-
-                var r = new Request()
-                r.tasklist = taskList.id
-
-
-                gapi.client.tasks.tasks.list(r).then(function handleResult(resp) {
-
-
-                    token = resp.result.nextPageToken
-                    if (token) {
-                        var r = new Request()
-                        r.tasklist = taskList.id
-                        r.pageToken = token
-                        gapi.client.tasks.tasks.list(r).then(handleResult)
-                    }
-                    tasks = resp.result.items
-                    if (!tasks) return;
-
-                    for (var j = 0; j < tasks.length; ++j) {
-                        obj.tasks.push(tasks[j])
-                    }
-                    obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });
-                })
-
-
-
-            })(obj, taskList);
-            }
         })
-
     })
     // get all updates with min date from g server... iterate over lists
 
@@ -298,48 +263,26 @@ function importGoogleTasks() {
 
 
 function listTaskLists() {
-    gapi.client.tasks.tasklists.list().then(function(resp) {
+    gTasks = viewModel.gTasks
 
-        gTasks = viewModel.gTasks
+    Gtask.forEachList({fields: "items(id,title)"}, function(taskList) {
 
-        var taskLists = resp.result.items;
-        if (!taskLists) return;
-        for (var i = 0; i < taskLists.length; ++i) {
-            var taskList = taskLists[i];
-            obj = new GoogleTaskList(taskList)
+        var obj = new GoogleTaskList(taskList)
+        gTasks.push(ko.observable(obj));
 
-            gTasks.push(ko.observable(obj));
-
-            (function(obj, taskList) {
-
-                function Request() {
-                    this.showDeleted = true;
-                    this.showHidden = true;
-                    this.fields = "nextPageToken,items(id,deleted,completed,updated,status,title)"
-                }
-
-                var r = new Request()
-                r.tasklist = taskList.id
-                gapi.client.tasks.tasks.list(r).then(function handleResult(resp) {
-                    token = resp.result.nextPageToken
-                    if (token) {
-                        var r = new Request()
-                        r.tasklist = taskList.id
-                        r.pageToken = token
-                        gapi.client.tasks.tasks.list(r).then(handleResult)
-                    }
-                    tasks = resp.result.items
-                    if (!tasks) return;
-
-                    for (var j = 0; j < tasks.length; ++j) {
-                        obj.tasks.push(tasks[j])
-                    }
-                    obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });
-                })
-
-            })(obj, taskList);
-
-        }
+        var options = {
+            tasklist: taskList.id,
+            fields: "nextPageToken,items(id,deleted,completed,updated,status,title)",
+            showDeleted: true,
+            showHidden: true
+        };
+        Gtask.forTasks(options, function(tasks) {
+            if (!tasks) return;
+            for (var j = 0; j < tasks.length; ++j) {
+                obj.tasks.push(tasks[j])
+            }
+            obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });
+        })
     });
 }
 

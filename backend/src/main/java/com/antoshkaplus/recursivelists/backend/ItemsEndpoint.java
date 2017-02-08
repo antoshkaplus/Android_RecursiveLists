@@ -3,17 +3,12 @@ package com.antoshkaplus.recursivelists.backend;
 import com.antoshkaplus.recursivelists.backend.model.BackendUser;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 import com.antoshkaplus.recursivelists.backend.model.Item;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.users.User;
-import com.google.appengine.repackaged.org.codehaus.jackson.map.ser.BeanSerializer;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
 
@@ -22,10 +17,6 @@ import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.logging.Logger;
 import java.util.List;
-
-import com.google.api.services.tasks.model.*;
-import com.google.api.services.tasks.Tasks;
-import com.google.api.client.auth.oauth2.Credential;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
@@ -88,11 +79,32 @@ public class ItemsEndpoint {
         return new Uuid(backendUser.getRootUuid());
     }
 
-    @ApiMethod(name = "getGoogleTaskLastUpdate", path = "get_google_task_last_update")
-    public ResourceDate getGoogleTaskLastUpdate(User user) {
+    @ApiMethod(name = "getGtaskLastUpdate", path = "get_gtask_last_update")
+    public ResourceDate getGtaskLastUpdate(User user) {
 
         BackendUser backendUser = retrieveBackendUser(user);
-        return new ResourceDate(backendUser.getGoogleTaskLastUpdate());
+        return new ResourceDate(backendUser.getGtaskLastUpdate());
+    }
+
+    @ApiMethod(name = "updateGtaskLastUpdate", path = "update_gtask_last_update")
+    public void updateGtaskLastUpdate(final User user, final ResourceDate lastUpdate) {
+
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                if (backendUser.getGtaskLastUpdate().before(lastUpdate.value)) {
+                    backendUser.setGtaskLastUpdate(lastUpdate.value);
+                    ofy().save().entity(backendUser).now();
+                }
+            }
+        });
+    }
+
+    @ApiMethod(name = "addGoogleTask", path = "add_google_task")
+    public void addGtask(User user, GtaskList gtaskList) {
+
+
     }
 
     @ApiMethod(name = "addItemOnline", path = "add_item_online")
@@ -237,10 +249,6 @@ public class ItemsEndpoint {
         // DB version always has to increased, backend user resaved
         // how to force it?
     }
-
-
-
-
 
 
     private BackendUser retrieveBackendUser(User user) {

@@ -9,7 +9,7 @@ import java.util.Date;
  * Created by antoshkaplus on 1/27/17.
  */
 
-public class GoogleTaskTrack {
+public class GtaskTrack {
 
     String googleId;
     String uuid;

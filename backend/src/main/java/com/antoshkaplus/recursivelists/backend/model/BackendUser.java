@@ -19,7 +19,7 @@ public class BackendUser {
     private int version;
     private String rootUuid;
 
-    private Date googleTaskLastUpdate;
+    private Date gtaskLastUpdate;
 
     public BackendUser() {}
 
@@ -59,11 +59,11 @@ public class BackendUser {
         this.rootUuid = rootId;
     }
 
-    public Date getGoogleTaskLastUpdate() {
-        return googleTaskLastUpdate;
+    public Date getGtaskLastUpdate() {
+        return gtaskLastUpdate;
     }
 
-    public void setGoogleTaskLastUpdate(Date googleTaskLastUpdate) {
-        this.googleTaskLastUpdate = googleTaskLastUpdate;
+    public void setGtaskLastUpdate(Date googleTaskLastUpdate) {
+        this.gtaskLastUpdate = googleTaskLastUpdate;
     }
 }
