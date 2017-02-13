@@ -20,3 +20,18 @@ onMenuItemSelected - more generic, should not usually be used
 
 Google Tasks API updated date is read only. That means we can track import/sync with this.
 This stays for both task and task list. Have to check what about inner tasks?
+
+
+Creating Datastore classes with parents localizes transactions.
+
+don't count parent change as update? really... what about offline changes like this?
+
+
+each server has it's own timestamps.
+and whatever object changed and saved on server has to have server timestamp.
+
+
+when we try to write something on server side there is possibility of some problem,
+that transaction fails many many times and because of it timestamp becomes messed up...
+
+

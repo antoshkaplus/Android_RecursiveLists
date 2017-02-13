@@ -10,8 +10,17 @@ public class ResourceDate {
 
     public Date value;
 
-    ResourceDate(Date value) {
+    public ResourceDate() {}
+
+    public ResourceDate(Date value) {
         this.value = value;
     }
 
+    public Date getValue() {
+        return value;
+    }
+
+    public void setValue(Date value) {
+        this.value = value;
+    }
 }

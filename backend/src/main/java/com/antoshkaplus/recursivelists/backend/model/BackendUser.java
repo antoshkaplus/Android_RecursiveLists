@@ -27,9 +27,10 @@ public class BackendUser {
         this.version = 0;
         this.userId = userId;
         this.rootUuid = UUID.randomUUID().toString();
+        this.gtaskLastUpdate = new Date(0);
     }
 
-    Key<BackendUser> getKey() {
+    public Key<BackendUser> getKey() {
         return Key.create(BackendUser.class, userId);
     }
 

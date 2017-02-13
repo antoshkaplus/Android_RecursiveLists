@@ -29,14 +29,27 @@ $(function() {
         gTasks: ko.observableArray(),
         onlyDeleted: ko.observable(false),
         onlyCompleted: ko.observable(false),
+        onlyCurrent: ko.observable(false),
         selectedItems: ko.observableArray(),
         waitRelease: ko.observable(false),
         moveItems: [],
-        moveParent: ""
+        moveParent: "",
+        gtaskApiLoaded: ko.observable(false),
+        itemsApiLoaded: ko.observable(false),
+        apisLoaded: ko.pureComputed(function() {
+            return viewModel.gtaskApiLoaded() && viewModel.itemsApiLoaded();
+        }),
+        prepareMove: ko.observable(false),
+        preparedItems: ko.observableArray()
     }
     viewModel.itemKindClass = ko.pureComputed(function(kind) {
         return kind == "Task" ? "task" : "item";
     }, viewModel);
+
+    viewModel.apisLoaded.subscribe(function(val) {
+        if (!val) return;
+        listTaskLists()
+    });
 
     viewModel.parent.subscribe(fillItemList)
     viewModel.parent.subscribe(function (val) {
@@ -46,15 +59,19 @@ $(function() {
     }, null, "beforeChange")
 
     viewModel.onlyDeleted.subscribe(function(val) {
-        console.log(val)
+        console.log(val);
     })
 
     viewModel.onlyCompleted.subscribe(function(val) {
-        console.log(val)
+        console.log(val);
     })
 
     ko.applyBindings(viewModel)
 })
+
+function setPrepareMove() {
+    viewModel.prepareMove(true)
+}
 
 function itemKindClass(kind) {
     return kind == "Task" ? "task" : "item";
@@ -178,6 +195,7 @@ function loadApi() {
 
     gapi.client.load(apiName, apiVersion, undefined, apiRoot).then(
         function(response) {
+            viewModel.itemsApiLoaded(true)
             gapi.client.itemsApi.getRootUuid().execute(function(resp) {
                 if (resp.error != null) {
                     console.log("error getRootUuid", resp)
@@ -193,7 +211,7 @@ function loadApi() {
         function(reason) {
             console.log("api load failure", reason)
         })
-    gapi.client.load('tasks', 'v1', listTaskLists);
+    gapi.client.load('tasks', 'v1', function(resp) { viewModel.gtaskApiLoaded(true); });
 
 }
 
@@ -203,6 +221,7 @@ function GoogleTaskList(taskList) {
     this.showTasks = ko.observable(false)
     this.tasks = ko.observableArray()
     this.title = taskList.title
+    this.id = taskList.id
 }
 GoogleTaskList.prototype.toggleShowTasks = function () {
     this.showTasks(!this.showTasks())
@@ -215,6 +234,20 @@ function GoogleTask(title) {
     this.fields = "id,updated"
 }
 
+
+function restoreGtask(gtask) {
+    var self = this
+    gapi.client.tasks.tasks.patch({tasklist: this.id, task: gtask.id, deleted: false}).then(function(resp) {
+        if (resp.code) {
+            console.log("unable to update", resp)
+            return
+        }
+        gtask.deleted = false
+        var data = self.tasks().slice(0);
+        self.tasks([]);
+        self.tasks(data);
+    })
+}
 
 
 function addGoogleTask() {
@@ -229,31 +262,108 @@ function addGoogleTask() {
 }
 
 
+function movePrepared() {
+    var d = new Date().toISOString();
+    viewModel.preparedItems().forEach(function(item) {
+        item.parentUuid = viewModel.parent().uuid;
+        item.updated = d;
+    });
+    gapi.client.itemsApi.addGtaskList({gtasks: viewModel.preparedItems()}).then(function(resp) {
+        if (resp.code) {
+            console.log("was unable to move prepared items")
+            return
+        }
+        viewModel.preparedItems().forEach(function(entry) {
+            entry.moved = true
+        });
+        viewModel.preparedItems([])
+        viewModel.prepareMove(false)
+
+        var data = viewModel.gTasks().slice(0);
+        viewModel.gTasks([]);
+        viewModel.gTasks(data);
+    });
+}
+
+
 function importGoogleTasks() {
     // get last update date from our server
-    gapi.client.itemsApi.getGoogleTaskLastUpdate().execute(function(resp) {
+    gapi.client.itemsApi.getGtaskLastUpdate().execute(function(resp) {
         if (resp.code) {
             console.log(resp)
             return
         }
-        lastUpdate = new Date(resp.result.value)
+        if (!resp.result.hasOwnProperty('value')) {
+            resp.result.value = 0
+        }
+        var lastUpdate = new Date(resp.result.value)
+        var newLastUpdate = new Date()
+        // consider that 1 hour is enough for any request (update transaction) to finish
+        // on gtast server
+        newLastUpdate.setHours(newLastUpdate.getHours() - 1);
+
+
+        var importerVM = {
+            listCount: ko.observable(0),
+            listTraversed: ko.observable(0),
+            error: ko.observable(false),
+            taskCount: ko.observable(0),
+            taskTraversed: ko.observable(0),
+
+            updateTimestamp: ko.pureComputed(function() {
+                return !importerVM.error() &&
+                        importerVM.listCount() > 0 &&
+                        importerVM.listCount() == importerVM.listTraversed() &&
+                        importerVM.taskCount() == importerVM.taskTraversed();
+            }),
+        }
+        importerVM.updateTimestamp.subscribe(function(val) {
+            if (!val) return;
+
+            gapi.client.itemsApi.updateGtaskLastUpdate({value: newLastUpdate}).then(function(resp) {
+                if (resp.code) {
+                    console.log("import gtask error")
+                    return
+                }
+                console.log("import gtask success")
+            })
+        })
+
+        function errorHandler() {
+            importerVM.error(true);
+        }
 
         Gtask.forEachList({}, function(taskList) {
+            importerVM.listCount(importerVM.listCount() +1)
+
+            if (taskList.updated > newLastUpdate) {
+                newLastUpdate = taskList.updated
+            }
 
             var options = {
                 tasklist: taskList.id,
                 showDeleted: true,
                 showHidden: true,
-                updatedMin: lastUpdate
+                updatedMin: lastUpdate.toISOString()
             }
+
             Gtask.forTasks(options, function(tasks) {
+                if (!tasks) {
+                    importerVM.listTraversed(importerVM.listTraversed() +1)
+                    return
+                }
 
-                // so we get a list of tasks
+                importerVM.taskCount(importerVM.taskCount() +1)
+                gapi.client.itemsApi.addGtaskList({gtasks: tasks}).then(function(resp) {
+                    importerVM.taskTraversed(importerVM.taskTraversed() +1)
+                    if (resp.code) {
+                        console.log("was unable to import gtask list")
+                        errorHandler()
+                    }
+                });
+            }, errorHandler)
 
-
-            })
-
-        })
+        }, errorHandler)
     })
     // get all updates with min date from g server... iterate over lists
 
@@ -278,10 +388,17 @@ function listTaskLists() {
         };
         Gtask.forTasks(options, function(tasks) {
             if (!tasks) return;
-            for (var j = 0; j < tasks.length; ++j) {
-                obj.tasks.push(tasks[j])
-            }
-            obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });
+
+            var ids = tasks.map(function(t) { return t.id });
+            gapi.client.itemsApi.checkGtaskIdPresent({ids : ids}).then(function(resp) {
+
+                ids = resp.result.ids
+                for (var j = 0; j < tasks.length; ++j) {
+                    tasks[j].moved = (ids[j] != null);
+                    obj.tasks.push(tasks[j])
+                }
+                obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });
+            });
         })
     });
 }

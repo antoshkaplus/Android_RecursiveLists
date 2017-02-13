@@ -46,8 +46,21 @@ public class Item {
 
     private ItemKind kind;
 
+
+    public boolean isValid() {
+        return  uuid != null &&
+                title != null &&
+                owner != null &&
+                createDate != null &&
+                updateDate != null &&
+                updateDate.after(createDate) &&
+                parentUuid != null;
+    }
+
     // should be called by orm
-    public Item() {}
+    public Item() {
+        kind = ItemKind.Item;
+    }
 
     public boolean isTask() {
         return kind == ItemKind.Task;
@@ -87,6 +100,7 @@ public class Item {
 
     public void setCreateDate(Date createDate) {
         this.createDate = createDate;
+        this.updateDate = createDate;
     }
 
     public Date getCreateDate() {
@@ -115,6 +129,14 @@ public class Item {
 
     public boolean isDisabled() {
         return disabled;
+    }
+
+    public Date getUpdateDate() {
+        return updateDate;
+    }
+
+    public void setUpdateDate(Date updateDate) {
+        this.updateDate = updateDate;
     }
 }
 

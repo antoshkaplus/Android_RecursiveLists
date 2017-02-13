@@ -15,6 +15,10 @@ public class Task extends Item {
     private Subtask subtask;
 
 
+    public Task() {
+        setKind(ItemKind.Task);
+    }
+
     public Date getCompleteDate() {
         return completeDate;
     }

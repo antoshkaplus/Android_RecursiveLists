@@ -83,6 +83,13 @@
                 <button type="button" class="btn btn-primary" data-bind="click: addGoogleTask">Add Google Task</button>
 
                 <button type="button" class="btn btn-primary" data-bind="click: importGoogleTasks">Import Google Tasks</button>
+
+                <button type="button" class="btn btn-primary" data-bind="click: setPrepareMove">Prepare Move</button>
+                <button type="button" class="btn btn-primary" data-bind="click: movePrepared">Move</button>
+
+                <!--<button type="button" class="btn btn-primary" data-bind="click: setPrepareDelete">Prepare Delete</button>-->
+                <!--<button type="button" class="btn btn-primary" data-bind="click: deletePrepared">Delete</button>-->
+
             </form>
         </div>
 
@@ -97,11 +104,21 @@
                     </button>
                     <div data-bind="visible: showTasks">
                         <div data-bind="foreach: tasks" id="g-tasks">
-                            <!-- ko if: (!$root.onlyDeleted() && !$root.onlyCompleted()) || ($data.completed && $root.onlyCompleted()) || ($data.deleted && $root.onlyDeleted())  -->
+                            <!-- ko if: (!$root.onlyDeleted() && !$root.onlyCompleted() && !$root.onlyCurrent()) ||
+                                        ($data.completed && $root.onlyCompleted()) ||
+                                        ($data.deleted && $root.onlyDeleted()) ||
+                                        (!$data.completed && !$data.deleted && $root.onlyCurrent()) -->
                             <div class="list-group-item" data-bind="css: { 'g-completed': $data.completed, 'g-deleted': $data.deleted }">
-                                <div class="col" data-bind="text: title"></div>
-                                <div class="col" data-bind="text: status"></div>
-                                <div class="col" data-bind="text: updated"></div>
+                                <div class="col-1" data-bind="visible: $root.onlyDeleted()">
+                                    <button type="button" class="btn btn-primary" data-bind="click: restoreGtask.bind($parent)">Restore</button>
+                                </div>
+                                <div class="col-1" data-bind="visible: $root.prepareMove()">
+                                    <input type="checkbox" data-bind="checkedValue: $data, checked: $root.preparedItems">
+                                </div>
+                                <div class="col-4" data-bind="text: title"></div>
+                                <div class="col-2" data-bind="text: status"></div>
+                                <div class="col-4" data-bind="text: updated"></div>
+                                <div class="col-1" data-bind="visible: moved"><span class="octicon octicon-home"></span></div>
                             </div>
                             <!-- /ko -->
                         </div>
@@ -114,6 +131,7 @@
             <div class="col-3">
                 <label><input type="checkbox" data-bind="checked: onlyDeleted">Only Deleted</label>
                 <label><input type="checkbox" data-bind="checked: onlyCompleted">Only Completed</label>
+                <label><input type="checkbox" data-bind="checked: onlyCurrent">Only Current</label>
             </div>
 
         </div>
