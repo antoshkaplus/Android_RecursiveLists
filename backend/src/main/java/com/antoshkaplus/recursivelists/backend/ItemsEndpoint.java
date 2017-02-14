@@ -117,7 +117,7 @@ public class ItemsEndpoint {
     }
 
     @ApiMethod(name = "addGtaskList", path = "add_gtask_list")
-    public void addGtaskList(final GtaskList gtaskList, User user) {
+    public void updateGtaskList(final GtaskList gtaskList, User user) {
 
         ofy().transact(new VoidWork() {
             @Override
@@ -147,26 +147,25 @@ public class ItemsEndpoint {
                         } else {
 
                             Task serverTask = track.task.get();
+                            // parent change is mandatory despite of update date
+                            if (!gtaskList.getParentUuid().equals(serverTask.getParentUuid())) {
+                                moveTask(serverTask, gtaskList.getParentUuid());
+                            }
                             if (gtask.getUpdated().after(serverTask.getUpdateDate())) {
-                                // this is actually move operation
-                                if (!serverTask.getParentUuid().equals(gtaskList.getParentUuid())) {
-                                    // we have to update subtasks
-
-                                }
-                                serverTask.setParentUuid(gtaskList.getParentUuid());
                                 serverTask.setUpdateDate(gtask.getUpdated());
                                 serverTask.setCompleteDate(gtask.getCompleted());
+                                // handle if completed change
                                 serverTask.setTitle(gtask.getTitle());
                                 serverTask.setDbVersion(V);
 
                                 // to check for cycles
                                 //moveTask(serverTask, user);
-                                ofy().save().entity(serverTask);
+                                ofy().save().entity(serverTask).now();
                             }
 
                         }
                     }
-                    ofy().save().entity(backendUser);
+                    ofy().save().entity(backendUser).now();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     throw ex;
@@ -299,25 +298,7 @@ public class ItemsEndpoint {
         Task task = ofy().load().type(Task.class).parent(backendUser).id(taskId).now();
         task.setDbVersion(backendUser.getVersion());
         task.setDisabled(true);
-        if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
-            // parent is real
-            Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
-            if (i.isTask()) {
-                Task t = (Task)i;
-                t.getSubtask().decCount();
-                // will uncomplete next
-                if (!task.isCompleted()) {
-                    t.getSubtask().decCompleted();
-                    CompleteTask ut = new CompleteTask(new Date(), backendUser.getVersion());
-                    AncestorTraversal at = new AncestorTraversal(backendUser, ut);
-                    at.traverse(task);
-
-                } else {
-                    t.getSubtask().decCompleted();
-                }
-                ofy().save().entity(t).now();
-            }
-        }
+        detachTask(task, backendUser);
         ofy().save().entities(backendUser, task).now();
 
     }
@@ -335,16 +316,55 @@ public class ItemsEndpoint {
     }
 
 
-    private void addNewTask(Task task, BackendUser backendUser) {
-        task.setOwner(backendUser);
-        if (!task.isValid()) throw new RuntimeException("addNewTask: task is invalid");
+    // 1) subtask counts
+    // 2) discover cycle
+    private void moveTask(Task task, String newParentUuid, BackendUser backendUser) {
+         task.getParentUuid();
 
-        task.setDbVersion(backendUser.getVersion());
+
+
+    }
+
+    private Item findAncestorUuid(String uuid, BackendUser user) {
+        Item item = ofy().load().type(Item.class).id(uuid).now();
+        boolean cycleFound = false;
+        AncestorTraversal at = new AncestorTraversal(user, new AncestorTraversal.Handler() {
+            @Override
+            public boolean handle(Item ancestor) {
+                if (item.getUuid().equals(ancestor.getUuid())) {
+                    cycleFound = true;
+                    return false;
+                }
+                return true;
+            }
+        });
+    }
+
+
+    private void detachTask(Task task, BackendUser backendUser) {
         if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
-
             Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
             if (i.isTask()) {
                 Task t = (Task)i;
+                t.getSubtask().decCount();
+                if (!task.isCompleted()) {
+                    t.getSubtask().decCompleted();
+                    CompleteTask ut = new CompleteTask(new Date(), backendUser.getVersion());
+                    AncestorTraversal at = new AncestorTraversal(backendUser, ut);
+                    at.traverse(task);
+                } else {
+                    t.getSubtask().decCompleted();
+                }
+                ofy().save().entity(t).now();
+            }
+        }
+    }
+
+    private void attachTask(Task task, BackendUser backendUser) {
+        if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
+            Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
+            if (i.isTask()) {
+                Task t = (Task) i;
                 t.getSubtask().incCount();
                 t.getSubtask().incCompleted();
                 if (!task.isCompleted()) {
@@ -355,6 +375,15 @@ public class ItemsEndpoint {
                 ofy().save().entity(t).now();
             }
         }
+    }
+
+    private void addNewTask(Task task, BackendUser backendUser) {
+        task.setOwner(backendUser);
+        if (!task.isValid()) throw new RuntimeException("addNewTask: task is invalid");
+
+        task.setDbVersion(backendUser.getVersion());
+        attachTask(task, backendUser);
+
         ofy().save().entity(task).now();
     }
 
