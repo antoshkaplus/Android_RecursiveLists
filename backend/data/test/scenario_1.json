@@ -1,0 +1,111 @@
+{
+    "comments": "use with sample_2, try to make loop",
+    "actions": [
+        {
+            "type": "update",
+            "kind": "gtask",
+            "content": [
+                {"id": "a_gt_a", "parentId": "gt_b"},
+                {"id": "a_gt_b", "parentId": "gt_b"}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"id": "gt_b", "completedCount": 0, "totalCount": 2}
+            ]
+        },
+        {
+            "type": "update",
+            "kind": "gtask",
+            "content": [
+                {"id": "gt_b", "parentId": "gt_a"},
+                {"id": "a_gt_a", "completed": true}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"id": "gt_b", "completedCount": 1, "totalCount": 2}
+            ]
+        },
+        {
+            "type": "update",
+            "kind": "gtask",
+            "content": [
+                {"id": "a_gt_b", "completed": true}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"id": "gt_b", "completedCount": 2, "totalCount": 2},
+                {"id": "a_gt_a", "completed": true}
+            ]
+        },
+        {
+            "type": "update",
+            "kind": "gtask",
+            "content": [
+                {"id": "a_gt_a", "parentId": null}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"id": "a_gt_a", "completed": true},
+                {"id": "gt_a", "completed": true},
+                {"id": "gt_b", "completedCount": 1, "totalCount": 1}
+            ]
+        },
+        {
+            "type": "update",
+            "kind": "gtask",
+            "content": [
+                {"id": "a_gt_b", "completed": false}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"id": "gt_a", "completed": false},
+                {"id": "gt_b", "completedCount": 0, "totalCount": 1}
+            ]
+        },
+        {
+            "type": "update",
+            "kind": "gtask",
+            "content": [
+                {"id": "a_gt_b", "completed": true}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"id": "gt_b", "completed": true},
+                {"id": "gt_a", "completedCount": 1, "totalCount": 1}
+            ]
+        },
+        {
+            "type": "update",
+            "kind": "gtask",
+            "content": [
+                {"id": "a_gt_a", "completed": false, "parentId": "gt_b"}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"id": "gt_a", "completed": false},
+                {"id": "gt_b", "completedCount": 1, "totalCount": 2}
+            ]
+        }
+    ]
+}

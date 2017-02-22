@@ -1,0 +1,24 @@
+{
+    "dependency": 1,
+    "items": [
+        {
+            "title": "a"
+        }
+    ],
+    "gtasks": [
+        {
+            "title": "gt_a"
+        },
+        {
+            "title": "gt_b"
+        },
+        {
+            "title": "a_gt_a",
+            "parent": "a"
+        },
+        {
+            "title": "a_gt_b",
+            "parent": "a"
+        }
+    ]
+}

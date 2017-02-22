@@ -1,0 +1,22 @@
+{
+	"comments": [
+		"default uuid equals title",
+		"default kind is item"
+	],
+	"user": {
+		"email": "example@example.com",
+		"authDomain": "example.com"
+	},
+	"items": [{
+		"title": "a",
+		"children": [{
+			"title": "aa"
+		}, {
+			"title": "ab"
+		}]
+	}, {
+		"title": "b"
+	}, {
+		"title": "c"
+	}]
+}

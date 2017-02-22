@@ -30,6 +30,12 @@ dependencies {
     compile 'com.google.apis:google-api-services-tasks:v1-rev46-1.22.0'
 
     compile project(path: ':bee')
+
+    testCompile 'com.google.appengine:appengine-api-labs:1.9.8'
+    testCompile 'com.google.appengine:appengine-api-stubs:1.9.8'
+    testCompile 'com.google.appengine:appengine-testing:1.9.8'
+    testCompile 'junit:junit:4.12'
+    testCompile 'com.googlecode.json-simple:json-simple:1.1.1'
 }
 
 appengine {
@@ -42,3 +48,8 @@ appengine {
         getDiscoveryDocsOnBuild = true
     }
 }
+
+// Android Studio does stupid things with the variable
+//test {
+//    workingDir = new File("/Users/antoshkaplus/AndroidStudioProjects/RecursiveLists_2/backend")
+//}

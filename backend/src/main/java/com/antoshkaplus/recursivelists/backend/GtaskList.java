@@ -17,8 +17,9 @@ public class GtaskList {
 
     public GtaskList() {}
 
-    public GtaskList(List<Gtask> items) {
+    public GtaskList(List<Gtask> items, String parentUuid) {
         this.items = items;
+        this.parentUuid = parentUuid;
     }
 
     public List<Gtask> getGtasks() {

@@ -83,7 +83,7 @@ function isTask(kind) {
 
 function completeTask(task) {
     task.completeDate = new Date()
-    gapi.client.itemsApi.completeTask(task).execute()
+    gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).execute()
 }
 
 function back() {
@@ -123,9 +123,9 @@ function releaseMove() {
 
         t.parentUuid = parentUuid
         if (isTask(t.kind)) {
-            gapi.client.itemsApi.moveTask(t).execute(callback)
+            gapi.client.itemsApi.moveTask({"uuid": t.uuid, "parentUuid": t.parentUuid}).execute(callback)
         } else {
-            gapi.client.itemsApi.moveItem(t).execute(callback)
+            gapi.client.itemsApi.moveItem({"uuid": t.uuid, "parentUuid": t.parentUuid}).execute(callback)
         }
     }
     cancelMove()
@@ -265,10 +265,9 @@ function addGoogleTask() {
 function movePrepared() {
     var d = new Date().toISOString();
     viewModel.preparedItems().forEach(function(item) {
-        item.parentUuid = viewModel.parent().uuid;
         item.updated = d;
     });
-    gapi.client.itemsApi.addGtaskList({gtasks: viewModel.preparedItems()}).then(function(resp) {
+    gapi.client.itemsApi.addGtaskList({gtasks: viewModel.preparedItems(), parentUuid: viewModel.parent().uuid}).then(function(resp) {
         if (resp.code) {
             console.log("was unable to move prepared items")
             return

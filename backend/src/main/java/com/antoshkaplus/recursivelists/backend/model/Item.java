@@ -53,7 +53,7 @@ public class Item {
                 owner != null &&
                 createDate != null &&
                 updateDate != null &&
-                updateDate.after(createDate) &&
+                !updateDate.before(createDate) &&
                 parentUuid != null;
     }
 

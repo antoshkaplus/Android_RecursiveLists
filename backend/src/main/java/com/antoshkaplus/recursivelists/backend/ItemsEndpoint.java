@@ -15,7 +15,6 @@ import com.google.appengine.api.users.User;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.VoidWork;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 
 
 import java.security.InvalidParameterException;
@@ -57,7 +56,7 @@ public class ItemsEndpoint {
     private static final Logger logger = Logger.getLogger(ItemsEndpoint.class.getName());
 
     @ApiMethod(name = "getChildrenItems", path = "get_children_items")
-    public ItemList getChildrenItems(@Named("parentUuid")String uuid, User user) throws OAuthRequestException {
+    public ItemList getChildrenItems(@Named("parentUuid")String uuid, User user) {
 
         BackendUser backendUser = retrieveBackendUser(user);
         List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).filter("parentUuid ==", uuid).list();
@@ -119,6 +118,7 @@ public class ItemsEndpoint {
         return idList;
     }
 
+    // for newly added gtasks we could return back their uuid-s
     @ApiMethod(name = "addGtaskList", path = "add_gtask_list")
     public void updateGtaskList(final GtaskList gtaskList, User user) {
 
@@ -151,23 +151,15 @@ public class ItemsEndpoint {
 
                             Task serverTask = track.task.get();
                             // parent change is mandatory despite of update date
-                            if (!gtaskList.getParentUuid().equals(serverTask.getParentUuid())) {
-                                Item newParent = null;// we have recover item from db
-                                if (gtaskList.getParentUuid() != null && !gtaskList.getParentUuid().equals(backendUser.getRootUuid())) {
-                                    newParent = ofy().load().type(Item.class).id(gtaskList.getParentUuid()).now();
-                                }
-                                moveTask(serverTask, newParent, backendUser);
-                            }
+                            updateTaskParent(serverTask, gtaskList.getParentUuid(), backendUser);
                             if (gtask.getUpdated().after(serverTask.getUpdateDate())) {
                                 serverTask.setUpdateDate(gtask.getUpdated());
-                                serverTask.setCompleteDate(gtask.getCompleted());
-                                // handle if completed change
+                                updateTaskComplete(serverTask, gtask.getCompleted(), backendUser);
                                 serverTask.setTitle(gtask.getTitle());
                                 serverTask.setDbVersion(V);
 
                                 ofy().save().entity(serverTask).now();
                             }
-
                         }
                     }
                     ofy().save().entity(backendUser).now();
@@ -179,16 +171,43 @@ public class ItemsEndpoint {
         });
     }
 
+    @ApiMethod(name = "getItemsById", path = "get_items_by_uuid")
+    public ItemList getItemsByUuid(IdList idList, final User user) {
+        BackendUser backendUser = retrieveBackendUser(user);
+        Map<String, Item> itemMap = ofy().load().type(Item.class).parent(backendUser).ids(idList.getIds());
+        ItemList res = new ItemList();
+        for (String id : idList.getIds()) {
+            res.getItems().add(itemMap.get(id));
+        }
+        return res;
+    }
+
+    @ApiMethod(name = "getItemsByGtaskId", path = "get_items_by_gtask_id")
+    public ItemList getItemsByGtaskId(IdList idList, final User user) {
+        BackendUser backendUser = retrieveBackendUser(user);
+        Map<String, GtaskTrack> itemMap = ofy().load().type(GtaskTrack.class).parent(backendUser).ids(idList.getIds());
+        ItemList res = new ItemList();
+        for (String id : idList.getIds()) {
+            res.getItems().add(itemMap.get(id).task.get());
+        }
+        return res;
+    }
+
+
     @ApiMethod(name = "addItemOnline", path = "add_item_online")
-    public void addItemOnline(final Item item, final User user)
-            throws OAuthRequestException, InvalidParameterException {
+    public void addItemOnline(final Item item, final User user) {
         try {
             ofy().transact(new VoidWork() {
                 @Override
                 public void vrun() {
                     BackendUser backendUser = retrieveBackendUser(user);
                     item.setOwner(backendUser);
+                    if (item.getParentUuid() == null) {
+                        item.setParentUuid(backendUser.getRootUuid());
+                    }
                     item.setDbVersion(backendUser.increaseVersion());
+
+                    if (!item.isValid()) throw new RuntimeException("addItemOnline: task is invalid");
                     ofy().save().entities(backendUser, item).now();
                 }
             });
@@ -210,33 +229,16 @@ public class ItemsEndpoint {
     }
 
     @ApiMethod(name = "removeTask", path = "remove_task")
-    public void removeTask(final Task task, final User user) {
+    public void removeTask(@Named("uuid")String uuid, final User user) {
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
                 BackendUser backendUser = retrieveBackendUser(user);
+                Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
                 task.setOwner(backendUser);
                 task.setDbVersion(backendUser.increaseVersion());
                 task.setDisabled(true);
-                if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
-                    // parent is real
-                    Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
-                    if (i.isTask()) {
-                        Task t = (Task)i;
-                        t.getSubtask().decCount();
-                        // will uncomplete next
-                        if (!task.isCompleted()) {
-                            t.getSubtask().decCompleted();
-                            CompleteTask ut = new CompleteTask(new Date(), backendUser.getVersion());
-                            AncestorTraversal at = new AncestorTraversal(backendUser, ut);
-                            at.traverse(task);
-
-                        } else {
-                            t.getSubtask().decCompleted();
-                        }
-                        ofy().save().entity(t).now();
-                    }
-                }
+                detachTask(task, backendUser);
                 ofy().save().entities(backendUser, task).now();
             }
         });
@@ -245,15 +247,15 @@ public class ItemsEndpoint {
     // you don't have to supply all the information about item
     // uuid and new parent uuid should be enough
     @ApiMethod(name = "moveItem", path = "move_item")
-    public void moveItem(final Item item, final User user) {
+    public void moveItem(@Named("uuid")String uuid, @Named("parentUuid")String parentUuid, final User user) {
         // this one is super easy
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
                 BackendUser backendUser = retrieveBackendUser(user);
-                Item oldItem = ofy().load().type(Item.class).parent(backendUser).id(item.getUuid()).now();
-                oldItem.setParentUuid(item.getParentUuid());
-                oldItem.setDbVersion(backendUser.increaseVersion());
+                Item item = ofy().load().type(Item.class).parent(backendUser).id(uuid).now();
+                item.setParentUuid(parentUuid == null ? backendUser.getRootUuid() : parentUuid);
+                item.setDbVersion(backendUser.increaseVersion());
                 ofy().save().entities(backendUser, item).now();
             }
         });
@@ -262,39 +264,32 @@ public class ItemsEndpoint {
     // we have to take a look at ancestor and decrease tasks
     // it;s like removing and adding task again
     @ApiMethod(name = "moveTask", path = "move_task")
-    public void moveTask(final Task task, final User user) {
+    public void moveTask(@Named("uuid")String uuid, @Named("parentUuid")String parentUuid, final User user) {
         // so it's similar to calling moveItem
         // but we have to traverse ancestors first
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
                 BackendUser backendUser = retrieveBackendUser(user);
-                Task t = ofy().load().type(Task.class).parent(backendUser).id(task.getUuid()).now();
-                removeTask(t, user);
-                addTaskOnline(task, user);
+                backendUser.increaseVersion();
+                Task t = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
+                moveTask(t, parentUuid, backendUser);
+
+                ofy().save().entity(backendUser).now();
             }
         });
     }
 
 
-
     @ApiMethod(name = "completeTask", path = "completeTask")
-    public void completeTask(final Task task, final User user) {
+    public void completeTask(@Named("uuid")String uuid, @Named("completeDate")Date completeDate, final User user) {
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
                 BackendUser backendUser = retrieveBackendUser(user);
-                Task old = ofy().load().type(Task.class).parent(backendUser).id(task.getUuid()).now();
-                // already set as completed
-                if (old.getCompleteDate() != null) return;
-                int dbVersion = backendUser.increaseVersion();
-                task.setDbVersion(dbVersion);
-                task.setOwner(backendUser);
+                Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
+                updateTaskComplete(task, completeDate, backendUser);
                 ofy().save().entity(task).now();
-
-                CompleteTask ct = new CompleteTask(task.getCompleteDate(), dbVersion);
-                AncestorTraversal at = new AncestorTraversal(backendUser, ct);
-                at.traverse(task);
             }
         });
     }
@@ -305,33 +300,63 @@ public class ItemsEndpoint {
         task.setDisabled(true);
         detachTask(task, backendUser);
         ofy().save().entities(backendUser, task).now();
-
     }
 
 
     // consider that task is already created
-    private void completeTask(Task task, BackendUser backendUser) {
-
-
+    private void updateTaskComplete(Task task, Date completeDate, BackendUser backendUser) {
+        if (task.getCompleteDate() == completeDate) {
+            return;
+        }
+        task.setCompleteDate(completeDate);
+        if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
+            Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
+            if (i.isTask()) {
+                Task t = (Task)i;
+                AncestorTraversal.Handler handler;
+                if (completeDate == null) { // became not completed
+                    handler = new UncompleteTask(backendUser.getVersion());
+                } else { // became completed
+                    handler = new CompleteTask(completeDate, backendUser.getVersion());
+                }
+                AncestorTraversal at = new AncestorTraversal(backendUser, handler);
+                at.traverse(task);
+                ofy().save().entity(t).now();
+            }
+        }
     }
 
-    private void updateTask(Task task, BackendUser backendUser) {
-
-
+    private void updateTaskParent(Task task, String parentUuid, BackendUser user) {
+        if (parentUuid == null) {
+            parentUuid = user.getRootUuid();
+        }
+        if (task.getParentUuid().equals(parentUuid)) {
+            return;
+        }
+        moveTask(task, parentUuid, user);
     }
-
 
     // 1) subtask counts
     // 2) discover cycle
     private void moveTask(Task task, Item newParent, BackendUser backendUser) {
-        if (task.getUuid().equals(newParent.getUuid())) {
-            throw new RuntimeException("Can't be a parent of yourself.");
-        }
-        if (hasAncestor(newParent, task, backendUser)) {
-            throw new RuntimeException("Move task action creates a cycle.");
+        if (newParent != null) {
+            if (task.getUuid().equals(newParent.getUuid())) {
+                throw new RuntimeException("Can't be a parent of yourself.");
+            }
+            if (hasAncestor(newParent, task, backendUser)) {
+                throw new RuntimeException("Move task action creates a cycle.");
+            }
         }
         detachTask(task, backendUser);
         attachTask(task, newParent, backendUser);
+    }
+
+    private void moveTask(Task task, String parentId, BackendUser backendUser) {
+        Item parent = null;
+        if (parentId != null && !parentId.equals(backendUser.getRootUuid())) {
+            parent = ofy().load().type(Item.class).parent(backendUser).id(parentId).now();
+        }
+        moveTask(task, parent, backendUser);
     }
 
     // used to detect cycle
@@ -372,11 +397,10 @@ public class ItemsEndpoint {
     }
 
     private void attachTask(Task task, Item newParent, BackendUser backendUser) {
-        String parentUuid;
         if (newParent == null) {
-            parentUuid = backendUser.getRootUuid();
+            task.setParentUuid(backendUser.getRootUuid());
         } else {
-            parentUuid = newParent.getUuid();
+            task.setParentUuid(newParent.getUuid());
 
             if (newParent.isTask()) {
                 Task t = (Task) newParent;
@@ -390,16 +414,15 @@ public class ItemsEndpoint {
                 ofy().save().entity(t).now();
             }
         }
-        task.setParentUuid(parentUuid);
         ofy().save().entity(task).now();
     }
 
-    private void attachNewTask(Task task, BackendUser user) {
+    private void attachTask(Task task, BackendUser user) {
         if (task.getParentUuid().equals(user.getRootUuid())) {
             return;
         }
-        Item parent = ofy().load().type(Item.class).parent(user).id(task.getParentUuid());
-
+        Item parent = ofy().load().type(Item.class).parent(user).id(task.getParentUuid()).now();
+        attachTask(task, parent, user);
     }
 
     private void addNewTask(Task task, BackendUser backendUser) {
