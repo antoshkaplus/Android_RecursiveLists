@@ -10,18 +10,15 @@ import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
-import com.google.appengine.api.oauth.OAuthRequestException;
 import com.google.appengine.api.users.User;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.VoidWork;
 
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.List;
 
@@ -305,25 +302,7 @@ public class ItemsEndpoint {
 
     // consider that task is already created
     private void updateTaskComplete(Task task, Date completeDate, BackendUser backendUser) {
-        if (task.getCompleteDate() == completeDate) {
-            return;
-        }
-        task.setCompleteDate(completeDate);
-        if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
-            Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
-            if (i.isTask()) {
-                Task t = (Task)i;
-                AncestorTraversal.Handler handler;
-                if (completeDate == null) { // became not completed
-                    handler = new UncompleteTask(backendUser.getVersion());
-                } else { // became completed
-                    handler = new CompleteTask(completeDate, backendUser.getVersion());
-                }
-                AncestorTraversal at = new AncestorTraversal(backendUser, handler);
-                at.traverse(task);
-                ofy().save().entity(t).now();
-            }
-        }
+        new SubtaskManagement(backendUser).updateCompleteDate(task, completeDate);
     }
 
     private void updateTaskParent(Task task, String parentUuid, BackendUser user) {
@@ -362,7 +341,8 @@ public class ItemsEndpoint {
     // used to detect cycle
     private boolean hasAncestor(Item item, Item ancestor, BackendUser user) {
         ValContainer<Boolean> hasAncestor = new ValContainer<>(false);
-        AncestorTraversal at = new AncestorTraversal(user, new AncestorTraversal.Handler() {
+        AncestorTraversal at = new AncestorTraversal(user, item);
+        at.traverse(new AncestorTraversal.Handler() {
             @Override
             public boolean handle(Item a) {
                 if (ancestor.getUuid().equals(a.getUuid())) {
@@ -372,28 +352,12 @@ public class ItemsEndpoint {
                 return true;
             }
         });
-        at.traverse(item);
         return hasAncestor.getVal();
     }
 
 
     private void detachTask(Task task, BackendUser backendUser) {
-        if (!task.getParentUuid().equals(backendUser.getRootUuid())) {
-            Item i = ofy().load().type(Item.class).parent(backendUser).id(task.getParentUuid()).now();
-            if (i.isTask()) {
-                Task t = (Task)i;
-                t.getSubtask().decCount();
-                if (!task.isCompleted()) {
-                    t.getSubtask().decCompleted();
-                    CompleteTask ut = new CompleteTask(new Date(), backendUser.getVersion());
-                    AncestorTraversal at = new AncestorTraversal(backendUser, ut);
-                    at.traverse(task);
-                } else {
-                    t.getSubtask().decCompleted();
-                }
-                ofy().save().entity(t).now();
-            }
-        }
+        new SubtaskManagement(backendUser).detach(task);
     }
 
     private void attachTask(Task task, Item newParent, BackendUser backendUser) {
@@ -401,18 +365,7 @@ public class ItemsEndpoint {
             task.setParentUuid(backendUser.getRootUuid());
         } else {
             task.setParentUuid(newParent.getUuid());
-
-            if (newParent.isTask()) {
-                Task t = (Task) newParent;
-                t.getSubtask().incCount();
-                t.getSubtask().incCompleted();
-                if (!task.isCompleted()) {
-                    UncompleteTask ut = new UncompleteTask(backendUser.getVersion());
-                    AncestorTraversal at = new AncestorTraversal(backendUser, ut);
-                    at.traverse(task);
-                }
-                ofy().save().entity(t).now();
-            }
+            new SubtaskManagement(backendUser).attach(task);
         }
         ofy().save().entity(task).now();
     }
@@ -427,6 +380,9 @@ public class ItemsEndpoint {
 
     private void addNewTask(Task task, BackendUser backendUser) {
         task.setOwner(backendUser);
+        if (task.getParentUuid() == null) {
+            task.setParentUuid(backendUser.getRootUuid());
+        }
         if (!task.isValid()) throw new RuntimeException("addNewTask: task is invalid");
 
         task.setDbVersion(backendUser.getVersion());

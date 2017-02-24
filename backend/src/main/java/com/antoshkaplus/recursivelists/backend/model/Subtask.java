@@ -6,8 +6,16 @@ import com.googlecode.objectify.annotation.Entity;
  * Created by antoshkaplus on 1/24/17.
  */
 public class Subtask {
+
     private int totalCount = 0;
     private int completedCount = 0;
+
+    public Subtask() {}
+
+    public Subtask(int completedCount, int totalCount) {
+        this.completedCount = completedCount;
+        this.totalCount = totalCount;
+    }
 
 
     public void decCount() {
@@ -43,5 +51,12 @@ public class Subtask {
 
     public void setCompletedCount(int completedCount) {
         this.completedCount = completedCount;
+    }
+
+    public void add(Subtask subtask) {
+        if (subtask == null) return;
+        this.completedCount += subtask.completedCount;
+        this.totalCount += subtask.totalCount;
+
     }
 }

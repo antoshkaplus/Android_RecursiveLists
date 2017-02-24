@@ -167,5 +167,7 @@ public class BackendTest {
 
     @Test
     public void completeTask() {
+        Util.getSample(3).apply(endpoint, user);
+        Util.getScenario(2).apply(endpoint, user);
     }
 }

@@ -10,20 +10,20 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
  */
 public class AncestorTraversal {
 
-    interface Handler {
+    public interface Handler {
         // return true if want to continue
         boolean handle(Item ancestor);
     }
 
-    BackendUser user;
-    Handler handler;
+    private BackendUser user;
+    private Item item;
 
-    AncestorTraversal(BackendUser user, Handler handler) {
+    public AncestorTraversal(BackendUser user, Item item) {
         this.user = user;
-        this.handler = handler;
+        this.item = item;
     }
 
-    void traverse(Item item) {
+    public void traverse(Handler handler) {
         while (true) {
             if (item.getParentUuid().equals(user.getRootUuid())) return;
             Item parent = ofy().load().type(Item.class).parent(user).id(item.getParentUuid()).now();

@@ -59,8 +59,38 @@ public class Scenario {
                 case "check":
                     handleCheck(ja);
                     break;
+                case "complete":
+                    handleComplete(ja);
+                    break;
+                case "move":
+                    handleMove(ja);
+                    break;
                 default:
                     throw new RuntimeException("Action type is not supported");
+            }
+        }
+    }
+
+    private void handleMove(JSONObject obj) {
+        String kind = (String)obj.get("kind");
+        if (kind.equals("task")) {
+            for (Object t : (JSONArray)obj.get("content")) {
+                JSONObject jt = (JSONObject) t;
+                String uuid = (String) jt.get("uuid");
+                String parentUuid = (String) jt.get("parentUuid");
+                endpoint.moveTask(uuid, parentUuid, user);
+            }
+        }
+    }
+
+    private void handleComplete(JSONObject obj) {
+        String kind = (String)obj.get("kind");
+        if (kind.equals("task")) {
+            for (Object t : (JSONArray)obj.get("content")) {
+                JSONObject jt = (JSONObject) t;
+                String uuid = (String) jt.get("uuid");
+                Boolean completed = (Boolean) jt.get("completed");
+                endpoint.completeTask(uuid, completed ? new Date() : null, user);
             }
         }
     }
@@ -106,9 +136,16 @@ public class Scenario {
         if (kind.equals("task")) {
             for (Object t : (JSONArray)obj.get("content")) {
                 JSONObject jt = (JSONObject)t;
-                String id = (String)jt.get("id");
-
-                Task task = (Task)endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(id)), user).getItems().get(0);
+                Task task = null;
+                if (jt.containsKey("id")) {
+                    String id = (String) jt.get("id");
+                    task = (Task) endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(id)), user).getItems().get(0);
+                } else if (jt.containsKey("uuid")) {
+                    String id = (String) jt.get("uuid");
+                    task = (Task) endpoint.getItemsByUuid(new IdList(Collections.singletonList(id)), user).getItems().get(0);
+                } else {
+                    throw new RuntimeException("can't define content element");
+                }
 
                 if (jt.containsKey("completed")) {
                     assertEquals((Boolean)jt.get("completed"), task.isCompleted());

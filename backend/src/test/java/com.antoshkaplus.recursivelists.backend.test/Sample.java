@@ -41,7 +41,10 @@ public class Sample {
             uuid = item.getUuid();
             endpoint.addItemOnline(item, user);
         } else {
-            //endpoint.addTaskOnline();
+            Task task = initTask(obj);
+            task.setParentUuid(parentUuid);
+            uuid = task.getUuid();
+            endpoint.addTaskOnline(task, user);
         }
         JSONArray arr = (JSONArray) obj.get("children");
         if (arr == null) return;
@@ -52,12 +55,22 @@ public class Sample {
 
     private Item initItem(JSONObject obj) {
         Item item = new Item();
+        initItem(obj, item);
+        return item;
+    }
+
+    private Task initTask(JSONObject obj) {
+        Task task = new Task();
+        initItem(obj, task);
+        return task;
+    }
+
+    private void initItem(JSONObject obj, Item item) {
         String t = (String) obj.get("title");
 
         item.setTitle(t);
         item.setUuid(t);
         item.setCreateDate(new Date());
-        return item;
     }
 
     private Gtask initGtask(JSONObject obj) {
@@ -67,10 +80,6 @@ public class Sample {
         g.setTitle(t);
         g.setUpdated(new Date());
         return g;
-    }
-
-    private Task initTask(JSONObject obj) {
-        return null;
     }
 
     public void apply(ItemsEndpoint endpoint, User user) {

@@ -47,4 +47,8 @@ public class Task extends Item {
     public void setSubtask(Subtask subtask) {
         this.subtask = subtask;
     }
+
+    public boolean hasSubtasks() {
+        return subtask != null && subtask.getTotalCount() > 0;
+    }
 }

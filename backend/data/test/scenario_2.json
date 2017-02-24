@@ -2,12 +2,73 @@
     "comments": "use sample #2",
     "actions": [
         {
+            "type": "move",
+            "kind": "task",
+            "content": [
+                {"uuid": "b", "parentUuid": "a"}
+            ]
+        },
+        {
             "type": "complete",
             "kind": "task",
-
+            "content": [
+                {"uuid": "b", "completed": true}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"uuid": "a", "completed": true},
+                {"uuid": "b", "completed": true}
+            ]
+        },
+        {
+            "type": "move",
+            "kind": "task",
+            "content": [
+                {"uuid": "c", "parentUuid": "b"},
+                {"uuid": "d", "parentUuid": "b"}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"uuid": "a", "completed": false},
+                {"uuid": "b", "completed": false}
+            ]
+        },
+        {
+            "type": "complete",
+            "kind": "task",
+            "content": [
+                {"uuid": "d", "completed": true}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"uuid": "a", "completed": false},
+                {"uuid": "b", "completed": false}
+            ]
+        },
+        {
+            "type": "complete",
+            "kind": "task",
+            "content": [
+                {"uuid": "c", "completed": true}
+            ]
+        },
+        {
+            "type": "check",
+            "kind": "task",
+            "content": [
+                {"uuid": "a", "completed": true},
+                {"uuid": "b", "completed": true}
+            ]
         }
-
-
     ]
 
 }
