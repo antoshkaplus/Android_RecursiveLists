@@ -1,16 +1,28 @@
 apply plugin: 'com.android.application'
 
+
 android {
-    compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    compileSdkVersion 24
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "com.antoshkaplus.recursivelists"
-        minSdkVersion 23
-        targetSdkVersion 23
+        minSdkVersion 24
+        targetSdkVersion 24
         versionCode 31
         versionName "3.1"
+        jackOptions {
+            enabled true
+        }
     }
+    dexOptions {
+        incremental true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -21,13 +33,14 @@ android {
         local {
             // buildConfigField 'String', 'HOST', '"http://10.48.98.43:8080/_ah/api"'
             // big mac
-            buildConfigField 'String', 'HOST', '"http://25.230.57.193:8080/_ah/api"'
+            buildConfigField 'String', 'HOST', '"http://192.168.1.4:8080/_ah/api"'
         }
 
         remote {
             buildConfigField 'String', 'HOST', '"https://antoshkaplus-recursivelists.appspot.com/_ah/api"'
         }
     }
+
 }
 
 dependencies {
@@ -35,7 +48,8 @@ dependencies {
     compile project(path: ':fly')
     compile project(path: ':backend', configuration: 'android-endpoints')
     compile 'com.google.http-client:google-http-client-android:1.12.0-beta'
-    compile 'com.google.android.gms:play-services:9.4.0'
+    compile 'com.google.android.gms:play-services-auth:10.2.0'
+    compile 'com.google.api-client:google-api-client-android:1.22.0'
     compile 'com.j256.ormlite:ormlite-core:4.48'
     compile 'com.j256.ormlite:ormlite-android:4.48'
 }

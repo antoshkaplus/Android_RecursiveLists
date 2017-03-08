@@ -46,7 +46,7 @@ public class EditStringDialog extends RetainedDialog {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        View view = getActivity().getLayoutInflater().inflate(R.layout.view_string_gialog, null);
+        View view = getActivity().getLayoutInflater().inflate(R.layout.view_string_dialog, null);
         input = (EditText)view.findViewById(R.id.input);
         input.setHint(hint);
         input.setText(text);

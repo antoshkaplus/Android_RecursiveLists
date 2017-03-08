@@ -38,4 +38,9 @@
 
     <string name="title_root">Root</string>
 
+    <string-array name="item_kind_array">
+        <item>Item</item>
+        <item>Task</item>
+    </string-array>
+
 </resources>

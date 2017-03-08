@@ -12,7 +12,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.support.v7.appcompat.*;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,18 +20,16 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.antoshkaplus.fly.dialog.RetryDialog;
-import com.antoshkaplus.recursivelists.backend.userItemsApi.UserItemsApi;
-import com.antoshkaplus.recursivelists.dialog.AddStringDialog;
+import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
+import com.antoshkaplus.recursivelists.dialog.AddItemDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.fly.dialog.OkDialog;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
-import com.google.api.client.http.HttpTransport;
-
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import org.json.JSONObject;
 
 import java.io.InputStream;
@@ -549,13 +546,13 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     private void showAddNewDialog() {
         final FragmentTransaction ft = getFragmentManager().beginTransaction();
-        AddStringDialog dialog = new AddStringDialog();
+        AddItemDialog dialog = new AddItemDialog();
         Bundle args = new Bundle();
-        args.putString(AddStringDialog.ARG_TITLE, getString(R.string.dialog__add_title));
+        args.putString(AddItemDialog.ARG_TITLE, getString(R.string.dialog__add_title));
         dialog.setArguments(args);
-        dialog.setAddStringDialogListener(new AddStringDialog.AddStringDialogListener() {
+        dialog.setAddItemDialogListener(new AddItemDialog.AddItemDialogListener() {
             @Override
-            public void onAddStringDialogSuccess(CharSequence string) {
+            public void onAddItemDialogSuccess(AddItemDialog.AddItemDialogResult result) {
                 RetryDialog.RetryDialogListener listener = new RetryDialog.RetryDialogListener() {
                     @Override
                     public void onDialogCancel() { }
@@ -565,7 +562,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     }
                 };
                 // empty string
-                if (string.toString().isEmpty()) {
+                if (result.title.toString().isEmpty()) {
                     // show dialog with on retry
                     showRetryDialog(
                             getString(R.string.dialog__empty__title),
@@ -576,7 +573,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 // item already exists
                 boolean exists = false;
                 for (Item i : items) {
-                    if (i.title.contentEquals(string)) {
+                    if (i.title.contentEquals(result.title)) {
                         exists = true;
                         break;
                     }
@@ -588,11 +585,11 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                             listener);
                     return;
                 }
-                addNewItem(string.toString(), pressedPosition);
+                addNewItem(result.title.toString(), pressedPosition);
                 getListView().clearChoices();
             }
             @Override
-            public void onAddStringDialogCancel() {}
+            public void onAddItemDialogCancel() {}
         });
         dialog.show(ft, "dialog");
     }
@@ -703,8 +700,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         bar.setTitle(title);
     }
 
-    private UserItemsApi CreateUserItemsEndpoint() {
-        UserItemsApi.Builder builder = new UserItemsApi.Builder(
+    private ItemsApi CreateUserItemsEndpoint() {
+        ItemsApi.Builder builder = new ItemsApi.Builder(
                 AndroidHttp.newCompatibleTransport(),
                 new AndroidJsonFactory(), credential);
         builder.setRootUrl(BuildConfig.HOST);

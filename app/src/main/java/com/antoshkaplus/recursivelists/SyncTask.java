@@ -1,7 +1,6 @@
 package com.antoshkaplus.recursivelists;
 
-import com.antoshkaplus.recursivelists.backend.userItemsApi.UserItemsApi;
-import com.antoshkaplus.recursivelists.backend.userItemsApi.model.UserItems;
+import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
 
@@ -19,13 +18,13 @@ import java.util.UUID;
  */
 public class SyncTask implements Runnable {
 
-    private UserItemsApi api;
+    private ItemsApi api;
     private ItemRepository repo;
     private Listener listener = new Adapter();
 
 
     // repository can be an interface
-    SyncTask(ItemRepository repo, UserItemsApi api) {
+    SyncTask(ItemRepository repo, ItemsApi api) {
         this.api = api;
         this.repo = repo;
     }
@@ -66,35 +65,35 @@ public class SyncTask implements Runnable {
             existingIds.add(i.id);
         }
 
-        UserItems userItems = api.getUserItems().execute();
-        UUID clientRootId = repo.getRootId();
-        String clientRootIdString = clientRootId.toString();
-        if (userItems.getItems() != null) {
-            for (com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item i : userItems.getItems()) {
-                // believe that client items are most RECENT
-                if (!existingIds.contains(UUID.fromString(i.getId()))) {
-                    if (i.getParentId().equals(userItems.getRootId())) {
-                        i.setParentId(clientRootIdString);
-                    }
-                    Item clientItem = Utils.toClientItem(i);
-                    items.add(clientItem);
-                    newItems.add(clientItem);
-                    // new item that's removed
-                    if (i.getDeletionDate() != null) {
-                        RemovedItem removedItem = new RemovedItem(clientItem, new Date(i.getDeletionDate().getValue()));
-                        removedItems.add(removedItem);
-                        newRemovedItems.add(removedItem);
-                    }
-                }
-            }
-        }
-        userItems.setItems(Utils.toBackendItems(items, removedItems));
-        userItems.setRootId(clientRootIdString);
-        try {
-            api.updateUserItems(userItems).execute();
-        } catch (InvalidParameterException ex) {
-            return result;
-        }
+//        ItemList userItems = api.getUserItems().execute();
+//        UUID clientRootId = repo.getRootId();
+//        String clientRootIdString = clientRootId.toString();
+//        if (userItems.getItems() != null) {
+//            for (com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item i : userItems.getItems()) {
+//                // believe that client items are most RECENT
+//                if (!existingIds.contains(UUID.fromString(i.getId()))) {
+//                    if (i.getParentId().equals(userItems.getRootId())) {
+//                        i.setParentId(clientRootIdString);
+//                    }
+//                    Item clientItem = Utils.toClientItem(i);
+//                    items.add(clientItem);
+//                    newItems.add(clientItem);
+//                    // new item that's removed
+//                    if (i.getDeletionDate() != null) {
+//                        RemovedItem removedItem = new RemovedItem(clientItem, new Date(i.getDeletionDate().getValue()));
+//                        removedItems.add(removedItem);
+//                        newRemovedItems.add(removedItem);
+//                    }
+//                }
+//            }
+//        }
+//        userItems.setItems(Utils.toBackendItems(items, removedItems));
+//        userItems.setRootId(clientRootIdString);
+//        try {
+//            api.updateUserItems(userItems).execute();
+//        } catch (InvalidParameterException ex) {
+//            return result;
+//        }
 
         result.success = true;
         return result;
