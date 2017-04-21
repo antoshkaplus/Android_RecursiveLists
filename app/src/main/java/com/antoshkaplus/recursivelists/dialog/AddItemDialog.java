@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.text.Editable;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -16,7 +15,9 @@ import android.widget.Spinner;
 
 import com.antoshkaplus.fly.dialog.RetainedDialog;
 import com.antoshkaplus.recursivelists.R;
+import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.ItemKind;
+import com.antoshkaplus.recursivelists.model.Task;
 
 /**
  * Created by antoshkaplus on 10/30/14.
@@ -84,10 +85,7 @@ public class AddItemDialog extends RetainedDialog {
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
                 if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
                     if (i == KeyEvent.KEYCODE_ENTER) {
-                        Editable title = input.getText();
-                        ItemKind kind = ItemKind.fromResourceIndex((int)kindView.getSelectedItemId());
-                        listener.onAddItemDialogSuccess(new AddItemDialogResult(title, kind));
-                        dismiss();
+                        onSuccess();
                         return true;
                     }
                     if (i == KeyEvent.KEYCODE_BACK) {
@@ -108,10 +106,7 @@ public class AddItemDialog extends RetainedDialog {
                 .setPositiveButton("Add", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        Editable title = input.getText();
-                        ItemKind kind = ItemKind.fromResourceIndex((int)kindView.getSelectedItemId());
-                        listener.onAddItemDialogSuccess(new AddItemDialogResult(title, kind));
-                        dismiss();
+                        onSuccess();
                     }
                 }))
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -134,7 +129,7 @@ public class AddItemDialog extends RetainedDialog {
         this.listener = listener;
     }
 
-    void onKindSelected() {
+    private void onKindSelected() {
         ItemKind kind = ItemKind.fromResourceIndex((int)kindView.getSelectedItemId());
         int colorId = 0;
         if (kind == ItemKind.Item) {
@@ -147,26 +142,29 @@ public class AddItemDialog extends RetainedDialog {
         ((AlertDialog)getDialog()).getWindow().setBackgroundDrawable(color);
     }
 
-    public class AddItemDialogResult {
-
-        public CharSequence title;
-        public ItemKind kind;
-
-        AddItemDialogResult(CharSequence title, ItemKind kind) {
-            this.title = title;
-            this.kind = kind;
+    private void onSuccess() {
+        Item item;
+        ItemKind kind = ItemKind.fromResourceIndex((int)kindView.getSelectedItemId());
+        if (kind == ItemKind.Item) {
+            item = new Item();
+        } else {
+            item = new Task();
         }
+        item.title = input.getText().toString();
+
+        listener.onAddItemDialogSuccess(item);
+        dismiss();
     }
 
     private class DefaultListener implements AddItemDialogListener {
         @Override
-        public void onAddItemDialogSuccess(AddItemDialogResult result) {}
+        public void onAddItemDialogSuccess(Item result) {}
         @Override
         public void onAddItemDialogCancel() {}
     }
 
     public interface AddItemDialogListener {
-        void onAddItemDialogSuccess(AddItemDialogResult addItemDialogResult);
+        void onAddItemDialogSuccess(Item item);
         void onAddItemDialogCancel();
     }
 }

@@ -1,6 +1,7 @@
 package com.antoshkaplus.recursivelists;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,7 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.antoshkaplus.recursivelists.model.Item;
+import com.antoshkaplus.recursivelists.model.ItemKind;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +38,9 @@ public class ItemAdapter extends BaseAdapter {
         Item item = (Item)getItem(position);
         TextView textView = (TextView)convertView.findViewById(android.R.id.text1);
         textView.setText(item.title);
+        int color = R.color.item;
+        if (item.getItemKind() == ItemKind.Task) color = R.color.task;
+        convertView.setBackground(context.getDrawable(color));
         return convertView;
     }
 
@@ -44,6 +49,8 @@ public class ItemAdapter extends BaseAdapter {
         return items.get(position);
     }
 
+    // this is not right
+    // it's not unique value
     @Override
     public long getItemId(int position) {
         return items.get(position).id.getLeastSignificantBits();
@@ -53,4 +60,16 @@ public class ItemAdapter extends BaseAdapter {
     public int getCount() {
         return items.size();
     }
+
+    // TODO maybe make different layout for different things
+//    @Override
+//    public int getViewTypeCount() {
+//        return 2;
+//    }
+//
+//    @Override
+//    public int getItemViewType(int position) {
+//        Item item = (Item)getItem(position);
+//        return item.getItemKind().ordinal();
+//    }
 }

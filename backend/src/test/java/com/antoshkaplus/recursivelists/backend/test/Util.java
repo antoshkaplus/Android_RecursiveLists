@@ -1,14 +1,7 @@
 package com.antoshkaplus.recursivelists.backend.test;
 
 import com.antoshkaplus.recursivelists.backend.Gtask;
-import com.antoshkaplus.recursivelists.backend.ItemsEndpoint;
 import com.antoshkaplus.recursivelists.backend.model.Task;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import java.io.FileReader;
 
 
 /**

@@ -44,6 +44,7 @@ If you iterate through very large quantities of entities, you should periodicall
 This will prevent memory issues as the session grows without bounds
 
 When you enter a transaction context, you receive a fresh, empty session cache.
+
 For webapp show only 10 first.. or whatever user asks for.
 
 The question was when to make user to pick type of the item / how. It's best to make him to pick it separate at first.

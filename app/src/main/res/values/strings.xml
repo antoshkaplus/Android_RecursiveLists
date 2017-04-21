@@ -27,6 +27,9 @@
     <string name="dialog__sync_failure__title">Bad news</string>
     <string name="dialog__sync_failure__text">Synchronization failed</string>
 
+    <string name="dialog__error__title">Error</string>
+    <string name="dialog__unexpected_error__text">Unexpected error occurred</string>
+
     <string name="pref__account__title">Change account</string>
     <string name="pref__account__key">pref__account__key</string>
 

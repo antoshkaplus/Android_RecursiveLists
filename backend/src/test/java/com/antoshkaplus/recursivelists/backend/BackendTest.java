@@ -1,11 +1,8 @@
-package com.antoshkaplus.recursivelists.backend.test;
+package com.antoshkaplus.recursivelists.backend;
 
 import com.antoshkaplus.bee.backend.ResourceDate;
-import com.antoshkaplus.recursivelists.backend.IdList;
-import com.antoshkaplus.recursivelists.backend.ItemList;
-import com.antoshkaplus.recursivelists.backend.ItemsEndpoint;
-import com.antoshkaplus.recursivelists.backend.Uuid;
 import com.antoshkaplus.recursivelists.backend.model.Item;
+import com.antoshkaplus.recursivelists.backend.test.*;
 import com.google.appengine.api.users.User;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -23,9 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -64,7 +59,7 @@ public class BackendTest {
 
     @Test
     public void getChildrenItems_1() {
-        Sample s = Util.getSample(1);
+        Sample s = com.antoshkaplus.recursivelists.backend.test.Util.getSample(1);
         s.apply(endpoint, user);
 
         String rootUuid = endpoint.getRootUuid(user).getUuid();
@@ -87,7 +82,7 @@ public class BackendTest {
 
     @Test
     public void getItems_1() {
-        Util.getSample(1).apply(endpoint, user);
+        com.antoshkaplus.recursivelists.backend.test.Util.getSample(1).apply(endpoint, user);
         ItemList list = endpoint.getItems(user);
         assertEquals(list.getItems().size(), 5);
     }
@@ -95,7 +90,7 @@ public class BackendTest {
     @Test
     public void getRootUuid() {
         String root = endpoint.getRootUuid(user).getUuid();
-        Sample s = Util.getSample(1);
+        Sample s = com.antoshkaplus.recursivelists.backend.test.Util.getSample(1);
         s.apply(endpoint, user);
         ItemList list = endpoint.getChildrenItems(root, user);
         for (Item item : list.getItems()) {
@@ -117,7 +112,7 @@ public class BackendTest {
 
     @Test
     public void checkGtaskIdPresent() {
-        Util.getSample(2).apply(endpoint, user);
+        com.antoshkaplus.recursivelists.backend.test.Util.getSample(2).apply(endpoint, user);
         List<String> ids = Arrays.asList("gt_a", "gt_b", "a_gt_a", "a_gt_b");
         IdList idList = new IdList(ids);
         IdList idsRes = endpoint.checkGtaskIdPresent(idList, user);
@@ -132,8 +127,8 @@ public class BackendTest {
 
     @Test
     public void updateGtaskList() {
-        Util.getSample(2).apply(endpoint, user);
-        Util.getScenario(1).apply(endpoint, user);
+        com.antoshkaplus.recursivelists.backend.test.Util.getSample(2).apply(endpoint, user);
+        com.antoshkaplus.recursivelists.backend.test.Util.getScenario(1).apply(endpoint, user);
         // TODO disable
     }
 
@@ -167,7 +162,7 @@ public class BackendTest {
 
     @Test
     public void completeTask() {
-        Util.getSample(3).apply(endpoint, user);
-        Util.getScenario(2).apply(endpoint, user);
+        com.antoshkaplus.recursivelists.backend.test.Util.getSample(3).apply(endpoint, user);
+        com.antoshkaplus.recursivelists.backend.test.Util.getScenario(2).apply(endpoint, user);
     }
 }

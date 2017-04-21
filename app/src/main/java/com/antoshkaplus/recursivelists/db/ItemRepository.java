@@ -1,17 +1,21 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.db;
 
 import android.content.Context;
 
 import com.antoshkaplus.recursivelists.model.Item;
+import com.antoshkaplus.recursivelists.model.ItemKind;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
+import com.antoshkaplus.recursivelists.model.Task;
 import com.antoshkaplus.recursivelists.model.UserItem;
 import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
+import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +24,8 @@ import java.util.concurrent.Callable;
 /**
  * well can think of deleting items better,
  * but user is too slow... creating data
+ *
+ *
  */
 public class ItemRepository {
     private static final String TAG = "ItemRepository";
@@ -29,6 +35,11 @@ public class ItemRepository {
 
     public ItemRepository(Context ctx, String user) {
         helper = new DatabaseHelper(ctx);
+        this.user = user;
+    }
+
+    public ItemRepository(DatabaseHelper helper, String user) {
+        this.helper = helper;
         this.user = user;
     }
 
@@ -42,24 +53,42 @@ public class ItemRepository {
         return userRoot.rootId;
     }
 
+    // we don't care if it was removed
+    // we return it to the user
     public Item getItem(UUID id) throws Exception {
         Dao<Item, UUID> dao = helper.getDao(Item.class);
-        return dao.queryForId(id);
+        Item item = dao.queryForId(id);
+        if (item == null) {
+            Dao<Task, UUID> taskDao = helper.getDao(Task.class);
+            item = taskDao.queryForId(id);
+        }
+        return item;
     }
 
     public List<Item> getChildren(UUID id) throws SQLException {
-        return helper.getDao(Item.class).queryBuilder()
-                .orderBy(Item.FIELD_NAME_ORDER, true)
+        List<Item> items = getChildren(id, Item.class);
+        items.addAll(getChildren(id, Task.class));
+        items.sort((i_1, i_2) -> i_1.order - i_2.order);
+        return items;
+    }
+
+    private <T extends Item> List<T> getChildren(UUID id, Class<T> cls) throws SQLException {
+        return helper.getDao(cls).queryBuilder()
                 .where().eq(Item.FIELD_NAME_PARENT_ID, id)
                 .and()
-                .notIn(Item.FIELD_NAME_ID, helper.getDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM))
+                .notIn(Item.FIELD_NAME_ID, helper.getDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM_ID))
                 .query();
     }
 
     public int getChildrenCount(UUID id) throws SQLException {
-        return (int)helper.getDao(Item.class)
-                .queryBuilder()
+        return getChildrenCount(id, Item.class) + getChildrenCount(id, Task.class);
+    }
+
+    private <T> int getChildrenCount(UUID id, Class<T> cls) throws SQLException {
+        return (int)helper.getDao(cls).queryBuilder()
                 .where().eq(Item.FIELD_NAME_PARENT_ID, id)
+                .and()
+                .notIn(Item.FIELD_NAME_ID, helper.getDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM_ID))
                 .countOf();
     }
 
@@ -102,27 +131,42 @@ public class ItemRepository {
 //        helper.getDao(RemovedItem.class).deleteBuilder().delete();
 //    }
 
+
+    // we are not going to check buisiness rules, but parent item has to be there
+    // otherwise element aren't visible at all
     public void addItem(Item item) throws Exception {
-        helper.getDao(Item.class).create(item);
+        UUID root = getRootId();
+        if (!item.parentId.equals(root)) {
+            long itemCount = helper.getDao(Item.class).queryBuilder().where().eq(Item.FIELD_NAME_PARENT_ID, item.parentId).countOf();
+            long taskCount = helper.getDao(Task.class).queryBuilder().where().eq(Item.FIELD_NAME_PARENT_ID, item.parentId).countOf();
+            if (itemCount + taskCount == 0) throw new RuntimeException("parent doesn't exists");
+        }
+
+        if (item.getItemKind() == ItemKind.Task) {
+            Dao<Item, UUID> i = helper.getDao(Item.class);
+            if (i.queryForId(item.id) != null) throw new RuntimeException("Task can't be created, item is already exists");
+            helper.getDao(Task.class).create((Task)item);
+        }
+        if (item.getItemKind() == ItemKind.Item) {
+            Dao<Task, UUID> i = helper.getDao(Task.class);
+            if (i.queryForId(item.id) != null) throw new RuntimeException("Item can't be created, task is already exists");
+            helper.getDao(Item.class).create(item);
+        }
         helper.getDao(UserItem.class).create(new UserItem(user, item));
     }
 
     public void addItemList(final List<Item> items) throws Exception {
         // add all of them to UserItem
         final Dao<Item, UUID> dao = helper.getDao(Item.class);
-        final Dao<UserItem, Void> userItemDao = helper.getDao(UserItem.class);
-        dao.callBatchTasks(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                for (Item i : items) {
-                    dao.create(i);
-                    userItemDao.create(new UserItem(user, i));
-                }
-                return null;
+        dao.callBatchTasks(() -> {
+            for (Item i : items) {
+                addItem(i);
             }
+            return null;
         });
     }
 
+    // could go with just remove items
     public void addRemovedItemList(final List<RemovedItem> removedItems) throws Exception {
         final Dao<RemovedItem, Integer> dao = helper.getDao(RemovedItem.class);
         dao.callBatchTasks(new Callable<Object>() {
@@ -138,7 +182,12 @@ public class ItemRepository {
 
     // should not change id by any means
     public void updateItem(Item item) throws Exception {
-        helper.getDao(Item.class).update(item);
+        if (item.getItemKind() == ItemKind.Task) {
+            helper.getDao(Task.class).update((Task)item);
+        }
+        if (item.getItemKind() == ItemKind.Task) {
+            helper.getDao(Item.class).update(item);
+        }
     }
 
     public void updateAllItems(final List<Item> items) throws Exception {
@@ -147,7 +196,7 @@ public class ItemRepository {
             @Override
             public Object call() throws Exception {
                 for (Item i : items) {
-                    dao.update(i);
+                    updateItem(i);
                 }
                 return null;
             }
@@ -163,7 +212,7 @@ public class ItemRepository {
         RemovedItem r = b.queryForFirst();
 
         DeleteBuilder<RemovedItem, Void> deleteBuilder = dao.deleteBuilder();
-        deleteBuilder.where().eq(RemovedItem.FIELD_ITEM, r.item);
+        deleteBuilder.where().eq(RemovedItem.FIELD_ITEM_ID, r.itemId);
         deleteBuilder.delete();
     }
 
@@ -206,4 +255,5 @@ public class ItemRepository {
     public void close() {
         helper.close();
     }
+
 }

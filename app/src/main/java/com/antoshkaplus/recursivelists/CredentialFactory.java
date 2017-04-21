@@ -9,7 +9,7 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
  */
 public class CredentialFactory {
 
-    static GoogleAccountCredential create(Context context, String accountName) {
+    public static GoogleAccountCredential create(Context context, String accountName) {
 
         GoogleAccountCredential credential = GoogleAccountCredential.usingAudience(context,
                 "server:client_id:582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com");

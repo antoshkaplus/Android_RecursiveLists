@@ -1,14 +1,13 @@
 package com.antoshkaplus.recursivelists;
 
 import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
+import com.antoshkaplus.recursivelists.db.ItemRepository;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
 
 import java.io.IOException;
-import java.security.InvalidParameterException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +23,7 @@ public class SyncTask implements Runnable {
 
 
     // repository can be an interface
-    SyncTask(ItemRepository repo, ItemsApi api) {
+    public SyncTask(ItemRepository repo, ItemsApi api) {
         this.api = api;
         this.repo = repo;
     }
@@ -113,7 +112,7 @@ public class SyncTask implements Runnable {
         public List<RemovedItem> newRemovedItems;
     }
 
-    interface Listener {
+    public interface Listener {
         void onStart();
         void onFinish(boolean success);
     }

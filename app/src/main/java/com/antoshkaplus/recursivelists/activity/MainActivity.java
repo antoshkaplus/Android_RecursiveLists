@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.activity;
 
 import android.accounts.AccountManager;
 import android.app.ActionBar;
@@ -20,7 +20,14 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.antoshkaplus.fly.dialog.RetryDialog;
+import com.antoshkaplus.recursivelists.BuildConfig;
+import com.antoshkaplus.recursivelists.CredentialFactory;
+import com.antoshkaplus.recursivelists.ItemAdapter;
+import com.antoshkaplus.recursivelists.R;
+import com.antoshkaplus.recursivelists.SyncTask;
+import com.antoshkaplus.recursivelists.Utils;
 import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
+import com.antoshkaplus.recursivelists.db.ItemRepository;
 import com.antoshkaplus.recursivelists.dialog.AddItemDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.fly.dialog.OkDialog;
@@ -59,6 +66,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private boolean contextMenuItemSelected = false;
     private boolean syncing = false;
 
+    private boolean onCreateSuccess = true;
+
     // those can be constants
     private int repositionBarColor = Color.YELLOW;
     private int moveInBarColor = Color.GREEN;
@@ -89,6 +98,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        onCreateSuccess = true;
         setContentView(R.layout.activity_main);
         getListView().setAdapter(new ItemAdapter(this, items));
         setActionBarColor(defaultBarColor);
@@ -114,6 +124,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 setActionBarTitle();
             } catch (SQLException ex) {
                 ex.printStackTrace();
+                onCreateSuccess = false;
             }
             loadItems();
             onItemsChanged();
@@ -428,6 +439,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onStart() {
         super.onStart();
+        if (!onCreateSuccess) {
+            FragmentManager mgr = getFragmentManager();
+            OkDialog.newInstance(
+                    getString(R.string.dialog__error__title),
+                    getString(R.string.dialog__unexpected_error__text)).show(mgr, "success");
+        }
         // will try to fill in items here
     }
 
@@ -552,7 +569,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         dialog.setArguments(args);
         dialog.setAddItemDialogListener(new AddItemDialog.AddItemDialogListener() {
             @Override
-            public void onAddItemDialogSuccess(AddItemDialog.AddItemDialogResult result) {
+            public void onAddItemDialogSuccess(Item result) {
                 RetryDialog.RetryDialogListener listener = new RetryDialog.RetryDialogListener() {
                     @Override
                     public void onDialogCancel() { }
@@ -585,7 +602,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                             listener);
                     return;
                 }
-                addNewItem(result.title.toString(), pressedPosition);
+                addNewItem(result);
                 getListView().clearChoices();
             }
             @Override
@@ -603,15 +620,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         dialog.show(getFragmentManager(), "retry_dialog");
     }
 
-    private void addNewItem(String title, int position) {
-        Item item = new Item(title, position, parentId);
+    private void addNewItem(Item item) {
+        item.order = pressedPosition;
+        item.parentId = parentId;
         try {
-            items.add(position, item);
-            for (int i = position+1; i < items.size(); ++i) {
+            items.add(item.order, item);
+            for (int i = item.order+1; i < items.size(); ++i) {
                 items.get(i).order = i;
             }
             repository.addItem(item);
-            repository.updateAllItems(items.subList(position+1, items.size()));
+            repository.updateAllItems(items.subList(item.order+1, items.size()));
             onItemsChanged();
         } catch (Exception ex) {
             ex.printStackTrace();

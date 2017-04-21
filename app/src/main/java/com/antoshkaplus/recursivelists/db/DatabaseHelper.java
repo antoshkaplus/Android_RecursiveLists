@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.db;
 
 import android.content.Context;
 import android.database.SQLException;
@@ -7,12 +7,15 @@ import android.util.Log;
 
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
+import com.antoshkaplus.recursivelists.model.Task;
 import com.antoshkaplus.recursivelists.model.UserItem;
 import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.android.apptools.OrmLiteSqliteOpenHelper;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
+
+import java.util.UUID;
 
 // functionality of this class is already quite big :
 // we should keep track of data base version and make
@@ -23,21 +26,25 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     // name of the database file for your application -- change to something appropriate for your app
     private static final String DATABASE_NAME = "recursive_lists";
     // any time you make changes to your database objects, you may have to increase the database version
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     // the DAO object we use to access the SimpleData table
     private Dao<Item, Integer> itemsDao;
-    private Dao<RemovedItem, Integer> removedItemsDao;
-
+    private Dao<Task, Integer> tasksDao;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    public DatabaseHelper(Context context, String dbName) {
+        super(context, dbName, null, DATABASE_VERSION);
     }
 
     @Override
     public void onCreate(SQLiteDatabase database,ConnectionSource connectionSource) {
         try {
             TableUtils.createTable(connectionSource, Item.class);
+            TableUtils.createTable(connectionSource, Task.class);
             TableUtils.createTable(connectionSource, RemovedItem.class);
             TableUtils.createTable(connectionSource, UserRoot.class);
             TableUtils.createTable(connectionSource, UserItem.class);
@@ -47,11 +54,18 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         } catch (java.sql.SQLException e) {
             e.printStackTrace();
         }
-
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, ConnectionSource connectionSource, int oldVersion, int newVersion) {
-        onCreate(db);
+        if (oldVersion < 3) {
+            try {
+                TableUtils.createTable(connectionSource, Task.class);
+                Dao<Item, UUID> dao = getDao(Item.class);
+            } catch (java.sql.SQLException e) {
+                Log.e(this.getClass().getName(), "Unable to do database migration from | to |", e);
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

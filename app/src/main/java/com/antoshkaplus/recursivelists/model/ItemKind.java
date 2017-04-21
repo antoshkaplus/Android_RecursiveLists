@@ -6,6 +6,9 @@ import android.content.Context;
  * Created by antoshkaplus on 3/5/17.
  */
 
+// this should not be an enum
+// it's like a table where you keep each id and type of it
+
 public enum ItemKind {
     Item,
     Task;

@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.activity;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
@@ -9,6 +9,8 @@ import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 
+import com.antoshkaplus.recursivelists.CredentialFactory;
+import com.antoshkaplus.recursivelists.R;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 
 
