@@ -25,6 +25,7 @@ public class Item {
     public static final String FIELD_NAME_ORDER = "order";
     public static final String FIELD_NAME_PARENT_ID = "parent_id";
     public static final String FIELD_NAME_ID = "id";
+    public static final String FIELD_NAME_STATE = "state";
 
     @DatabaseField(columnName = FIELD_NAME_TITLE, canBeNull = false)
     public String title;
@@ -37,6 +38,12 @@ public class Item {
 
     @DatabaseField(columnName = FIELD_NAME_ID, id = true, canBeNull = false)
     public UUID id;
+
+    @DatabaseField(columnName = FIELD_NAME_STATE, canBeNull = false)
+    public ItemState state;
+
+
+
 
     public Item(String title, int order, UUID parentId) {
         this.id = UUID.randomUUID();

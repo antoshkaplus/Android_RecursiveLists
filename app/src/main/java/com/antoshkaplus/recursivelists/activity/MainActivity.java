@@ -27,7 +27,9 @@ import com.antoshkaplus.recursivelists.R;
 import com.antoshkaplus.recursivelists.SyncTask;
 import com.antoshkaplus.recursivelists.Utils;
 import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
-import com.antoshkaplus.recursivelists.db.ItemRepository;
+import com.antoshkaplus.recursivelists.data.ItemDbRepository;
+import com.antoshkaplus.recursivelists.data.ItemRepository;
+import com.antoshkaplus.recursivelists.data.ItemsApiFactory;
 import com.antoshkaplus.recursivelists.dialog.AddItemDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.fly.dialog.OkDialog;
@@ -110,7 +112,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (account == null) {
             chooseAccount();
         } else {
-            repository = new ItemRepository(this, account);
+            repository = new ItemRepository(this, account, new ItemsApiFactory(credential));
             try {
                 rootId = repository.getRootId();
                 if (savedInstanceState == null) {
@@ -122,7 +124,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 }
                 // need to know parentId before initializing actionBarTitle
                 setActionBarTitle();
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 onCreateSuccess = false;
             }
@@ -386,22 +388,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     }
 
     private void onSync() {
-        SyncTask task = new SyncTask(new ItemRepository(this, retrieveAccount()), CreateUserItemsEndpoint());
-        task.setListener(new SyncTask.Listener() {
-            // should've used async task instead. no need for runOnUiThread in that case
-            @Override
-            public void onStart() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        syncing = true;
-                        invalidateOptionsMenu();
-                    }
-                });
-            }
+        // having multiple flags...
+        // so everything has to go through handler or through callback
+        syncing = true;
+        invalidateOptionsMenu();
+        // or we could do it differently
 
+        // it would be much better to have independent object to do it
+        // same for all operations but we can hide it in the repo
+        repository.sync(new ItemRepository.OutcomeHandler() {
             @Override
-            public void onFinish(final boolean success) {
+            public void handle(boolean success) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -427,7 +424,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                 });
             }
         });
-        new Thread(task).start();
     }
 
     @Override
@@ -628,8 +624,8 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             for (int i = item.order+1; i < items.size(); ++i) {
                 items.get(i).order = i;
             }
-            repository.addItem(item);
-            repository.updateAllItems(items.subList(item.order+1, items.size()));
+            repository.addNewItem(item, null);
+            //repository.updateAllItems(items.subList(item.order+1, items.size()));
             onItemsChanged();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -718,24 +714,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         bar.setTitle(title);
     }
 
-    private ItemsApi CreateUserItemsEndpoint() {
-        ItemsApi.Builder builder = new ItemsApi.Builder(
-                AndroidHttp.newCompatibleTransport(),
-                new AndroidJsonFactory(), credential);
-        builder.setRootUrl(BuildConfig.HOST);
-        builder.setHttpRequestInitializer(new HttpRequestInitializer() {
-            @Override
-            public void initialize(HttpRequest httpRequest) {
-                credential.initialize(httpRequest);
-                httpRequest.setConnectTimeout(20 * 1000);  // 3 seconds connect timeout
-                httpRequest.setReadTimeout(20 * 1000);  // 3 seconds read timeout
-            }
-        });
-        // TODO may need this line
-        //builder.setApplicationName("antoshkaplus-recursivelists");
-        return builder.build();
-    }
-
     private void chooseAccount() {
         startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
     }
@@ -764,10 +742,10 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     private void onAccountChanged() {
         String account = retrieveAccount();
         credential.setSelectedAccountName(account);
-        repository = new ItemRepository(this, account);
+        repository = new ItemRepository(this, account, new ItemsApiFactory(credential));
         try {
             parentId = rootId = repository.getRootId();
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         loadItems();

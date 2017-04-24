@@ -1,7 +1,7 @@
 package com.antoshkaplus.recursivelists;
 
 import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
-import com.antoshkaplus.recursivelists.db.ItemRepository;
+import com.antoshkaplus.recursivelists.data.ItemDbRepository;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
 
@@ -18,12 +18,12 @@ import java.util.UUID;
 public class SyncTask implements Runnable {
 
     private ItemsApi api;
-    private ItemRepository repo;
+    private ItemDbRepository repo;
     private Listener listener = new Adapter();
 
 
     // repository can be an interface
-    public SyncTask(ItemRepository repo, ItemsApi api) {
+    public SyncTask(ItemDbRepository repo, ItemsApi api) {
         this.api = api;
         this.repo = repo;
     }

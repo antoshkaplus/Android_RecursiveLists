@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists.db;
+package com.antoshkaplus.recursivelists.data;
 
 import android.content.Context;
 
@@ -10,12 +10,10 @@ import com.antoshkaplus.recursivelists.model.UserItem;
 import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
-import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -27,18 +25,18 @@ import java.util.concurrent.Callable;
  *
  *
  */
-public class ItemRepository {
+public class ItemDbRepository {
     private static final String TAG = "ItemRepository";
 
     private DatabaseHelper helper;
     private String user;
 
-    public ItemRepository(Context ctx, String user) {
+    public ItemDbRepository(Context ctx, String user) {
         helper = new DatabaseHelper(ctx);
         this.user = user;
     }
 
-    public ItemRepository(DatabaseHelper helper, String user) {
+    public ItemDbRepository(DatabaseHelper helper, String user) {
         this.helper = helper;
         this.user = user;
     }
@@ -145,6 +143,7 @@ public class ItemRepository {
         if (item.getItemKind() == ItemKind.Task) {
             Dao<Item, UUID> i = helper.getDao(Item.class);
             if (i.queryForId(item.id) != null) throw new RuntimeException("Task can't be created, item is already exists");
+            // don't forget about subtask logic
             helper.getDao(Task.class).create((Task)item);
         }
         if (item.getItemKind() == ItemKind.Item) {

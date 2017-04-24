@@ -1,19 +1,12 @@
-package com.antoshkaplus.recursivelists.db;
+package com.antoshkaplus.recursivelists.data;
 
 
-import android.support.test.espresso.core.deps.guava.util.concurrent.ExecutionError;
 import android.support.test.filters.SmallTest;
 import android.support.test.runner.AndroidJUnit4;
 
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.ItemKind;
 import com.antoshkaplus.recursivelists.model.Task;
-import com.antoshkaplus.recursivelists.model.UserItem;
-import com.antoshkaplus.recursivelists.model.UserRoot;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.j256.ormlite.dao.Dao;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 import static android.support.test.InstrumentationRegistry.getTargetContext;
@@ -21,17 +14,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -39,9 +28,9 @@ import java.util.UUID;
  */
 @RunWith(AndroidJUnit4.class)
 @SmallTest
-public class ItemRepositoryTest {
+public class ItemDbRepositoryTest {
 
-    ItemRepository repo;
+    ItemDbRepository repo;
     DatabaseHelper dbHelper;
     static final String TEST_DB_NAME = "test.db";
 
@@ -51,7 +40,7 @@ public class ItemRepositoryTest {
     public void setUp() throws Exception {
         getTargetContext().deleteDatabase(TEST_DB_NAME);
         dbHelper = new DatabaseHelper(getTargetContext(), TEST_DB_NAME);
-        repo = new ItemRepository(dbHelper, "example@gmail.com");
+        repo = new ItemDbRepository(dbHelper, "example@gmail.com");
 
         InputStream input = getContext().getResources().openRawResource(com.antoshkaplus.recursivelists.test.R.raw.test_data);
 

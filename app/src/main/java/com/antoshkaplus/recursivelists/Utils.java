@@ -28,32 +28,5 @@ public final class Utils {
         return new JSONObject(total.toString());
     }
 
-//    public static com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item toBackendItem(Item item, DateTime dateTime) {
-//        com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item apiItem = new com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item();
-//        apiItem.setId(item.id.toString());
-//        apiItem.setTitle(item.title);
-//        apiItem.setOrder(item.order);
-//        apiItem.setParentId(item.parentId.toString());
-//        apiItem.setDeletionDate(dateTime);
-//        return apiItem;
-//    }
-//
-//    public static List<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> toBackendItems(List<Item> items, List<RemovedItem> removedItems) {
-//        ArrayList<com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item> apiItems = new ArrayList<>();
-//        HashMap<UUID, DateTime> removed = new HashMap<>();
-//        for (RemovedItem i : removedItems) {
-//            removed.put(i.item.id, new DateTime(i.deletionDate.getTime()));
-//        }
-//        for (Item i : items) {
-//            apiItems.add(toBackendItem(i, removed.get(i.id)));
-//        }
-//        return apiItems;
-//    }
-//
-//    public static Item toClientItem(com.antoshkaplus.recursivelists.backend.userItemsApi.model.Item item) {
-//        Item clientItem = new Item(item.getTitle(), item.getOrder(), java.util.UUID.fromString(item.getParentId()));
-//        clientItem.id = java.util.UUID.fromString(item.getId());
-//        return clientItem;
-//    }
 
 }

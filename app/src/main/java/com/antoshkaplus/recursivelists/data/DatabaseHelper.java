@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists.db;
+package com.antoshkaplus.recursivelists.data;
 
 import android.content.Context;
 import android.database.SQLException;
