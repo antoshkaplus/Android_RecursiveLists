@@ -9,6 +9,7 @@ import com.antoshkaplus.recursivelists.model.Task;
 import com.antoshkaplus.recursivelists.model.UserItem;
 import com.antoshkaplus.recursivelists.model.UserRoot;
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.dao.RuntimeExceptionDao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
 
@@ -41,8 +42,8 @@ public class ItemDbRepository {
         this.user = user;
     }
 
-    public UUID getRootId() throws SQLException {
-        Dao<UserRoot, String> dao = helper.getDao(UserRoot.class);
+    public UUID getRootId() {
+        RuntimeExceptionDao<UserRoot, String> dao = helper.getRuntimeExceptionDao(UserRoot.class);
         UserRoot userRoot = dao.queryForId(user);
         if (userRoot == null) {
             userRoot = new UserRoot(user, UUID.randomUUID());
@@ -53,41 +54,49 @@ public class ItemDbRepository {
 
     // we don't care if it was removed
     // we return it to the user
-    public Item getItem(UUID id) throws Exception {
-        Dao<Item, UUID> dao = helper.getDao(Item.class);
+    public Item getItem(UUID id) {
+        RuntimeExceptionDao<Item, UUID> dao = helper.getRuntimeExceptionDao(Item.class);
         Item item = dao.queryForId(id);
         if (item == null) {
-            Dao<Task, UUID> taskDao = helper.getDao(Task.class);
+            RuntimeExceptionDao<Task, UUID> taskDao = helper.getRuntimeExceptionDao(Task.class);
             item = taskDao.queryForId(id);
         }
         return item;
     }
 
-    public List<Item> getChildren(UUID id) throws SQLException {
+    public List<Item> getChildren(UUID id) {
         List<Item> items = getChildren(id, Item.class);
         items.addAll(getChildren(id, Task.class));
         items.sort((i_1, i_2) -> i_1.order - i_2.order);
         return items;
     }
 
-    private <T extends Item> List<T> getChildren(UUID id, Class<T> cls) throws SQLException {
-        return helper.getDao(cls).queryBuilder()
-                .where().eq(Item.FIELD_NAME_PARENT_ID, id)
-                .and()
-                .notIn(Item.FIELD_NAME_ID, helper.getDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM_ID))
-                .query();
+    private <T extends Item> List<T> getChildren(UUID id, Class<T> cls) {
+        try {
+            return helper.getDao(cls).queryBuilder()
+                    .where().eq(Item.FIELD_NAME_PARENT_ID, id)
+                    .and()
+                    .notIn(Item.FIELD_NAME_ID, helper.getRuntimeExceptionDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM_ID))
+                    .query();
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
-    public int getChildrenCount(UUID id) throws SQLException {
+    public int getChildrenCount(UUID id) {
         return getChildrenCount(id, Item.class) + getChildrenCount(id, Task.class);
     }
 
-    private <T> int getChildrenCount(UUID id, Class<T> cls) throws SQLException {
-        return (int)helper.getDao(cls).queryBuilder()
-                .where().eq(Item.FIELD_NAME_PARENT_ID, id)
-                .and()
-                .notIn(Item.FIELD_NAME_ID, helper.getDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM_ID))
-                .countOf();
+    private <T> int getChildrenCount(UUID id, Class<T> cls) {
+        try {
+            return (int) helper.getDao(cls).queryBuilder()
+                    .where().eq(Item.FIELD_NAME_PARENT_ID, id)
+                    .and()
+                    .notIn(Item.FIELD_NAME_ID, helper.getDao(RemovedItem.class).queryBuilder().selectColumns(RemovedItem.FIELD_ITEM_ID))
+                    .countOf();
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public void deleteItem(Item item) throws SQLException {
@@ -132,31 +141,39 @@ public class ItemDbRepository {
 
     // we are not going to check buisiness rules, but parent item has to be there
     // otherwise element aren't visible at all
-    public void addItem(Item item) throws Exception {
-        UUID root = getRootId();
-        if (!item.parentId.equals(root)) {
-            long itemCount = helper.getDao(Item.class).queryBuilder().where().eq(Item.FIELD_NAME_PARENT_ID, item.parentId).countOf();
-            long taskCount = helper.getDao(Task.class).queryBuilder().where().eq(Item.FIELD_NAME_PARENT_ID, item.parentId).countOf();
-            if (itemCount + taskCount == 0) throw new RuntimeException("parent doesn't exists");
-        }
 
-        if (item.getItemKind() == ItemKind.Task) {
-            Dao<Item, UUID> i = helper.getDao(Item.class);
-            if (i.queryForId(item.id) != null) throw new RuntimeException("Task can't be created, item is already exists");
-            // don't forget about subtask logic
-            helper.getDao(Task.class).create((Task)item);
+    // it has to be in transaction!!!
+    public void addItem(Item item) {
+        try {
+            UUID root = getRootId();
+            if (!item.parentId.equals(root)) {
+                long itemCount = helper.getDao(Item.class).queryBuilder().where().eq(Item.FIELD_NAME_PARENT_ID, item.parentId).countOf();
+                long taskCount = helper.getDao(Task.class).queryBuilder().where().eq(Item.FIELD_NAME_PARENT_ID, item.parentId).countOf();
+                if (itemCount + taskCount == 0) throw new RuntimeException("parent doesn't exists");
+            }
+
+            if (item.getItemKind() == ItemKind.Task) {
+                Dao<Item, UUID> i = helper.getDao(Item.class);
+                if (i.queryForId(item.id) != null)
+                    throw new RuntimeException("Task can't be created, item is already exists");
+                // don't forget about subtask logic
+                helper.getDao(Task.class).create((Task) item);
+            }
+            if (item.getItemKind() == ItemKind.Item) {
+                Dao<Task, UUID> i = helper.getDao(Task.class);
+                if (i.queryForId(item.id) != null)
+                    throw new RuntimeException("Item can't be created, task is already exists");
+                helper.getDao(Item.class).create(item);
+            }
+            helper.getDao(UserItem.class).create(new UserItem(user, item));
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
         }
-        if (item.getItemKind() == ItemKind.Item) {
-            Dao<Task, UUID> i = helper.getDao(Task.class);
-            if (i.queryForId(item.id) != null) throw new RuntimeException("Item can't be created, task is already exists");
-            helper.getDao(Item.class).create(item);
-        }
-        helper.getDao(UserItem.class).create(new UserItem(user, item));
     }
 
-    public void addItemList(final List<Item> items) throws Exception {
+    public void addItemList(final List<Item> items) {
         // add all of them to UserItem
-        final Dao<Item, UUID> dao = helper.getDao(Item.class);
+        final RuntimeExceptionDao<Item, UUID> dao = helper.getRuntimeExceptionDao(Item.class);
         dao.callBatchTasks(() -> {
             for (Item i : items) {
                 addItem(i);
@@ -232,8 +249,12 @@ public class ItemDbRepository {
     }
 
 
-    public boolean hasRemovedItems() throws SQLException {
-        return getRemovedItemQueryBuilder().countOf() > 0;
+    public boolean hasRemovedItems() {
+        try {
+            return getRemovedItemQueryBuilder().countOf() > 0;
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public List<Item> getAllItems() throws Exception {
@@ -255,4 +276,13 @@ public class ItemDbRepository {
         helper.close();
     }
 
+    public int getLastSyncVersion() {
+        RuntimeExceptionDao<UserRoot, String> dao = helper.getRuntimeExceptionDao(UserRoot.class);
+        UserRoot userRoot = dao.queryForId(user);
+        if (userRoot == null) {
+            userRoot = new UserRoot(user, UUID.randomUUID());
+            dao.create(userRoot);
+        }
+        return userRoot.lastSyncVersion;
+    }
 }

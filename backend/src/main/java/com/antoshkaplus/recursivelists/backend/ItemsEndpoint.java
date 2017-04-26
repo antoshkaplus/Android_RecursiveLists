@@ -14,6 +14,7 @@ import com.google.appengine.api.users.User;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.VoidWork;
+import com.sun.jdi.IntegerValue;
 
 
 import java.util.ArrayList;
@@ -53,19 +54,26 @@ public class ItemsEndpoint {
     private static final Logger logger = Logger.getLogger(ItemsEndpoint.class.getName());
 
     @ApiMethod(name = "getChildrenItems", path = "get_children_items")
-    public ItemList getChildrenItems(@Named("parentUuid")String uuid, User user) {
+    public VariantItemList getChildrenItems(@Named("parentUuid")String uuid, User user) {
 
         BackendUser backendUser = retrieveBackendUser(user);
         List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).filter("parentUuid ==", uuid).list();
-        return new ItemList(itemList);
+        return VariantItemList.createFromItems(itemList);
     }
 
     @ApiMethod(name = "getItems", path = "get_items")
-    public ItemList getItems(User user) {
+    public VariantItemList getItems(User user) {
 
         BackendUser backendUser = retrieveBackendUser(user);
         List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).list();
-        return new ItemList(itemList);
+        return VariantItemList.createFromItems(itemList);
+    }
+
+    @ApiMethod(name = "getItemList_G_Version", path = "get_item_list_g_version")
+    public VariantItemList getItemList_G_Version(@Named("version")Integer version, User user) {
+        BackendUser backendUser = retrieveBackendUser(user);
+        List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).filter("version >", version).list();
+        return VariantItemList.createFromItems(itemList);
     }
 
     @ApiMethod(name = "getRootUuid", path = "get_root_uuid")
@@ -74,6 +82,11 @@ public class ItemsEndpoint {
         BackendUser backendUser = retrieveBackendUser(user);
         return new Uuid(backendUser.getRootUuid());
     }
+
+    public ResourceInteger getDbVersion(User user) {
+        return retrieveBackendUser(user).getVersion();
+    }
+
 
     // TODO may not be needed
     @ApiMethod(name = "getGtaskLastUpdate", path = "get_gtask_last_update")
@@ -169,23 +182,29 @@ public class ItemsEndpoint {
     }
 
     @ApiMethod(name = "getItemsById", path = "get_items_by_uuid")
-    public ItemList getItemsByUuid(IdList idList, final User user) {
+    public VariantItemList getItemsByUuid(IdList idList, final User user) {
         BackendUser backendUser = retrieveBackendUser(user);
         Map<String, Item> itemMap = ofy().load().type(Item.class).parent(backendUser).ids(idList.getIds());
-        ItemList res = new ItemList();
+        VariantItemList res = new VariantItemList();
         for (String id : idList.getIds()) {
-            res.getItems().add(itemMap.get(id));
+            res.add(itemMap.getOrDefault(id, null));
         }
         return res;
     }
 
+//    @ApiMethod(name = "getItemsGreaterVersion", path = "get_items_greater_version")
+//    public ItemList getItemsGreaterVersion(Integer  final User user) {
+//
+//    }
+
+
     @ApiMethod(name = "getItemsByGtaskId", path = "get_items_by_gtask_id")
-    public ItemList getItemsByGtaskId(IdList idList, final User user) {
+    public VariantItemList getItemsByGtaskId(IdList idList, final User user) {
         BackendUser backendUser = retrieveBackendUser(user);
         Map<String, GtaskTrack> itemMap = ofy().load().type(GtaskTrack.class).parent(backendUser).ids(idList.getIds());
-        ItemList res = new ItemList();
+        VariantItemList res = new VariantItemList();
         for (String id : idList.getIds()) {
-            res.getItems().add(itemMap.get(id).task.get());
+            res.add(itemMap.get(id).task.get());
         }
         return res;
     }

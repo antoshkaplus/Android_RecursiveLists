@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/backend" />
             <option value="$PROJECT_DIR$/fly/bee" />
             <option value="$PROJECT_DIR$/fly/fly" />
+            <option value="$PROJECT_DIR$/remote" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

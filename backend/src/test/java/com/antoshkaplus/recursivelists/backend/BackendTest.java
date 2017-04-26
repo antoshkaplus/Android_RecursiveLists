@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.antoshkaplus.recursivelists.backend.test.Util.getSample;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -53,47 +55,47 @@ public class BackendTest {
     public void getChildrenItems_Empty() {
         Uuid uuid = endpoint.getRootUuid(user);
 
-        ItemList list = endpoint.getChildrenItems(uuid.getUuid(), user);
-        assertTrue(list.getItems().size() == 0);
+        VariantItemList list = endpoint.getChildrenItems(uuid.getUuid(), user);
+        assertTrue(list.size() == 0);
     }
 
     @Test
     public void getChildrenItems_1() {
-        Sample s = com.antoshkaplus.recursivelists.backend.test.Util.getSample(1);
+        Sample s = getSample(1);
         s.apply(endpoint, user);
 
         String rootUuid = endpoint.getRootUuid(user).getUuid();
 
-        ItemList list = endpoint.getChildrenItems(rootUuid, user);
-        assertTrue(list.getItems().size() == 3);
+        VariantItemList list = endpoint.getChildrenItems(rootUuid, user);
+        assertTrue(list.size() == 3);
 
         list = endpoint.getChildrenItems("a", user);
-        assertTrue(list.getItems().size() == 2);
+        assertTrue(list.size() == 2);
 
         list = endpoint.getChildrenItems("b", user);
-        assertTrue(list.getItems().size() == 0);
+        assertTrue(list.size() == 0);
     }
 
     @Test
     public void getItems_Empty() {
-        ItemList list = endpoint.getItems(user);
-        assertEquals(list.getItems().size(), 0);
+        VariantItemList list = endpoint.getItems(user);
+        assertEquals(list.size(), 0);
     }
 
     @Test
     public void getItems_1() {
-        com.antoshkaplus.recursivelists.backend.test.Util.getSample(1).apply(endpoint, user);
-        ItemList list = endpoint.getItems(user);
-        assertEquals(list.getItems().size(), 5);
+        getSample(1).apply(endpoint, user);
+        VariantItemList list = endpoint.getItems(user);
+        assertEquals(list.size(), 5);
     }
 
     @Test
     public void getRootUuid() {
         String root = endpoint.getRootUuid(user).getUuid();
-        Sample s = com.antoshkaplus.recursivelists.backend.test.Util.getSample(1);
+        Sample s = getSample(1);
         s.apply(endpoint, user);
-        ItemList list = endpoint.getChildrenItems(root, user);
-        for (Item item : list.getItems()) {
+        VariantItemList list = endpoint.getChildrenItems(root, user);
+        for (Item item : list.convertToItems()) {
             assertEquals(item.getParentUuid(), root);
         }
     }
@@ -112,7 +114,7 @@ public class BackendTest {
 
     @Test
     public void checkGtaskIdPresent() {
-        com.antoshkaplus.recursivelists.backend.test.Util.getSample(2).apply(endpoint, user);
+        getSample(2).apply(endpoint, user);
         List<String> ids = Arrays.asList("gt_a", "gt_b", "a_gt_a", "a_gt_b");
         IdList idList = new IdList(ids);
         IdList idsRes = endpoint.checkGtaskIdPresent(idList, user);
@@ -127,13 +129,31 @@ public class BackendTest {
 
     @Test
     public void updateGtaskList() {
-        com.antoshkaplus.recursivelists.backend.test.Util.getSample(2).apply(endpoint, user);
+        getSample(2).apply(endpoint, user);
         com.antoshkaplus.recursivelists.backend.test.Util.getScenario(1).apply(endpoint, user);
         // TODO disable
     }
 
     @Test
     public void getItemsByUuid() {
+        getSample(4).apply(endpoint, user);
+        IdList ids = new IdList(Arrays.asList("a_i", "a_t", "d_i", "d_t"));
+        VariantItemList itemList = endpoint.getItemsByUuid(ids ,user);
+        assertEquals(4, itemList.size());
+        Iterator<Item> items = itemList.convertToItems().iterator();
+        Iterator<String> idsIt = ids.getIds().iterator();
+        while (items.hasNext()) {
+            assertEquals(items.next().getUuid(), idsIt.next());
+        }
+    }
+
+    @Test
+    public void getItemsByUuid_NonExistingId() {
+        getSample(4).apply(endpoint, user);
+        IdList ids = new IdList(Arrays.asList("a_i", "a_t", "t_i", "d_t"));
+        VariantItemList itemList = endpoint.getItemsByUuid(ids ,user);
+        assertEquals(4, itemList.size());
+        assertNull(itemList.getVariantItems().get(2));
     }
 
     @Test
@@ -141,7 +161,11 @@ public class BackendTest {
     }
 
     @Test
-    public void addItemOnline() {
+    public void addItemOnline_VersionIncrease() {
+        getSample(3).apply(endpoint, user);
+        endpoint.get
+
+
     }
 
     @Test
@@ -162,7 +186,7 @@ public class BackendTest {
 
     @Test
     public void completeTask() {
-        com.antoshkaplus.recursivelists.backend.test.Util.getSample(3).apply(endpoint, user);
+        getSample(3).apply(endpoint, user);
         com.antoshkaplus.recursivelists.backend.test.Util.getScenario(2).apply(endpoint, user);
     }
 }

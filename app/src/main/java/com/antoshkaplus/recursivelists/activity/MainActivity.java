@@ -10,6 +10,8 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.view.ContextMenu;
@@ -204,7 +206,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             JSONObject json = Utils.readDefaultData(input);
             List<Item> result = new ArrayList<>();
             recursion(result, rootId, json);
-            repository.addItemList(result);
+            repository.addItemListOffline(result);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -396,32 +398,25 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
         // it would be much better to have independent object to do it
         // same for all operations but we can hide it in the repo
-        repository.sync(new ItemRepository.OutcomeHandler() {
+        repository.sync(new Handler() {
             @Override
-            public void handle(boolean success) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        syncing = false;
-                        invalidateOptionsMenu();
-                        FragmentManager mgr = getFragmentManager();
-                        if (!success) {
-                            // show negative message
-
-
-                            OkDialog.newInstance(
-                                    getString(R.string.dialog__sync_failure__title),
-                                    getString(R.string.dialog__sync_failure__text)).show(mgr, "failure");
-                        } else {
-                            // show positive message
-                            OkDialog.newInstance(
-                                    getString(R.string.dialog__sync_success__title),
-                                    getString(R.string.dialog__sync_success__text)).show(mgr, "success");
-                            loadItems();
-                            onItemsChanged();
-                        }
-                    }
-                });
+            public void handleMessage(Message msg) {
+                syncing = false;
+                invalidateOptionsMenu();
+                FragmentManager mgr = getFragmentManager();
+                if (!msg.getData().getBoolean("success")) {
+                    // show negative message
+                    OkDialog.newInstance(
+                            getString(R.string.dialog__sync_failure__title),
+                            getString(R.string.dialog__sync_failure__text)).show(mgr, "failure");
+                } else {
+                    // show positive message
+                    OkDialog.newInstance(
+                            getString(R.string.dialog__sync_success__title),
+                            getString(R.string.dialog__sync_success__text)).show(mgr, "success");
+                    loadItems();
+                    onItemsChanged();
+                }
             }
         });
     }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:id="@+id/add_string_content"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:paddingLeft="15dp"
+             android:paddingRight="15dp"
+             android:paddingTop="15dp">
+
+    <EditText
+        android:id="@+id/input"
+        android:inputType="text|textAutoCorrect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+</FrameLayout>

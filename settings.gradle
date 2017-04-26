@@ -1,4 +1,4 @@
-include ':app', ':backend'
+include ':app', ':backend', ':remote'
 
 include ':fly'
 include ':bee'

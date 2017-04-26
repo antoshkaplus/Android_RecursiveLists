@@ -1,11 +1,14 @@
 package com.antoshkaplus.recursivelists.data;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Message;
 
 import com.antoshkaplus.fly.Util;
 import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
+import com.antoshkaplus.recursivelists.backend.itemsApi.model.VariantItemList;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.ItemKind;
 import com.antoshkaplus.recursivelists.model.ItemState;
@@ -23,39 +26,7 @@ import static com.antoshkaplus.recursivelists.data.Util.*;
 
 // before class can be used should get rootId from the internet
 public class ItemRepository {
-	
-	class VariantItem {
-		Item item;
-		Task task;
-		
-		ItemKind kind;
-		
-		private VariantItem() {}
-		
-		Item get() {
-			switch (kind):
-				Item: return item;
-				Task: return task;
-		}
-		
-		static VariantItem create(Item item) {
-			VariantItem v = new VariantItem();
-			v.kind = item.kind;
-			switch (item.kind): {
-				Item: { 
-					v.item = item;
-					break;
-				}
-				Task: {
-					v.task = (Task)item;
-					break;
-				}
-			}
-			return v;
-		}
-	};
-	
-	
+
     ItemDbRepository dbRepo;
     ItemsApiFactory itemsApiFactory;
     Context context;
@@ -80,14 +51,14 @@ public class ItemRepository {
         if (Util.isInternetAvailable()) {
 			
             Runnable r = new Runnable() {
-				// do something with the handler on top
-				
-				if (addNewItemOnline(item, handler)) {
-					// it's bad that user gets feedback eventhough sync is not run
-					sync();
-				}
-			}
-            
+                @Override
+                public void run() {
+                    if (addNewItemOnline(item, handler)) {
+                        // it's bad that user gets feedback eventhough sync is not run
+                        sync(handler);
+                    }
+                }
+			};
             taskHandler.post(r);
 			
         } else {
@@ -99,7 +70,7 @@ public class ItemRepository {
             // notifications should come from the repo
             // about data change
 
-			runOnUiThread(handler, false);	
+			runHandler(handler, false);
             // catch exception let user know if was able to save
         }
 
@@ -107,18 +78,22 @@ public class ItemRepository {
 
     private void updateLocal() {
         ItemsApi api = itemsApiFactory.create();
-		
-		// get 
-		
-		// should be processed for polymorphism
-		ItemList itemList = api.getItemListGVersion(localVersion);
-		
-		// save everything to here
-		
-		// update localVersion
+
+        int localVersion = dbRepo.getLastSyncVersion();
+
+        // need to get last sync version
+        api.get
+		VariantItemList itemList = api.getItemListGVersion(localVersion);
+		List<com.antoshkaplus.recursivelists.backend.itemsApi.model.Item> items = itemList.();
+
+        dbRepo.updateAllItemsOffline(items);
+
+        dbRepo.updateLastSyncVersion()
     }
 
     private void updateRemote() {
+
+
 		// extract from repository everything that is IN-PROGRESS or LOCAL
 		// and in the same transaction mark it IN-PROGRESS
 		
@@ -135,7 +110,7 @@ public class ItemRepository {
         updateLocal();
         updateRemote();
 
-        runOnUiThread(handler, false);
+        runHandler(handler, false);
     }
 
 
@@ -147,7 +122,7 @@ public class ItemRepository {
         } else {
             api.addTaskOnline(item).execute();
         }
-		runOnUiThread(handler, false);
+		runHandler(handler, false);
         // in case of exception
         // can actually sort out exceptions to figure out if can do it offline
 
@@ -161,7 +136,7 @@ public class ItemRepository {
     }
 
     public boolean hasRemovedItems() {
-		// offline
+		return dbRepo.hasRemovedItems();
 	}
 	
 	// user has to handle
@@ -169,8 +144,12 @@ public class ItemRepository {
 		// try online.
 	}
 
+	public void addItemListOffline(List<Item> result) {
+        dbRepo.addItemList(result);
+    }
+
     public Item getItem(UUID parentId) {
-		// offline
+        return dbRepo.getItem(parentId);
 	}
 
     public void updateItem(Item moveItem) {    
@@ -180,9 +159,10 @@ public class ItemRepository {
 
 	// items has to be onces from the server
 	// can we force server involvement???
-    private void updateAllItems(List<Item> items) {
+    public void updateAllItems(List<Item> items) {
 		// update is based on where you are.
-		// 
+		//
+        throw new RuntimeException("not supported");
 	}
 
     public void deleteItem(Item item) {
@@ -201,26 +181,35 @@ public class ItemRepository {
 	}
 
     public int getChildrenCount(UUID parentId) {
-		// offline
+		return dbRepo.getChildrenCount(parentId);
     }
 
     public Collection<? extends Item> getChildren(UUID parentId) {
-        // offline
-		return null;
+		return dbRepo.getChildren(parentId);
     }
 
 	// check handler for null, add some description for user to post
 	// make Handler an optional type
-    void runOnUiThread(Handler handler, boolean outcome) {
+    void runHandler(Handler handler, boolean outcome) {
         taskHandler.post(new Runnable() {
-			void run() {
-				Message.obtainMsg;
-				msg.obj = outcome; // success or not
-				handler.postMessage(msg);
+			public void run() {
+                Message msg = handler.obtainMessage();
+                Bundle b = msg.getData();
+                b.putBoolean("success", outcome);
+                handler.sendMessage(msg);
 			}
-		} 
+		});
     }
 
+    public void Start() {
+		worker = new HandlerThread("ItemRepositoryHandlerThread");
+		worker.start();
+		taskHandler = new Handler(worker.getLooper());
+	}
+
+    public void Destroy() {
+		worker.quit();
+	}
 
     // conversion methods
 }

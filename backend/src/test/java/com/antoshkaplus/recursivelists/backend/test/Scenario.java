@@ -97,13 +97,13 @@ public class Scenario {
                 JSONObject jt = (JSONObject)t;
                 String id = (String)jt.get("id");
 
-                Task task = (Task)endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(id)), user).getItems().get(0);
+                Task task = (Task)endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(id)), user).convertToItems().get(0);
                 Gtask g = Util.toGtask(task, id);
                 GtaskList gList = new GtaskList(Collections.singletonList(g), task.getParentUuid());
                 if (jt.containsKey("parentId")) {
                     String parentUuid = (String) jt.get("parentId");
                     if (parentUuid != null) {
-                        Task parent = (Task)endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(parentUuid)), user).getItems().get(0);
+                        Task parent = (Task)endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(parentUuid)), user).convertToItems().get(0);
                         parentUuid = parent.getUuid();
                     }
                     gList.setParentUuid(parentUuid);
@@ -134,10 +134,10 @@ public class Scenario {
                 Task task = null;
                 if (jt.containsKey("id")) {
                     String id = (String) jt.get("id");
-                    task = (Task) endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(id)), user).getItems().get(0);
+                    task = (Task) endpoint.getItemsByGtaskId(new IdList(Collections.singletonList(id)), user).convertToItems().get(0);
                 } else if (jt.containsKey("uuid")) {
                     String id = (String) jt.get("uuid");
-                    task = (Task) endpoint.getItemsByUuid(new IdList(Collections.singletonList(id)), user).getItems().get(0);
+                    task = (Task) endpoint.getItemsByUuid(new IdList(Collections.singletonList(id)), user).convertToItems().get(0);
                 } else {
                     throw new RuntimeException("can't define content element");
                 }

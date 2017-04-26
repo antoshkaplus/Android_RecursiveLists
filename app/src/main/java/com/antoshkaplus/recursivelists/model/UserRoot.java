@@ -15,7 +15,7 @@ public class UserRoot {
 
     public static final String FIELD_NAME_USER = "user_id";
     public static final String FIELD_NAME_ROOT_ID = "root_id";
-
+    public static final String FIELD_NAME_LAST_SYNC_VERSION = "last_sync_version";
 
     @DatabaseField(columnName = FIELD_NAME_USER, id = true)
     public String userId;
@@ -23,6 +23,8 @@ public class UserRoot {
     @DatabaseField(columnName = FIELD_NAME_ROOT_ID, unique = true)
     public UUID rootId;
 
+    @DatabaseField(columnName = FIELD_NAME_LAST_SYNC_VERSION, defaultValue = "0")
+    public int lastSyncVersion;
 
     public UserRoot() {}
 
