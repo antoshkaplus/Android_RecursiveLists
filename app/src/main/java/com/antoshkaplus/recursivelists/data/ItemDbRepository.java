@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.ItemKind;
+import com.antoshkaplus.recursivelists.model.ItemState;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
 import com.antoshkaplus.recursivelists.model.Task;
 import com.antoshkaplus.recursivelists.model.UserItem;
@@ -12,13 +13,16 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.RuntimeExceptionDao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.QueryBuilder;
+import com.j256.ormlite.stmt.UpdateBuilder;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * well can think of deleting items better,
@@ -206,7 +210,7 @@ public class ItemDbRepository {
         }
     }
 
-    public void updateAllItems(final List<Item> items) throws Exception {
+    public void updateAllItemsOffline(final List<Item> items) throws Exception {
         final Dao<Item, Integer> dao = helper.getDao(Item.class);
         dao.callBatchTasks(new Callable<Object>() {
             @Override
@@ -284,5 +288,58 @@ public class ItemDbRepository {
             dao.create(userRoot);
         }
         return userRoot.lastSyncVersion;
+    }
+
+    public void updateLastSyncVersion(int version) {
+        RuntimeExceptionDao<UserRoot, String> dao = helper.getRuntimeExceptionDao(UserRoot.class);
+        UserRoot userRoot = dao.queryForId(user);
+        userRoot.lastSyncVersion = version;
+        dao.update(userRoot);
+    }
+
+    public void markInProgress() {
+        RuntimeExceptionDao<Item, UUID> itemDao = helper.getRuntimeExceptionDao(Item.class);
+        RuntimeExceptionDao<Task, UUID> taskDao = helper.getRuntimeExceptionDao(Task.class);
+
+        Callable<Void> t = () -> {
+            UpdateBuilder<Item, UUID> itemBuilder = itemDao.updateBuilder();
+            itemBuilder.updateColumnValue(Item.FIELD_NAME_STATE, ItemState.InProgress);
+            itemBuilder.where().eq(Item.FIELD_NAME_STATE, ItemState.Local);
+            itemBuilder.update();
+
+            UpdateBuilder<Task, UUID> taskBuilder = taskDao.updateBuilder();
+            taskBuilder.updateColumnValue(Item.FIELD_NAME_STATE, ItemState.InProgress);
+            taskBuilder.where().eq(Item.FIELD_NAME_STATE, ItemState.Local);
+            taskBuilder.update();
+            return null;
+        };
+
+        itemDao.callBatchTasks(t);
+    }
+
+    public List<Item> getItemListByState(ItemState state) {
+        try {
+            RuntimeExceptionDao<Item, UUID> itemDao = helper.getRuntimeExceptionDao(Item.class);
+            List<Item> items = itemDao.queryBuilder().where().eq(Item.FIELD_NAME_STATE, state).query();
+
+            RuntimeExceptionDao<Task, UUID> taskDao = helper.getRuntimeExceptionDao(Task.class);
+            List<Task> tasks = taskDao.queryBuilder().where().eq(Item.FIELD_NAME_STATE, state).query();
+            items.addAll(tasks);
+            return items;
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public void markRemote(List<Item> itemList) {
+        itemList.forEach(s -> s.state = ItemState.Remote);
+        List<Task> tasks = itemList.stream().filter(s -> s.getItemKind() == ItemKind.Task).map(s->(Task)s).collect(Collectors.toList());
+        List<Item> items = itemList.stream().filter(s -> s.getItemKind() == ItemKind.Item).collect(Collectors.toList());
+
+        RuntimeExceptionDao<Item, UUID> itemDao = helper.getRuntimeExceptionDao(Item.class);
+        items.forEach(itemDao::update);
+
+        RuntimeExceptionDao<Task, UUID> taskDao = helper.getRuntimeExceptionDao(Task.class);
+        tasks.forEach(taskDao::update);
     }
 }

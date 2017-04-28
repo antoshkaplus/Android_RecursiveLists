@@ -162,10 +162,14 @@ public class BackendTest {
 
     @Test
     public void addItemOnline_VersionIncrease() {
+        assertEquals(0, endpoint.getDbVersion(user).getValue());
         getSample(3).apply(endpoint, user);
-        endpoint.get
-
-
+        char ch = 'a';
+        for (int i = 0; i < 4; ++i) {
+            Item item = endpoint.getItem("" + (char)(ch+i), user).get();
+            assertEquals(i+1, item.getDbVersion());
+        }
+        assertEquals(4, endpoint.getDbVersion(user).getValue());
     }
 
     @Test

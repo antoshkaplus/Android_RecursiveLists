@@ -8,15 +8,22 @@ import android.os.Message;
 
 import com.antoshkaplus.fly.Util;
 import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
+import com.antoshkaplus.recursivelists.backend.itemsApi.model.VariantItem;
 import com.antoshkaplus.recursivelists.backend.itemsApi.model.VariantItemList;
+import com.antoshkaplus.recursivelists.model.RemovedItem;
+import com.antoshkaplus.recursivelists.model.Task;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.ItemKind;
 import com.antoshkaplus.recursivelists.model.ItemState;
 
+import java.io.IOError;
+import java.io.IOException;
+import java.sql.Date;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.antoshkaplus.recursivelists.data.Util.*;
 
@@ -43,92 +50,84 @@ public class ItemRepository {
 	// at some point we would need to quit worker thread
 	
     public void addNewItem(Item item, Handler handler) {
-        // try to push outside first
-        // if was able to push outside
-        // have to make sure that I get it back
 
-        // after each write we should call sync procedure
         if (Util.isInternetAvailable()) {
 			
             Runnable r = new Runnable() {
                 @Override
                 public void run() {
-                    if (addNewItemOnline(item, handler)) {
-                        // it's bad that user gets feedback eventhough sync is not run
-                        sync(handler);
+                    boolean success = true;
+                    try {
+                        addNewItemOnline(item);
+                        sync();
+                    } catch (Exception ex) {
+                        success = false;
                     }
+                    runHandler(handler, success);
                 }
 			};
             taskHandler.post(r);
 			
         } else {
 
-            // other wise we are fine doing it in sync
             item.state = ItemState.Local;
             dbRepo.addItem(item);
 
-            // notifications should come from the repo
-            // about data change
-
-			runHandler(handler, false);
-            // catch exception let user know if was able to save
+			runHandler(handler, true);
         }
 
     }
 
-    private void updateLocal() {
+    private void updateLocal() throws Exception {
         ItemsApi api = itemsApiFactory.create();
 
         int localVersion = dbRepo.getLastSyncVersion();
 
         // need to get last sync version
-        api.get
-		VariantItemList itemList = api.getItemListGVersion(localVersion);
-		List<com.antoshkaplus.recursivelists.backend.itemsApi.model.Item> items = itemList.();
+        int remoteVersion = api.getDbVersion().execute().getValue();
+        VariantItemList itemList = api.getItemListGVersion(localVersion).execute();
+
+        List<Item> items = itemList.getVariantItems().stream().map(s-> toLocalItem(s)).collect(Collectors.toList());
 
         dbRepo.updateAllItemsOffline(items);
-
-        dbRepo.updateLastSyncVersion()
+        dbRepo.updateLastSyncVersion(remoteVersion);
     }
 
-    private void updateRemote() {
+    private void updateRemote() throws IOException {
+        ItemsApi api = itemsApiFactory.create();
 
+        dbRepo.markInProgress();
+        List<Item> items = dbRepo.getItemListByState(ItemState.InProgress);
+        List<VariantItem> variantItems = items.stream().map(s -> toRemoteItem(s, null)).collect(Collectors.toList());
+        VariantItemList list = new VariantItemList();
+        list.setVariantItems(variantItems);
+        api.addItemList(list).execute();
 
-		// extract from repository everything that is IN-PROGRESS or LOCAL
-		// and in the same transaction mark it IN-PROGRESS
-		
-		// send it to server
-		
-		// for each we do add new. if new fails, item is already there and it's good
-		
-		// mark all items remote
+        dbRepo.markRemote(items);
     }
 
 
     // this is method is purely internet
     public void sync(Handler handler) {
+        boolean success = true;
+        try {
+            sync();
+        } catch (Exception ex) {
+            success = false;
+        }
+        runHandler(handler, success);
+    }
+
+    private void sync() throws Exception {
         updateLocal();
         updateRemote();
-
-        runHandler(handler, false);
     }
 
 
-    private boolean addNewItemOnline(Item item, Handler handler) {
+    private void addNewItemOnline(Item item) throws Exception {
         ItemsApi api = itemsApiFactory.create();
         // so we have to use fucking if statement and it will happen many many times.
-        if (item.getItemKind() == ItemKind.Item) {
-            api.addItemOnline(getApiItem(item, Optional.empty())).execute();
-        } else {
-            api.addTaskOnline(item).execute();
-        }
-		runHandler(handler, false);
-        // in case of exception
-        // can actually sort out exceptions to figure out if can do it offline
-
-		return false;
-
-        return true;
+        api.addItem(toRemoteItem(item, null)).execute();
     }
 
     public UUID getRootId() {
@@ -211,5 +210,50 @@ public class ItemRepository {
 		worker.quit();
 	}
 
-    // conversion methods
+
+    private Item toLocalItem(VariantItem item) {
+        if (item.getItem() != null) {
+            Item updateItem = new Item();
+            updateItem.id = UUID.fromString(item.getItem().getUuid());
+            updateItem.parentId = UUID.fromString(item.getItem().getParentUuid());
+            updateItem.title = item.getItem().getTitle();
+            return updateItem;
+        } else if (item.getTask() != null) {
+            Task updateTask = new Task();
+            updateTask.id = UUID.fromString(item.getTask().getUuid());
+            updateTask.parentId = UUID.fromString(item.getTask().getParentUuid());
+            updateTask.title = item.getTask().getTitle();
+            if (item.getTask().getCompleteDate() != null) {
+                Date d = new Date(item.getTask().getCompleteDate().getValue());
+                updateTask.setCompleteDate(d);
+            }
+            return updateTask;
+        } else {
+            return null;
+        }
+    }
+
+    private VariantItem toRemoteItem(Item item, RemovedItem removedItem) {
+        VariantItem vItem = new VariantItem();
+        switch (item.getItemKind()) {
+            case Item:
+                com.antoshkaplus.recursivelists.backend.itemsApi.model.Item rItem = new com.antoshkaplus.recursivelists.backend.itemsApi.model.Item();
+                rItem.setTitle(item.title);
+                rItem.setUuid(item.id.toString());
+                rItem.setParentUuid(item.parentId.toString());
+                vItem.setItem(rItem);
+            case Task:
+                Task task = (Task)item;
+                com.antoshkaplus.recursivelists.backend.itemsApi.model.Task rTask = new com.antoshkaplus.recursivelists.backend.itemsApi.model.Task();
+                rTask.setTitle(item.title);
+                rTask.setUuid(item.id.toString());
+                rTask.setParentUuid(item.parentId.toString());
+                vItem.setTask(rTask);
+            default:
+                throw new RuntimeException("Unknown ItemKind");
+        }
+    }
+
+
+
 }

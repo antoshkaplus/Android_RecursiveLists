@@ -12,24 +12,24 @@ class VariantItem {
     Item item;
     Task task;
 
-    ItemKind kind;
-
     private VariantItem() {}
 
-    Item get() {
-        switch (kind) {
-            case Item:
-                return item;
-            case Task:
-                return task;
-            default:
-                throw new RuntimeException("Unknown kind");
-        }
+    public Item get() {
+        if (item != null) return item;
+        if (task != null) return task;
+        return null;
     }
 
-    static VariantItem create(Item item) {
+    public Item getItem() {
+        return item;
+    }
+
+    public Task getTask() {
+        return task;
+    }
+
+    public static VariantItem create(Item item) {
         VariantItem v = new VariantItem();
-        v.kind = item.getKind();
         switch (item.getKind()) {
             case Item:
                 v.item = item;

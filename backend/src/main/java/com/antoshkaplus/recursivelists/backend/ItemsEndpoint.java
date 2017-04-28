@@ -2,6 +2,7 @@ package com.antoshkaplus.recursivelists.backend;
 
 import com.antoshkaplus.bee.ValContainer;
 import com.antoshkaplus.bee.backend.ResourceDate;
+import com.antoshkaplus.bee.backend.ResourceInteger;
 import com.antoshkaplus.recursivelists.backend.model.BackendUser;
 import com.antoshkaplus.recursivelists.backend.model.GtaskTrack;
 import com.antoshkaplus.recursivelists.backend.model.Task;
@@ -14,7 +15,6 @@ import com.google.appengine.api.users.User;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.VoidWork;
-import com.sun.jdi.IntegerValue;
 
 
 import java.util.ArrayList;
@@ -83,10 +83,16 @@ public class ItemsEndpoint {
         return new Uuid(backendUser.getRootUuid());
     }
 
+    @ApiMethod(name = "getDbVersion", path = "get_db_version")
     public ResourceInteger getDbVersion(User user) {
-        return retrieveBackendUser(user).getVersion();
+        return new ResourceInteger(retrieveBackendUser(user).getVersion());
     }
 
+    @ApiMethod(name = "getItem", path = "get_item")
+    public VariantItem getItem(@Named("uuid")String uuid, User user) {
+        Item item = ofy().load().type(Item.class).parent(retrieveBackendUser(user)).id(uuid).now();
+        return VariantItem.create(item);
+    }
 
     // TODO may not be needed
     @ApiMethod(name = "getGtaskLastUpdate", path = "get_gtask_last_update")
@@ -209,39 +215,44 @@ public class ItemsEndpoint {
         return res;
     }
 
-
-    @ApiMethod(name = "addItemOnline", path = "add_item_online")
-    public void addItemOnline(final Item item, final User user) {
-        try {
-            ofy().transact(new VoidWork() {
-                @Override
-                public void vrun() {
-                    BackendUser backendUser = retrieveBackendUser(user);
-                    item.setOwner(backendUser);
-                    if (item.getParentUuid() == null) {
-                        item.setParentUuid(backendUser.getRootUuid());
-                    }
-                    item.setDbVersion(backendUser.increaseVersion());
-
-                    if (!item.isValid()) throw new RuntimeException("addItemOnline: task is invalid");
-                    ofy().save().entities(backendUser, item).now();
-                }
-            });
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    // have to update if parent is a task itself.
-    @ApiMethod(name = "addTaskOnline", path = "add_task_online")
-    public void addTaskOnline(final Task task, final User user) {
+    @ApiMethod(name = "addItem", path = "add_item")
+    public void addVariantItem(final VariantItem item, final User user) {
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
                 BackendUser backendUser = retrieveBackendUser(user);
-                addNewTask(task, backendUser);
+                backendUser.increaseVersion();
+                addVariantItemImpl(item, backendUser);
+                ofy().save().entities(backendUser);
             }
         });
+    }
+
+    private void addVariantItemImpl(final VariantItem item, final BackendUser backendUser) {
+        if (item.getItem() != null) {
+            addNewItem(item.getItem(), backendUser);
+        } else if (item.getTask() != null) {
+            addNewTask(item.getTask(), backendUser);
+        } else {
+            throw new RuntimeException("Empty VariantItem");
+        }
+    }
+
+
+    @ApiMethod(name = "addItemList", path = "add_variant_item_list")
+    public void addVariantItemList(VariantItemList itemList, final User user) {
+        itemList.getVariantItems().stream().forEach(s -> addVariantItem(s, user));
+    }
+
+    private void addNewItem(final Item item, final BackendUser backendUser) {
+        item.setOwner(backendUser);
+        if (item.getParentUuid() == null) {
+            item.setParentUuid(backendUser.getRootUuid());
+        }
+        item.setDbVersion(backendUser.increaseVersion());
+
+        if (!item.isValid()) throw new RuntimeException("addItemOnline: task is invalid");
+        ofy().save().entities(item).now();
     }
 
     @ApiMethod(name = "removeTask", path = "remove_task")
