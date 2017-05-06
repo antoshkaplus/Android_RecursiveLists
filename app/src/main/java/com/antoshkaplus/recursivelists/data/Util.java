@@ -11,7 +11,7 @@ import java.util.Optional;
  */
 
 class Util {
-
+    // may not be needed
     static com.antoshkaplus.recursivelists.backend.itemsApi.model.Item getApiItem(Item item, Optional<RemovedItem> removedItem) {
         com.antoshkaplus.recursivelists.backend.itemsApi.model.Item apiItem = new com.antoshkaplus.recursivelists.backend.itemsApi.model.Item();
         if (!removedItem.isPresent()) {

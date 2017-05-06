@@ -1,5 +1,6 @@
 package com.antoshkaplus.recursivelists.activity;
 
+import android.Manifest;
 import android.accounts.AccountManager;
 import android.app.ActionBar;
 import android.app.Activity;
@@ -22,6 +23,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.antoshkaplus.fly.dialog.RetryDialog;
+import com.antoshkaplus.fly.fragment.PermissionHelper;
 import com.antoshkaplus.recursivelists.BuildConfig;
 import com.antoshkaplus.recursivelists.CredentialFactory;
 import com.antoshkaplus.recursivelists.ItemAdapter;
@@ -103,6 +105,16 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         onCreateSuccess = true;
+
+        PermissionHelper helper = (PermissionHelper) getFragmentManager()
+                .findFragmentByTag(PermissionHelper.TAG);
+        if (helper == null) {
+            helper = new PermissionHelper();
+            getFragmentManager().beginTransaction()
+                    .add(helper, PermissionHelper.TAG)
+                    .commit();
+        }
+
         setContentView(R.layout.activity_main);
         getListView().setAdapter(new ItemAdapter(this, items));
         setActionBarColor(defaultBarColor);
@@ -115,6 +127,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             chooseAccount();
         } else {
             repository = new ItemRepository(this, account, new ItemsApiFactory(credential));
+            repository.Start();
             try {
                 rootId = repository.getRootId();
                 if (savedInstanceState == null) {
@@ -396,29 +409,48 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         invalidateOptionsMenu();
         // or we could do it differently
 
-        // it would be much better to have independent object to do it
-        // same for all operations but we can hide it in the repo
-        repository.sync(new Handler() {
+        PermissionHelper helper = (PermissionHelper) getFragmentManager()
+                .findFragmentByTag(PermissionHelper.TAG);
+        helper.setPermissions(new String[]{Manifest.permission.GET_ACCOUNTS});
+        helper.setCallback(new PermissionHelper.PermissionCallback() {
             @Override
-            public void handleMessage(Message msg) {
+            public void onPermissionGranted() {
+                repository.sync(new Handler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        syncing = false;
+                        invalidateOptionsMenu();
+                        FragmentManager mgr = getFragmentManager();
+                        if (!msg.getData().getBoolean("success")) {
+                            // show negative message
+                            OkDialog.newInstance(
+                                    getString(R.string.dialog__sync_failure__title),
+                                    getString(R.string.dialog__sync_failure__text)).show(mgr, "failure");
+                        } else {
+                            // show positive message
+                            OkDialog.newInstance(
+                                    getString(R.string.dialog__sync_success__title),
+                                    getString(R.string.dialog__sync_success__text)).show(mgr, "success");
+                            loadItems();
+                            onItemsChanged();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onPermissionDenied() {
                 syncing = false;
-                invalidateOptionsMenu();
                 FragmentManager mgr = getFragmentManager();
-                if (!msg.getData().getBoolean("success")) {
-                    // show negative message
-                    OkDialog.newInstance(
-                            getString(R.string.dialog__sync_failure__title),
-                            getString(R.string.dialog__sync_failure__text)).show(mgr, "failure");
-                } else {
-                    // show positive message
-                    OkDialog.newInstance(
-                            getString(R.string.dialog__sync_success__title),
-                            getString(R.string.dialog__sync_success__text)).show(mgr, "success");
-                    loadItems();
-                    onItemsChanged();
-                }
+                OkDialog.newInstance("Notification", "Can't sync without granting permissions").show(mgr, "failure");
             }
         });
+
+        helper.checkPermissions();
+
+        // it would be much better to have independent object to do it
+        // same for all operations but we can hide it in the repo
+
     }
 
     @Override
@@ -436,7 +468,22 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
                     getString(R.string.dialog__error__title),
                     getString(R.string.dialog__unexpected_error__text)).show(mgr, "success");
         }
-        // will try to fill in items here
+        PermissionHelper helper = (PermissionHelper) getFragmentManager()
+                .findFragmentByTag(PermissionHelper.TAG);
+        helper.setPermissions(new String[]{Manifest.permission.GET_ACCOUNTS});
+        helper.setCallback(new PermissionHelper.PermissionCallback() {
+            @Override
+            public void onPermissionDenied() {
+
+            }
+
+            @Override
+            public void onPermissionGranted() {
+                onAccountChanged();
+            }
+        });
+        helper.checkPermissions();
+            // will try to fill in items here
     }
 
     @Override
@@ -734,10 +781,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         }
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        repository.Destroy();
+    }
+
     private void onAccountChanged() {
         String account = retrieveAccount();
         credential.setSelectedAccountName(account);
         repository = new ItemRepository(this, account, new ItemsApiFactory(credential));
+        repository.Start();
         try {
             parentId = rootId = repository.getRootId();
         } catch (Exception ex) {

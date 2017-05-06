@@ -109,13 +109,20 @@ public class ItemRepository {
 
     // this is method is purely internet
     public void sync(Handler handler) {
-        boolean success = true;
-        try {
-            sync();
-        } catch (Exception ex) {
-            success = false;
-        }
-        runHandler(handler, success);
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                boolean success = true;
+                try {
+                    sync();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    success = false;
+                }
+                runHandler(handler, success);
+            }
+        };
+        taskHandler.post(r);
     }
 
     private void sync() throws Exception {

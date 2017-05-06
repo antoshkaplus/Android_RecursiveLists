@@ -238,9 +238,8 @@ public class ItemDbRepository {
 
     private QueryBuilder<RemovedItem, Void> getRemovedItemQueryBuilder() throws SQLException {
         // must do 3 joins to select removed items of particular user
-        QueryBuilder<Item, UUID> b = getItemQueryBuilder();
-        Dao<RemovedItem, Void> dao = helper.getDao(RemovedItem.class);
-        return dao.queryBuilder().join(b);
+        Dao<RemovedItem, Void> rm = helper.getDao(RemovedItem.class);
+        return rm.queryBuilder();
     }
 
     private QueryBuilder<Item, UUID> getItemQueryBuilder() throws SQLException {

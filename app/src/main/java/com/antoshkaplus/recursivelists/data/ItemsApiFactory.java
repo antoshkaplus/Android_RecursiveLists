@@ -39,7 +39,7 @@ public class ItemsApiFactory {
             }
         });
         // TODO may need this line
-        //builder.setApplicationName("antoshkaplus-recursivelists");
+        builder.setApplicationName("antoshkaplus-recursivelists");
         return builder.build();
     }
 

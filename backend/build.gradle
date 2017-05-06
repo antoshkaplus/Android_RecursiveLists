@@ -47,6 +47,7 @@ appengine {
         getClientLibsOnBuild = true
         getDiscoveryDocsOnBuild = true
     }
+    httpAddress = "0.0.0.0"
 }
 
 // Android Studio does stupid things with the variable
