@@ -23,7 +23,10 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.List;
 
+import static ch.lambdaj.Lambda.forEach;
+import static ch.lambdaj.Lambda.on;
 import static com.googlecode.objectify.ObjectifyService.ofy;
+import static ch.lambdaj.Lambda.extract;
 
 
 /**
@@ -31,7 +34,7 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
  */
 @Api(
         name = "itemsApi",
-        version = "v2",
+        version = "v3",
         resource = "items",
         namespace = @ApiNamespace(
                 ownerDomain = "backend.recursivelists.antoshkaplus.com",
@@ -106,7 +109,7 @@ public class ItemsEndpoint {
     @ApiMethod(name = "updateGtaskLastUpdate", path = "update_gtask_last_update")
     public void updateGtaskLastUpdate(final ResourceDate lastUpdate, final User user) {
 
-        BackendUser backendUser = retrieveBackendUser(user);
+        final BackendUser backendUser = retrieveBackendUser(user);
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
@@ -136,7 +139,7 @@ public class ItemsEndpoint {
 
     // for newly added gtasks we could return back their uuid-s
     @ApiMethod(name = "addGtaskList", path = "add_gtask_list")
-    public void updateGtaskList(final GtaskList gtaskList, User user) {
+    public void updateGtaskList(final GtaskList gtaskList, final User user) {
 
         ofy().transact(new VoidWork() {
             @Override
@@ -145,10 +148,9 @@ public class ItemsEndpoint {
                     BackendUser backendUser = retrieveBackendUser(user);
                     int V = backendUser.increaseVersion();
 
-                    List<String> ids = new ArrayList<>(gtaskList.getGtasks().size());
-                    gtaskList.getGtasks().forEach((gtask) -> {
-                        ids.add(gtask.getId());
-                    });
+                    List<String> ids = new ArrayList<>(
+                            extract(gtaskList.getGtasks(), on(Gtask.class).getId()));
+
                     Map<String, GtaskTrack> map = ofy().load().type(GtaskTrack.class).parent(backendUser).ids(ids);
 
                     for (Gtask gtask : gtaskList.getGtasks()) {
@@ -241,7 +243,9 @@ public class ItemsEndpoint {
 
     @ApiMethod(name = "addItemList", path = "add_variant_item_list")
     public void addVariantItemList(VariantItemList itemList, final User user) {
-        itemList.getVariantItems().stream().forEach(s -> addVariantItem(s, user));
+        for (VariantItem i : itemList.getVariantItems()) {
+            addVariantItem(i, user);
+        }
     }
 
     private void addNewItem(final Item item, final BackendUser backendUser) {
@@ -256,7 +260,7 @@ public class ItemsEndpoint {
     }
 
     @ApiMethod(name = "removeTask", path = "remove_task")
-    public void removeTask(@Named("uuid")String uuid, final User user) {
+    public void removeTask(@Named("uuid") final String uuid, final User user) {
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
@@ -274,7 +278,7 @@ public class ItemsEndpoint {
     // you don't have to supply all the information about item
     // uuid and new parent uuid should be enough
     @ApiMethod(name = "moveItem", path = "move_item")
-    public void moveItem(@Named("uuid")String uuid, @Named("parentUuid")String parentUuid, final User user) {
+    public void moveItem(@Named("uuid") final String uuid, @Named("parentUuid") final String parentUuid, final User user) {
         // this one is super easy
         ofy().transact(new VoidWork() {
             @Override
@@ -291,7 +295,7 @@ public class ItemsEndpoint {
     // we have to take a look at ancestor and decrease tasks
     // it;s like removing and adding task again
     @ApiMethod(name = "moveTask", path = "move_task")
-    public void moveTask(@Named("uuid")String uuid, @Named("parentUuid")String parentUuid, final User user) {
+    public void moveTask(@Named("uuid") final String uuid, @Named("parentUuid") final String parentUuid, final User user) {
         // so it's similar to calling moveItem
         // but we have to traverse ancestors first
         ofy().transact(new VoidWork() {
@@ -309,7 +313,7 @@ public class ItemsEndpoint {
 
 
     @ApiMethod(name = "completeTask", path = "completeTask")
-    public void completeTask(@Named("uuid")String uuid, @Named("completeDate")Date completeDate, final User user) {
+    public void completeTask(@Named("uuid") final String uuid, @Named("completeDate")final Date completeDate, final User user) {
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
@@ -369,8 +373,8 @@ public class ItemsEndpoint {
     }
 
     // used to detect cycle
-    private boolean hasAncestor(Item item, Item ancestor, BackendUser user) {
-        ValContainer<Boolean> hasAncestor = new ValContainer<>(false);
+    private boolean hasAncestor(Item item, final Item ancestor, BackendUser user) {
+        final ValContainer<Boolean> hasAncestor = new ValContainer<>(false);
         AncestorTraversal at = new AncestorTraversal(user, item);
         at.traverse(new AncestorTraversal.Handler() {
             @Override

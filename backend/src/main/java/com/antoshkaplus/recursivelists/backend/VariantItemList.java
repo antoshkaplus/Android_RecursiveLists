@@ -4,7 +4,13 @@ import com.antoshkaplus.recursivelists.backend.model.Item;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import ch.lambdaj.function.convert.Converter;
+
+import static ch.lambdaj.Lambda.convert;
+import static ch.lambdaj.Lambda.extract;
+import static ch.lambdaj.Lambda.on;
+import static ch.lambdaj.Lambda.project;
 
 /**
  * Created by antoshkaplus on 9/5/16.
@@ -22,9 +28,12 @@ public class VariantItemList {
     }
 
     static VariantItemList createFromItems(List<Item> items) {
-        VariantItemList list = new VariantItemList();
-        list.items = items.stream().map(VariantItem::create).collect(Collectors.toList());
-        return list;
+        return new VariantItemList(convert(items, new Converter<Item, VariantItem>() {
+            @Override
+            public VariantItem convert(Item from) {
+                return VariantItem.create(from);
+            }
+        }));
     }
 
     public List<VariantItem> getVariantItems() {
@@ -32,7 +41,7 @@ public class VariantItemList {
     }
 
     public List<Item> convertToItems() {
-        return items.stream().map(VariantItem::get).collect(Collectors.toList());
+        return extract(items, on(VariantItem.class).get());
     }
 
     public void add(Item item) {
