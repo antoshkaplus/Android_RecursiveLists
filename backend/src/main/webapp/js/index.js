@@ -421,7 +421,7 @@ function addTask() {
     title = $('#item').val()
     item = new Item(title)
     item.kind = "Task"
-    gapi.client.itemsApi.addTaskOnline(item).execute()
+    gapi.client.itemsApi.addItem({task: item}).execute()
 
 }
 
@@ -430,7 +430,11 @@ function addItem() {
     title = $('#item').val()
     item = new Item(title)
     item.kind = "Item"
-    gapi.client.itemsApi.addItemOnline(item).execute()
+    gapi.client.itemsApi.addItem({item: item}).execute()
+}
+
+function convertVariantItems(variantItems) {
+    return variantItems.map(function(x) { return x.item ? x.item : x.task; });
 }
 
 function fillItemList() {
@@ -442,11 +446,9 @@ function fillItemList() {
             return
         }
         // empty items with such parent
-        if (!resp) resp.items = []
+        if (!resp.variantItems) resp.variantItems = []
 
-
-
-        viewModel.itemList(resp.items)
+        viewModel.itemList(convertVariantItems(resp.variantItems))
         console.log(resp)
     })
 }
