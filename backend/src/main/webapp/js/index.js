@@ -284,6 +284,19 @@ function movePrepared() {
     });
 }
 
+function deletePrepared() {
+    s = new Map()
+    viewModel.preparedItems().forEach(function(item) {
+        if (!s.has(item.listId)) s.set(item.listId, [item.id])
+        else s.get(item.listId).push(item.id)
+    })
+    s.forEach(function(itemIds, listId) {
+        callback = function(p) { console.log(p, 'success delete') }
+        errorHandler = function(p) { console.log(p, 'failure delete') }
+        Gtask.deleteTasks(listId, itemIds, callback, errorHandler)
+    })
+}
+
 
 function importGoogleTasks() {
     // get last update date from our server
@@ -388,6 +401,7 @@ function listTaskLists() {
         Gtask.forTasks(options, function(tasks) {
             if (!tasks) return;
 
+            tasks.forEach(function(t) { t.listId = taskList.id; })
             var ids = tasks.map(function(t) { return t.id });
             gapi.client.itemsApi.checkGtaskIdPresent({ids : ids}).then(function(resp) {
 

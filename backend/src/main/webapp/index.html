@@ -82,13 +82,11 @@
                 </div>
                 <button type="button" class="btn btn-primary" data-bind="click: addGoogleTask">Add Google Task</button>
 
-                <button type="button" class="btn btn-primary" data-bind="click: importGoogleTasks">Import Google Tasks</button>
+                <button type="button" class="btn btn-primary" data-bind="enable: false, click: importGoogleTasks">Import Google Tasks</button>
 
                 <button type="button" class="btn btn-primary" data-bind="click: setPrepareMove">Prepare Move</button>
                 <button type="button" class="btn btn-primary" data-bind="click: movePrepared">Move</button>
-
-                <!--<button type="button" class="btn btn-primary" data-bind="click: setPrepareDelete">Prepare Delete</button>-->
-                <!--<button type="button" class="btn btn-primary" data-bind="click: deletePrepared">Delete</button>-->
+                <button type="button" class="btn btn-primary" data-bind="click: deletePrepared">Delete</button>
 
             </form>
         </div>

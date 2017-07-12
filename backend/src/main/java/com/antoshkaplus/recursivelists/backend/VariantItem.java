@@ -8,7 +8,7 @@ import com.antoshkaplus.recursivelists.backend.model.Task;
  * Created by antoshkaplus on 4/25/17.
  */
 
-class VariantItem {
+public class VariantItem {
     Item item;
     Task task;
 

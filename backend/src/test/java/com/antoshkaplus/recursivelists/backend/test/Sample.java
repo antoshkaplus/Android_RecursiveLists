@@ -3,6 +3,7 @@ package com.antoshkaplus.recursivelists.backend.test;
 import com.antoshkaplus.recursivelists.backend.Gtask;
 import com.antoshkaplus.recursivelists.backend.GtaskList;
 import com.antoshkaplus.recursivelists.backend.ItemsEndpoint;
+import com.antoshkaplus.recursivelists.backend.VariantItem;
 import com.antoshkaplus.recursivelists.backend.model.Item;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 import com.google.appengine.api.users.User;
@@ -39,12 +40,12 @@ public class Sample {
             Item item = initItem(obj);
             item.setParentUuid(parentUuid);
             uuid = item.getUuid();
-            endpoint.addItemOnline(item, user);
+            endpoint.addVariantItem(VariantItem.create(item), user);
         } else {
             Task task = initTask(obj);
             task.setParentUuid(parentUuid);
             uuid = task.getUuid();
-            endpoint.addTaskOnline(task, user);
+            endpoint.addVariantItem(VariantItem.create(task), user);
         }
         JSONArray arr = (JSONArray) obj.get("children");
         if (arr == null) return;

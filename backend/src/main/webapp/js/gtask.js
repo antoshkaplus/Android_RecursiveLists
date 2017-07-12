@@ -47,3 +47,18 @@ Gtask.forTasks = function(reqOptions, callback, errorHandler) {
         }
     })
 }
+
+//
+Gtask.deleteTasks = function(tasklistId, taskIds, callback, errorHandler) {
+    taskIds.forEach(function(taskId) {
+        p = {tasklist: tasklistId, task: taskId};
+        gapi.client.tasks.tasks.delete(p).then(
+            function (response) {
+                callback(p)
+            },
+            function (reason) {
+                console.log('Error: ' + reason.result.error.message);
+                errorHandler(p)
+            })
+    })
+}
