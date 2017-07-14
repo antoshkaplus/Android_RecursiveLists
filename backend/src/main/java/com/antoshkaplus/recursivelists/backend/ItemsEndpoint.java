@@ -240,13 +240,43 @@ public class ItemsEndpoint {
         }
     }
 
+    @ApiMethod(name = "removeItem", path = "remove_item", httpMethod = "POST")
+    public void removeVariantItem(final VariantItem item, final User user) {
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                backendUser.increaseVersion();
+                removeVariantItemImpl(item, backendUser);
+                ofy().save().entities(backendUser);
+            }
+        });
+    }
 
-    @ApiMethod(name = "addItemList", path = "add_variant_item_list")
+    private void removeVariantItemImpl(final VariantItem item, final BackendUser backendUser) {
+        if (item.getItem() != null) {
+            removeItem(item.getItem().getUuid(), backendUser);
+        } else if (item.getTask() != null) {
+            removeTask(item.getTask().getUuid(), backendUser);
+        } else {
+            throw new RuntimeException("Empty VariantItem");
+        }
+    }
+
+    @ApiMethod(name = "addItemList", path = "add_item_list")
     public void addVariantItemList(VariantItemList itemList, final User user) {
         for (VariantItem i : itemList.getVariantItems()) {
             addVariantItem(i, user);
         }
     }
+
+    @ApiMethod(name = "removeItemList", path = "remove_item_list", httpMethod = "POST")
+    public void removeVariantItemList(VariantItemList itemList, final User user) {
+        for (VariantItem i : itemList.getVariantItems()) {
+            removeVariantItem(i, user);
+        }
+    }
+
 
     private void addNewItem(final Item item, final BackendUser backendUser) {
         item.setOwner(backendUser);
@@ -259,21 +289,6 @@ public class ItemsEndpoint {
         ofy().save().entities(item).now();
     }
 
-    @ApiMethod(name = "removeTask", path = "remove_task")
-    public void removeTask(@Named("uuid") final String uuid, final User user) {
-        ofy().transact(new VoidWork() {
-            @Override
-            public void vrun() {
-                BackendUser backendUser = retrieveBackendUser(user);
-                Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
-                task.setOwner(backendUser);
-                task.setDbVersion(backendUser.increaseVersion());
-                task.setDisabled(true);
-                detachTask(task, backendUser);
-                ofy().save().entities(backendUser, task).now();
-            }
-        });
-    }
 
     // you don't have to supply all the information about item
     // uuid and new parent uuid should be enough
@@ -331,6 +346,13 @@ public class ItemsEndpoint {
         task.setDisabled(true);
         detachTask(task, backendUser);
         ofy().save().entities(backendUser, task).now();
+    }
+
+    private void removeItem(String itemId, BackendUser backendUser) {
+        Item item = ofy().load().type(Task.class).parent(backendUser).id(itemId).now();
+        item.setDbVersion(backendUser.getVersion());
+        item.setDisabled(true);
+        ofy().save().entities(backendUser, item).now();
     }
 
 
@@ -438,8 +460,5 @@ public class ItemsEndpoint {
         }
         return res;
     }
-
-
-
 
 }

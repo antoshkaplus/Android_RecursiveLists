@@ -25,7 +25,6 @@ public class Item {
     private String title;
 
     @Parent
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     private Key<BackendUser> owner;
 
     // it's like deleted or not
@@ -46,7 +45,7 @@ public class Item {
 
     private ItemKind kind;
 
-
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public boolean isValid() {
         return  uuid != null &&
                 title != null &&
@@ -62,6 +61,7 @@ public class Item {
         kind = ItemKind.Item;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public boolean isTask() {
         return kind == ItemKind.Task;
     }
@@ -82,6 +82,7 @@ public class Item {
         this.parentUuid = parentUuid;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<BackendUser> getOwner() {
         return owner;
     }
@@ -92,6 +93,7 @@ public class Item {
 
     public void setDbVersion(int version) {
         this.dbVersion = version;
+        this.updateDate = new Date();
     }
 
     public int getDbVersion() {
@@ -130,6 +132,9 @@ public class Item {
     public boolean isDisabled() {
         return disabled;
     }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public boolean isEnabled() { return !disabled; }
 
     public Date getUpdateDate() {
         return updateDate;

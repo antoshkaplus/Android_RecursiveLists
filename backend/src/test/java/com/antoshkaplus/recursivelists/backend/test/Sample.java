@@ -63,6 +63,10 @@ public class Sample {
     private Task initTask(JSONObject obj) {
         Task task = new Task();
         initItem(obj, task);
+
+        Boolean completed = (Boolean) obj.get("completed");
+        if (completed != null && completed) task.setCompleteDate(new Date());
+
         return task;
     }
 

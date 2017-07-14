@@ -3,6 +3,7 @@ package com.antoshkaplus.recursivelists.backend;
 import com.antoshkaplus.bee.backend.ResourceDate;
 import com.antoshkaplus.recursivelists.backend.model.Item;
 import com.antoshkaplus.recursivelists.backend.test.*;
+import com.antoshkaplus.recursivelists.backend.test.Util;
 import com.google.appengine.api.users.User;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -177,7 +178,35 @@ public class BackendTest {
     }
 
     @Test
-    public void removeTask() {
+    public void removeItem() {
+        getSample(1).apply(endpoint, user);
+        assertEquals(2, Util.countEnabled(endpoint.getChildrenItems("a", user)));
+        endpoint.removeVariantItem(VariantItem.create(Util.itemWithUuid("aa")), user);
+        assertEquals(1, Util.countEnabled(endpoint.getChildrenItems("a", user)));
+    }
+
+    @Test
+    public void removeTask_DecChildren() {
+        getSample(5).apply(endpoint, user);
+        assertEquals(3, Util.countEnabled(endpoint.getChildrenItems("a_t", user)));
+        endpoint.removeVariantItem(VariantItem.create(Util.taskWithUuid("d_t")), user);
+        assertEquals(2, Util.countEnabled(endpoint.getChildrenItems("a_t", user)));
+    }
+
+    @Test
+    public void removeTask_StaysComplete() {
+        getSample(5).apply(endpoint, user);
+        assertEquals(true, endpoint.getItem("a_t", user).getTask().isCompleted());
+        endpoint.removeVariantItem(VariantItem.create(Util.taskWithUuid("d_t")), user);
+        assertEquals(true, endpoint.getItem("a_t", user).getTask().isCompleted());
+    }
+
+    @Test
+    public void removeTask_BecomesComplete() {
+        getSample(5).apply(endpoint, user);
+        assertEquals(false, endpoint.getItem("e_t", user).getTask().isCompleted());
+        endpoint.removeVariantItem(VariantItem.create(Util.taskWithUuid("f_t")), user);
+        assertEquals(true, endpoint.getItem("e_t", user).getTask().isCompleted());
     }
 
     @Test

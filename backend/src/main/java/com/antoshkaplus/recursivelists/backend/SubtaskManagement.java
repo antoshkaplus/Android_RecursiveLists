@@ -83,6 +83,7 @@ public class SubtaskManagement implements AncestorTraversal.Handler {
 	
 	private void make(Task task) {
 		date = task.getCompleteDate();
+		if (date == null) date = new Date();
 		AncestorTraversal ancTrav = new AncestorTraversal(backendUser, task);
 		ancTrav.traverse(this);
 	}

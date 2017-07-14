@@ -9,8 +9,8 @@ import com.antoshkaplus.recursivelists.backend.model.Task;
  */
 
 public class VariantItem {
-    Item item;
-    Task task;
+    private Item item;
+    private Task task;
 
     private VariantItem() {}
 

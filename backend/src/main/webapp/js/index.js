@@ -40,11 +40,9 @@ $(function() {
             return viewModel.gtaskApiLoaded() && viewModel.itemsApiLoaded();
         }),
         prepareMove: ko.observable(false),
-        preparedItems: ko.observableArray()
+        preparedItems: ko.observableArray(),
+        showRemoved: ko.observable(false)
     }
-    viewModel.itemKindClass = ko.pureComputed(function(kind) {
-        return kind == "Task" ? "task" : "item";
-    }, viewModel);
 
     viewModel.apisLoaded.subscribe(function(val) {
         if (!val) return;
@@ -68,6 +66,14 @@ $(function() {
 
     ko.applyBindings(viewModel)
 })
+
+function itemCssClass(item) {
+    cssClass = ""
+    if (item.disabled) cssClass += 'g-deleted '
+    cssClass += (item.kind == "Task" ? "task" : "item");
+    return cssClass
+}
+
 
 function setPrepareMove() {
     viewModel.prepareMove(true)
@@ -100,6 +106,19 @@ function moveSelected() {
     viewModel.selectedItems.removeAll()
     viewModel.moveParent = viewModel.parent()
 }
+
+function removeSelected() {
+    params = {variantItems: toVariantItems(viewModel.selectedItems())}
+    viewModel.selectedItems.removeAll();
+    gapi.client.itemsApi.removeItemList(params).then(
+        function(resp) {
+            console.log("remove success")
+        },
+        function(reason) {
+            console.log("remove failure")
+        });
+}
+
 
 function cancelMove() {
     viewModel.waitRelease(false)
@@ -450,6 +469,11 @@ function addItem() {
 function convertVariantItems(variantItems) {
     return variantItems.map(function(x) { return x.item ? x.item : x.task; });
 }
+
+function toVariantItems(items) {
+    return items.map(function(x) { return isTask(x) ? {task: x} : {item: x} })
+}
+
 
 function fillItemList() {
     gapi.client.itemsApi.getChildrenItems({parentUuid: viewModel.parent().uuid}).execute(function(resp) {
