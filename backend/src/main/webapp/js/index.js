@@ -282,10 +282,11 @@ function addGoogleTask() {
 
 
 function movePrepared() {
-    var d = new Date().toISOString();
-    viewModel.preparedItems().forEach(function(item) {
-        item.updated = d;
-    });
+//    WHY THIS IS HERE ???
+//    var d = new Date().toISOString();
+//    viewModel.preparedItems().forEach(function(item) {
+//         item.updated = d;
+//    });
     gapi.client.itemsApi.addGtaskList({gtasks: viewModel.preparedItems(), parentUuid: viewModel.parent().uuid}).then(function(resp) {
         if (resp.code) {
             console.log("was unable to move prepared items")
@@ -297,11 +298,17 @@ function movePrepared() {
         viewModel.preparedItems([])
         viewModel.prepareMove(false)
 
-        var data = viewModel.gTasks().slice(0);
-        viewModel.gTasks([]);
-        viewModel.gTasks(data);
+        updateGtasksVisualization()
     });
 }
+
+function updateGtasksVisualization() {
+    var data = viewModel.gTasks().slice(0);
+    viewModel.gTasks([]);
+    viewModel.gTasks(data);
+}
+
+
 
 function deletePrepared() {
     s = new Map()
@@ -310,8 +317,18 @@ function deletePrepared() {
         else s.get(item.listId).push(item.id)
     })
     s.forEach(function(itemIds, listId) {
-        callback = function(p) { console.log(p, 'success delete') }
+        callback = function(p) {
+            viewModel.preparedItems().forEach(function(entry) {
+                entry.deleted = true
+            });
+            viewModel.preparedItems([])
+            viewModel.prepareMove(false)
+            console.log(p, 'success delete')
+
+            updateGtasksVisualization()
+        }
         errorHandler = function(p) { console.log(p, 'failure delete') }
+
         Gtask.deleteTasks(listId, itemIds, callback, errorHandler)
     })
 }
@@ -444,7 +461,7 @@ function appendPre(message) {
 
 function Item(title) {
     this.title = title
-    this.createDate = new Date()
+    this.createDate = timestampToSend()
     this.kind = "Item"
     this.uuid = guid()
     this.parentUuid = viewModel.parent().uuid
@@ -463,7 +480,13 @@ function addItem() {
     title = $('#item').val()
     item = new Item(title)
     item.kind = "Item"
-    gapi.client.itemsApi.addItem({item: item}).execute()
+    gapi.client.itemsApi.addItem({item: item}).then(
+        function(resp) {
+            console.log(item, "add item success")
+        },
+        function(reason) {
+            console.log(reason, "add item failure")
+        })
 }
 
 function convertVariantItems(variantItems) {

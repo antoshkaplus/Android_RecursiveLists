@@ -10,7 +10,11 @@ import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.annotation.Index;
 
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * better use UUID as a Key
@@ -45,6 +49,7 @@ public class Item {
 
     private ItemKind kind;
 
+    // could be hidden somewhere in Util, as doesn't correspond to context
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public boolean isValid() {
         return  uuid != null &&
@@ -55,6 +60,33 @@ public class Item {
                 !updateDate.before(createDate) &&
                 parentUuid != null;
     }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public String getValidityReport() {
+        StringBuilder report = new StringBuilder();
+
+        List<String> lines = new ArrayList<>();
+        if (uuid == null) lines.add("uuid");
+        if (title == null) lines.add("title");
+        if (owner == null) lines.add("owner");
+        if (createDate == null) lines.add("createDate");
+        if (updateDate == null) lines.add("updateDate");
+        if (parentUuid == null) lines.add("parentUuid");
+        if (!lines.isEmpty()) {
+            report = new StringBuilder("Missing fields:")
+                        .append(StringUtils.join(lines, ","))
+                        .append(".");
+        }
+        if (updateDate.before(createDate)) {
+            report.append(String.format("updateDate %s earlier than createDate %s.", updateDate, createDate));
+        }
+        if (report.length() == 0) {
+            report.append("Instance is Valid.");
+        }
+        return report.toString();
+    }
+
+
 
     // should be called by orm
     public Item() {

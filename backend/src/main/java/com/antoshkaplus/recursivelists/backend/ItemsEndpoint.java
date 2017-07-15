@@ -195,7 +195,7 @@ public class ItemsEndpoint {
         Map<String, Item> itemMap = ofy().load().type(Item.class).parent(backendUser).ids(idList.getIds());
         VariantItemList res = new VariantItemList();
         for (String id : idList.getIds()) {
-            res.add(itemMap.getOrDefault(id, null));
+            res.add(itemMap.get(id));
         }
         return res;
     }
@@ -277,7 +277,6 @@ public class ItemsEndpoint {
         }
     }
 
-
     private void addNewItem(final Item item, final BackendUser backendUser) {
         item.setOwner(backendUser);
         if (item.getParentUuid() == null) {
@@ -285,10 +284,11 @@ public class ItemsEndpoint {
         }
         item.setDbVersion(backendUser.increaseVersion());
 
-        if (!item.isValid()) throw new RuntimeException("addItemOnline: task is invalid");
+        if (!item.isValid()) {
+            throw new RuntimeException("item is invalid: " + item.getValidityReport());
+        }
         ofy().save().entities(item).now();
     }
-
 
     // you don't have to supply all the information about item
     // uuid and new parent uuid should be enough
@@ -439,7 +439,9 @@ public class ItemsEndpoint {
         if (task.getParentUuid() == null) {
             task.setParentUuid(backendUser.getRootUuid());
         }
-        if (!task.isValid()) throw new RuntimeException("addNewTask: task is invalid");
+        if (!task.isValid()) {
+            throw new RuntimeException("task is invalid: " + task.getValidityReport());
+        }
 
         task.setDbVersion(backendUser.getVersion());
         attachTask(task, backendUser);
