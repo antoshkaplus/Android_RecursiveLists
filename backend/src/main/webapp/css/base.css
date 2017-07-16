@@ -1,10 +1,12 @@
 
 .item {
     background-color: #ffffff;
+    border-bottom: 1px solid #ccc;
 }
 
 .task {
     background-color: #ffffcc;
+    border-bottom: 1px solid #ccc;
 }
 
 .g-completed {

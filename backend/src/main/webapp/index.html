@@ -105,14 +105,12 @@
                     </button>
                     <div data-bind="visible: showTasks">
                         <div data-bind="foreach: tasks" id="g-tasks">
-                            <!-- ko if: (!$root.onlyDeleted() && !$root.onlyCompleted() && !$root.onlyCurrent()) ||
-                                        ($data.completed && $root.onlyCompleted()) ||
-                                        ($data.deleted && $root.onlyDeleted()) ||
-                                        (!$data.completed && !$data.deleted && $root.onlyCurrent()) -->
+                            <!-- ko if: showGtask($data) -->
                             <div class="list-group-item" data-bind="css: { 'g-completed': $data.completed, 'g-deleted': $data.deleted }">
-                                <div class="col-1" data-bind="visible: $root.onlyDeleted()">
-                                    <button type="button" class="btn btn-primary" data-bind="click: restoreGtask.bind($parent)">Restore</button>
-                                </div>
+                                <!-- TODO in another window somewhere -->
+                                <!--<div class="col-1" data-bind="visible: $root.onlyDeleted()">-->
+                                    <!--<button type="button" class="btn btn-primary" data-bind="click: restoreGtask.bind($parent)">Restore</button>-->
+                                <!--</div>-->
                                 <div class="col-1" data-bind="visible: $root.prepareMove()">
                                     <input type="checkbox" data-bind="checkedValue: $data, checked: $root.preparedItems">
                                 </div>
@@ -130,9 +128,10 @@
 
             <!-- should not use only keyword gtaskShowCompleted, gtaskShowDeleted; on the other hand the way it works is fine -->
             <div class="col-3">
-                <label><input type="checkbox" data-bind="checked: onlyDeleted">Only Deleted</label>
-                <label><input type="checkbox" data-bind="checked: onlyCompleted">Only Completed</label>
-                <label><input type="checkbox" data-bind="checked: onlyCurrent">Only Current</label>
+                <label><input type="checkbox" data-bind="checked: showDeleted">Show Deleted</label>
+                <label><input type="checkbox" data-bind="checked: showCompleted">Show Completed</label>
+                <label><input type="checkbox" data-bind="checked: showMoved">Show Moved</label>
+                <label><input type="checkbox" data-bind="checked: showUnmarked">Show Unmarked</label>
             </div>
 
         </div>

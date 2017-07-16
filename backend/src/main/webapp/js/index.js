@@ -27,9 +27,11 @@ $(function() {
         parent: ko.observable(new Parent(null, null)),
         parentPath: [],
         gTasks: ko.observableArray(),
-        onlyDeleted: ko.observable(false),
-        onlyCompleted: ko.observable(false),
-        onlyCurrent: ko.observable(false),
+        showDeleted: ko.observable(false),
+        showCompleted: ko.observable(false),
+        showMoved: ko.observable(false),
+        // TODO setting to pick default distribution
+        showUnmarked: ko.observable(true),
         selectedItems: ko.observableArray(),
         waitRelease: ko.observable(false),
         moveItems: [],
@@ -42,7 +44,7 @@ $(function() {
         prepareMove: ko.observable(false),
         preparedItems: ko.observableArray(),
         showRemoved: ko.observable(false)
-    }
+    };
 
     viewModel.apisLoaded.subscribe(function(val) {
         if (!val) return;
@@ -56,14 +58,6 @@ $(function() {
 
     }, null, "beforeChange")
 
-    viewModel.onlyDeleted.subscribe(function(val) {
-        console.log(val);
-    })
-
-    viewModel.onlyCompleted.subscribe(function(val) {
-        console.log(val);
-    })
-
     ko.applyBindings(viewModel)
 })
 
@@ -72,6 +66,13 @@ function itemCssClass(item) {
     if (item.disabled) cssClass += 'g-deleted '
     cssClass += (item.kind == "Task" ? "task" : "item");
     return cssClass
+}
+
+function showGtask(gtask) {
+    vm = viewModel;
+    g = gtask;
+    return (vm.showUnmarked() && !g.deleted && !g.moved && !g.completed) ||
+            (vm.showDeleted() && g.deleted) || (vm.showMoved() && g.moved) || (vm.showCompleted() && g.completed);
 }
 
 
