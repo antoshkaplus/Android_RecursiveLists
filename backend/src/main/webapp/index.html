@@ -58,6 +58,13 @@
                         <input type="checkbox" data-bind="enable: !$root.waitRelease(), checkedValue: $data, checked: $root.selectedItems"/>
 
                         <div class="col" data-bind="text: title"></div>
+                        <div class="col">
+                            <!-- ko if: isTask(kind) && !$data.current -->
+                            <button type="button" class="col btn btn-primary" data-bind="click: makeCurrent">
+                                Make Current
+                            </button>
+                            <!-- /ko -->
+                        </div>
                         <div class="col" data-bind="if: isTask(kind)">
                             <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
                             <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
