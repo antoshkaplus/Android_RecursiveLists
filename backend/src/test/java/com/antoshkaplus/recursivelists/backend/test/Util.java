@@ -1,8 +1,8 @@
 package com.antoshkaplus.recursivelists.backend.test;
 
-import com.antoshkaplus.recursivelists.backend.Gtask;
-import com.antoshkaplus.recursivelists.backend.VariantItem;
-import com.antoshkaplus.recursivelists.backend.VariantItemList;
+import com.antoshkaplus.recursivelists.backend.bean.Gtask;
+import com.antoshkaplus.recursivelists.backend.bean.VariantItem;
+import com.antoshkaplus.recursivelists.backend.bean.VariantItemList;
 import com.antoshkaplus.recursivelists.backend.model.Item;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 

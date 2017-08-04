@@ -3,6 +3,13 @@ package com.antoshkaplus.recursivelists.backend;
 import com.antoshkaplus.bee.ValContainer;
 import com.antoshkaplus.bee.backend.ResourceDate;
 import com.antoshkaplus.bee.backend.ResourceInteger;
+import com.antoshkaplus.recursivelists.backend.bean.Gtask;
+import com.antoshkaplus.recursivelists.backend.bean.GtaskList;
+import com.antoshkaplus.recursivelists.backend.bean.IdList;
+import com.antoshkaplus.recursivelists.backend.bean.TaskList;
+import com.antoshkaplus.recursivelists.backend.bean.Uuid;
+import com.antoshkaplus.recursivelists.backend.bean.VariantItem;
+import com.antoshkaplus.recursivelists.backend.bean.VariantItemList;
 import com.antoshkaplus.recursivelists.backend.model.BackendUser;
 import com.antoshkaplus.recursivelists.backend.model.GtaskTrack;
 import com.antoshkaplus.recursivelists.backend.model.Task;
@@ -11,6 +18,7 @@ import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.config.Named;
+import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.users.User;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.Ref;
@@ -78,6 +86,14 @@ public class ItemsEndpoint {
         List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).filter("version >", version).list();
         return VariantItemList.createFromItems(itemList);
     }
+
+    @ApiMethod(name = "getCurrentTaskList", path = "get_current_task_list")
+    public TaskList getCurrentTaskList(User user) {
+        BackendUser backendUser = retrieveBackendUser(user);
+        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).filter("current ==", true).list();
+        return new TaskList(taskList);
+    }
+
 
     @ApiMethod(name = "getRootUuid", path = "get_root_uuid")
     public Uuid getRootUuid(User user) {

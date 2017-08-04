@@ -1,7 +1,6 @@
-package com.antoshkaplus.recursivelists.backend;
+package com.antoshkaplus.recursivelists.backend.bean;
 
 import com.antoshkaplus.recursivelists.backend.model.Item;
-import com.antoshkaplus.recursivelists.backend.model.ItemKind;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 
 /**

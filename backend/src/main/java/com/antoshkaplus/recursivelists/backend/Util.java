@@ -1,5 +1,6 @@
 package com.antoshkaplus.recursivelists.backend;
 
+import com.antoshkaplus.recursivelists.backend.bean.Gtask;
 import com.antoshkaplus.recursivelists.backend.model.BackendUser;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 

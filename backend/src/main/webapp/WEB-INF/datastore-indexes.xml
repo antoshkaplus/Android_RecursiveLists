@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- we have to specify our own indexes here as ormlite mapper expects them to exist -->
+<datastore-indexes autoGenerate="true">
+    <datastore-index kind="Task" ancestor="true" source="manual">
+        <property name="current" direction="asc" />
+    </datastore-index>
+</datastore-indexes>

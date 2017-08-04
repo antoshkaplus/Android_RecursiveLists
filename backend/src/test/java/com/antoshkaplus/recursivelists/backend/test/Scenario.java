@@ -3,6 +3,9 @@ package com.antoshkaplus.recursivelists.backend.test;
 import java.util.Collections;
 
 import com.antoshkaplus.recursivelists.backend.*;
+import com.antoshkaplus.recursivelists.backend.bean.Gtask;
+import com.antoshkaplus.recursivelists.backend.bean.GtaskList;
+import com.antoshkaplus.recursivelists.backend.bean.IdList;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 import com.google.appengine.api.users.User;
 

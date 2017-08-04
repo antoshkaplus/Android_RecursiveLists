@@ -1,6 +1,10 @@
 package com.antoshkaplus.recursivelists.backend;
 
 import com.antoshkaplus.bee.backend.ResourceDate;
+import com.antoshkaplus.recursivelists.backend.bean.IdList;
+import com.antoshkaplus.recursivelists.backend.bean.Uuid;
+import com.antoshkaplus.recursivelists.backend.bean.VariantItem;
+import com.antoshkaplus.recursivelists.backend.bean.VariantItemList;
 import com.antoshkaplus.recursivelists.backend.model.Item;
 import com.antoshkaplus.recursivelists.backend.test.*;
 import com.antoshkaplus.recursivelists.backend.test.Util;

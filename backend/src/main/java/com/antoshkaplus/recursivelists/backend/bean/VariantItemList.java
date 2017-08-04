@@ -1,8 +1,6 @@
-package com.antoshkaplus.recursivelists.backend;
+package com.antoshkaplus.recursivelists.backend.bean;
 
 import com.antoshkaplus.recursivelists.backend.model.Item;
-import com.google.api.server.spi.config.AnnotationBoolean;
-import com.google.api.server.spi.config.ApiResourceProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +26,7 @@ public class VariantItemList {
         this.items = items;
     }
 
-    static VariantItemList createFromItems(List<Item> items) {
+    public static VariantItemList createFromItems(List<Item> items) {
         return new VariantItemList(convert(items, new Converter<Item, VariantItem>() {
             @Override
             public VariantItem convert(Item from) {

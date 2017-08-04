@@ -43,7 +43,8 @@ $(function() {
         }),
         prepareMove: ko.observable(false),
         preparedItems: ko.observableArray(),
-        showRemoved: ko.observable(false)
+        showRemoved: ko.observable(false),
+        currentTasks: ko.observable([])
     };
 
     viewModel.apisLoaded.subscribe(function(val) {
@@ -225,6 +226,13 @@ function loadApi() {
                 // root is always item
                 viewModel.parent(new Parent(resp.uuid, "Item"))
                 console.log("root uuid set")
+            })
+            gapi.client.itemsApi.getCurrentTaskList().execute(function(resp) {
+                if (resp.error != null) {
+                    console.log("error getCurrentTaskList", resp)
+                    return
+                }
+                viewModel.currentTasks(resp.items);
             })
             console.log("api loaded")
         },

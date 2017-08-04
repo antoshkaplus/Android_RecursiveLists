@@ -77,7 +77,7 @@ public class Item {
                         .append(StringUtils.join(lines, ","))
                         .append(".");
         }
-        if (updateDate.before(createDate)) {
+        if (updateDate != null && createDate != null && updateDate.before(createDate)) {
             report.append(String.format("updateDate %s earlier than createDate %s.", updateDate, createDate));
         }
         if (report.length() == 0) {

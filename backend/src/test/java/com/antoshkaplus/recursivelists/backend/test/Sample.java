@@ -1,9 +1,9 @@
 package com.antoshkaplus.recursivelists.backend.test;
 
-import com.antoshkaplus.recursivelists.backend.Gtask;
-import com.antoshkaplus.recursivelists.backend.GtaskList;
+import com.antoshkaplus.recursivelists.backend.bean.Gtask;
+import com.antoshkaplus.recursivelists.backend.bean.GtaskList;
 import com.antoshkaplus.recursivelists.backend.ItemsEndpoint;
-import com.antoshkaplus.recursivelists.backend.VariantItem;
+import com.antoshkaplus.recursivelists.backend.bean.VariantItem;
 import com.antoshkaplus.recursivelists.backend.model.Item;
 import com.antoshkaplus.recursivelists.backend.model.Task;
 import com.google.appengine.api.users.User;
@@ -12,9 +12,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 

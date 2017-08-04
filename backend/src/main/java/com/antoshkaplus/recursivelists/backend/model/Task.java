@@ -13,7 +13,7 @@ public class Task extends Item {
     private Date completeDate;
     private int priority;
     private Subtask subtask;
-
+    private boolean current = false;
 
     public Task() {
         setKind(ItemKind.Task);
@@ -50,5 +50,13 @@ public class Task extends Item {
 
     public boolean hasSubtasks() {
         return subtask != null && subtask.getTotalCount() > 0;
+    }
+
+    public void setCurrent(boolean current) {
+        this.current = current;
+    }
+
+    public boolean isCurrent() {
+        return current;
     }
 }

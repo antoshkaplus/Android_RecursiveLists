@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists.backend;
+package com.antoshkaplus.recursivelists.backend.bean;
 
 import java.util.Date;
 

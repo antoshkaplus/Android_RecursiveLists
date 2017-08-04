@@ -1,4 +1,4 @@
-package com.antoshkaplus.recursivelists.backend;
+package com.antoshkaplus.recursivelists.backend.bean;
 
 /**
  * Created by antoshkaplus on 9/5/16.
