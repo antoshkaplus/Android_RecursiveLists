@@ -94,6 +94,17 @@ function completeTask(task) {
     gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).execute()
 }
 
+function makeCurrent(task) {
+    task.current = true
+    gapi.client.itemsApi.makeTaskCurrent({"uuid": task.uuid}).then(
+        function(resp) {
+            console.log("task made current")
+        }, 
+        function(error) {
+            console.log("task is not made current. failure.")
+        })
+}
+
 function back() {
     if (viewModel.parentPath.length == 0) return;
     p = viewModel.parentPath.pop()
