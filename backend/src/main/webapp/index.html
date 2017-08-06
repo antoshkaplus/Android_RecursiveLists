@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
 
     <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect.js"></script>
     <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect-collapsible-groups.js"></script>
@@ -91,10 +91,18 @@
                     <div class="row" data-bind="css: itemCssClass($data)">
                         <div class="col" data-bind="text: title"></div>
                         <div class="col">
-                            <!-- ko if: !subtask.totalCount > 0 -->
+                            <button type="button" class="col btn btn-primary" data-bind="click: removeCurrent">
+                                Not Current
+                            </button>
+                        </div>
+                        <div class="col">
+                            <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
                             <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
                                 Complete
                             </button>
+                            <!-- /ko -->
+                            <!-- ko if: $data.completeDate -->
+                            <div data-bind="text: completeDate"></div>
                             <!-- /ko -->
                         </div>
                     </div>

@@ -1,5 +1,6 @@
 package com.antoshkaplus.recursivelists.backend.model;
 
+import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Subclass;
 
 import java.util.Date;
@@ -13,7 +14,7 @@ public class Task extends Item {
     private Date completeDate;
     private int priority;
     private Subtask subtask;
-    private boolean current = false;
+    @Index private boolean current = false;
 
     public Task() {
         setKind(ItemKind.Task);

@@ -91,18 +91,41 @@ function isTask(kind) {
 
 function completeTask(task) {
     task.completeDate = new Date()
-    gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).execute()
+    gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).then(
+        function(resp) {
+            console.log("completeTask complete")
+
+        },
+        function(error) {
+            console.log("completeTask failure")
+        }
+    )
 }
 
 function makeCurrent(task) {
     task.current = true
-    gapi.client.itemsApi.makeTaskCurrent({"uuid": task.uuid}).then(
+    gapi.client.itemsApi.setCurrentTask({"uuid": task.uuid, "current": true}).then(
         function(resp) {
+            refreshItemList()
+            viewModel.currentTasks(viewModel.currentTasks().concat([task]))
             console.log("task made current")
         }, 
         function(error) {
             console.log("task is not made current. failure.")
         })
+}
+
+function removeCurrent(task) {
+    task.current = false
+    gapi.client.itemsApi.setCurrentTask({"uuid": task.uuid, "current": false}).then(
+        function(resp) {
+            viewModel.currentTasks(viewModel.currentTasks().filter(x => x !== task))
+            console.log("task remove current. success.")
+        },
+        function(error) {
+            console.log("task remove current. failure.")
+        }
+    )
 }
 
 function back() {
@@ -242,6 +265,9 @@ function loadApi() {
                 if (resp.error != null) {
                     console.log("error getCurrentTaskList", resp)
                     return
+                }
+                if (!Array.isArray(resp.items)) {
+                    resp.items = []
                 }
                 viewModel.currentTasks(resp.items);
             })
@@ -533,3 +559,10 @@ function fillItemList() {
         console.log(resp)
     })
 }
+
+function refreshItemList() {
+    list = viewModel.itemList().slice()
+    viewModel.itemList.removeAll()
+    viewModel.itemList(list)
+}
+

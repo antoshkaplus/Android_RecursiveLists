@@ -90,7 +90,7 @@ public class ItemsEndpoint {
     @ApiMethod(name = "getCurrentTaskList", path = "get_current_task_list")
     public TaskList getCurrentTaskList(User user) {
         BackendUser backendUser = retrieveBackendUser(user);
-        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).filter("current ==", true).list();
+        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).filter("current", true).list();
         return new TaskList(taskList);
     }
 
@@ -351,6 +351,19 @@ public class ItemsEndpoint {
                 BackendUser backendUser = retrieveBackendUser(user);
                 Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
                 updateTaskComplete(task, completeDate, backendUser);
+                ofy().save().entity(task).now();
+            }
+        });
+    }
+
+    @ApiMethod(name = "setCurrentTask", path = "setCurrentTask")
+    public void setCurrentTask(@Named("uuid") final String uuid, @Named("current") final boolean current, final User user) {
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
+                task.setCurrent(current);
                 ofy().save().entity(task).now();
             }
         });
