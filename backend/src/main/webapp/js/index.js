@@ -1,30 +1,10 @@
 
-// now we need ability to go back.
-// either keep tree in javascript of where we going each time. or do requests.
-// lets do online.
-// so we have our parent guy. we need to get his parent and it's children
-
-
-//server:client_id:
-var CLIENT_ID = "582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com"
-var SCOPES = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/tasks"
-var API_KEY = "AIzaSyD81UMLvDPOz_gOov_9fuaWZopCNwWrS-4"
-
-function Parent(uuid, kind) {
-    this.uuid = uuid
-    this.kind = kind
-}
-Parent.prototype.isTask = function() {
-    return this.kind == "Task"
-}
-
-
 
 $(function() {
 
     viewModel = {
         itemList: ko.observableArray(),
-        parent: ko.observable(new Parent(null, null)),
+        parent: ko.observable({title:null, kind:null, uuid:null}),
         parentPath: [],
         gTasks: ko.observableArray(),
         showDeleted: ko.observable(false),
@@ -49,6 +29,8 @@ $(function() {
 
     viewModel.apisLoaded.subscribe(function(val) {
         if (!val) return;
+        initItemListRoot()
+        fillCurrentTasks()
         listTaskLists()
     });
 
@@ -186,9 +168,9 @@ function releaseMove() {
     cancelMove()
 }
 
-function onItemClick(item) {
+function pushParent(item) {
     viewModel.parentPath.push(viewModel.parent())
-    viewModel.parent(new Parent(item.uuid, item.kind))
+    viewModel.parent(item)
 }
 
 function guid() {
@@ -201,85 +183,26 @@ function guid() {
     s4() + '-' + s4() + s4() + s4();
 }
 
-// Get authorization from the user to access profile info
-function initAuth() {
-    gapi.client.setApiKey(API_KEY);
-    gapi.auth2.init({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-    }).then(function () {
-        console.log("everything is good")
-        auth2 = gapi.auth2.getAuthInstance();
-        auth2.isSignedIn.listen(updateSigninStatus);
-        updateSigninStatus(auth2.isSignedIn.get());
-        $('#login').click(auth)
-    });
+function getRootItem() {
+    if (!viewModel.parentPath.length) return viewModel.parent()
+    return viewModel.parentPath[0]
 }
 
-function updateSigninStatus(isSignedIn) {
-    if (isSignedIn) {
-        console.log(auth2.currentUser.get().getBasicProfile().getGivenName());
-        loadApi();
-    } else {
-        console.log("terrible")
+function showCurrent(task) {
+    root = getRootItem()
+    if (root.uuid == task.parentUuid) {
+        // it's root
+        pushParent(root)
+        return
     }
-
-}
-
-function auth() {
-    auth2.signIn();
-}
-
-// this is where we starting out
-function init() {
-    gapi.load('client:auth2', initAuth);
-}
-
-function loadApi() {
-    var apiName = 'itemsApi';
-    var apiVersion = 'v3';
-    var apiRoot = 'https://' + window.location.host + '/_ah/api';
-    if (window.location.hostname == 'localhost'
-      || window.location.hostname == '127.0.0.1'
-      || ((window.location.port != "") && (window.location.port > 1023))) {
-        // We're probably running against the DevAppServer
-      apiRoot = 'http://' + window.location.host + '/_ah/api';
-    }
-    //apiRoot = "https://antoshkaplus-words.appspot.com/_ah/api"
-
-
-    gapi.client.load(apiName, apiVersion, undefined, apiRoot).then(
-        function(response) {
-            viewModel.itemsApiLoaded(true)
-            gapi.client.itemsApi.getRootUuid().execute(function(resp) {
-                if (resp.error != null) {
-                    console.log("error getRootUuid", resp)
-                    return
-                }
-                console.log(resp.uuid)
-                // root is always item
-                viewModel.parent(new Parent(resp.uuid, "Item"))
-                console.log("root uuid set")
-            })
-            gapi.client.itemsApi.getCurrentTaskList().execute(function(resp) {
-                if (resp.error != null) {
-                    console.log("error getCurrentTaskList", resp)
-                    return
-                }
-                if (!Array.isArray(resp.items)) {
-                    resp.items = []
-                }
-                viewModel.currentTasks(resp.items);
-            })
-            console.log("api loaded")
+    gapi.client.itemsApi.getItem({uuid: task.parentUuid}).then(
+        function(resp) {
+            pushParent(convertVarItem(resp.result))
         },
         function(reason) {
-            console.log("api load failure", reason)
+            console.log("error", reason)
         })
-    gapi.client.load('tasks', 'v1', function(resp) { viewModel.gtaskApiLoaded(true); });
-
 }
-
 
 function GoogleTaskList(taskList) {
     this.updated = taskList.updated
@@ -517,12 +440,17 @@ function addTask() {
     title = $('#item').val()
     item = new Item(title)
     item.kind = "Task"
-    gapi.client.itemsApi.addItem({task: item}).execute()
-
+    gapi.client.itemsApi.addItem({task: item}).then(
+       function(resp) {
+           console.log(item, "add item success")
+       },
+       function(reason) {
+           console.log(reason, "add item failure")
+       })
 }
 
 function addItem() {
-    if (viewModel.parent().isTask()) throw "Can't insert Item into Task."
+    if (isTask(viewModel.parent())) throw "Can't insert Item into Task."
     title = $('#item').val()
     item = new Item(title)
     item.kind = "Item"
@@ -535,14 +463,43 @@ function addItem() {
         })
 }
 
+function convertVarItem(x) {
+    return x.item ? x.item : x.task;
+}
+
 function convertVariantItems(variantItems) {
-    return variantItems.map(function(x) { return x.item ? x.item : x.task; });
+    return variantItems.map(convertVarItem);
 }
 
 function toVariantItems(items) {
     return items.map(function(x) { return isTask(x) ? {task: x} : {item: x} })
 }
 
+function initItemListRoot() {
+    gapi.client.itemsApi.getRootUuid().execute(function(resp) {
+        if (resp.error != null) {
+            console.log("error getRootUuid", resp)
+            return
+        }
+        console.log(resp.uuid)
+        // root is always item
+        viewModel.parent({kind:item, uuid:resp.uuid, title:"Root"})
+        console.log("root uuid set")
+    })
+}
+
+function fillCurrentTasks() {
+    gapi.client.itemsApi.getCurrentTaskList().execute(function(resp) {
+        if (resp.error != null) {
+            console.log("error getCurrentTaskList", resp)
+            return
+        }
+        if (!Array.isArray(resp.items)) {
+            resp.items = []
+        }
+        viewModel.currentTasks(resp.items);
+    })
+}
 
 function fillItemList() {
     gapi.client.itemsApi.getChildrenItems({parentUuid: viewModel.parent().uuid}).execute(function(resp) {

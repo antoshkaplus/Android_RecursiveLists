@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import java.util.List;
 
 import static ch.lambdaj.Lambda.forEach;
+import static ch.lambdaj.Lambda.of;
 import static ch.lambdaj.Lambda.on;
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import static ch.lambdaj.Lambda.extract;
@@ -109,7 +110,8 @@ public class ItemsEndpoint {
 
     @ApiMethod(name = "getItem", path = "get_item")
     public VariantItem getItem(@Named("uuid")String uuid, User user) {
-        Item item = ofy().load().type(Item.class).parent(retrieveBackendUser(user)).id(uuid).now();
+        BackendUser backendUser = retrieveBackendUser(user);
+        Item item = ofy().load().type(Item.class).parent(backendUser).id(uuid).now();
         return VariantItem.create(item);
     }
 
@@ -214,6 +216,12 @@ public class ItemsEndpoint {
             res.add(itemMap.get(id));
         }
         return res;
+    }
+
+    @ApiMethod
+    public VariantItem getItemByUuid(@Named("uuid") String uuid, final User user) {
+        BackendUser backendUser = retrieveBackendUser(user);
+        return VariantItem.create(ofy().load().type(Item.class).parent(backendUser).id(uuid).now());
     }
 
 //    @ApiMethod(name = "getItemsGreaterVersion", path = "get_items_greater_version")
@@ -363,6 +371,7 @@ public class ItemsEndpoint {
             public void vrun() {
                 BackendUser backendUser = retrieveBackendUser(user);
                 Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
+                task.setDbVersion(backendUser.increaseVersion());
                 task.setCurrent(current);
                 ofy().save().entity(task).now();
             }
