@@ -488,6 +488,13 @@ function initItemListRoot() {
     })
 }
 
+function filterOldCompletedTasks(items) {
+    var bound = new Date();
+    bound.setMonth(bound.getMonth() - 1);
+    return items.filter(function(x) { return !isTask(x) || !x.completeDate || x.completeDate > bound})
+}
+
+
 function fillCurrentTasks() {
     gapi.client.itemsApi.getCurrentTaskList().execute(function(resp) {
         if (resp.error != null) {
@@ -497,7 +504,7 @@ function fillCurrentTasks() {
         if (!Array.isArray(resp.items)) {
             resp.items = []
         }
-        viewModel.currentTasks(resp.items);
+        viewModel.currentTasks(filterOldCompletedTasks(resp.items));
     })
 }
 
@@ -512,7 +519,7 @@ function fillItemList() {
         // empty items with such parent
         if (!resp.variantItems) resp.variantItems = []
 
-        viewModel.itemList(convertVariantItems(resp.variantItems))
+        viewModel.itemList(filterOldCompletedTasks(convertVariantItems(resp.variantItems)))
         console.log(resp)
     })
 }
