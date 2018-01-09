@@ -63,13 +63,13 @@
                             </div>
                             <div class="col" data-bind="text: title"></div>
                             <div class="col-2">
-                                <!-- ko if: isTask(kind) && !$data.completeDate && !$data.current -->
+                                <!-- ko if: isTask($data) && !$data.completeDate && !$data.current -->
                                 <button type="button" class="btn btn-primary" data-bind="click: makeCurrent">
                                     Make Current
                                 </button>
                                 <!-- /ko -->
                             </div>
-                            <div class="col-2" data-bind="if: isTask(kind)">
+                            <div class="col-2" data-bind="if: isTask($data)">
                                 <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
                                 <button type="button" class="btn btn-primary" data-bind="click: completeTask">
                                     Complete

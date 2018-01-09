@@ -67,8 +67,8 @@ function itemKindClass(kind) {
     return kind == "Task" ? "task" : "item";
 }
 
-function isTask(kind) {
-    return kind == "Task"
+function isTask(t) {
+    return t.kind == "Task"
 }
 
 function completeTask(task) {
@@ -159,7 +159,7 @@ function releaseMove() {
         }
 
         t.parentUuid = parentUuid
-        if (isTask(t.kind)) {
+        if (isTask(t)) {
             gapi.client.itemsApi.moveTask({"uuid": t.uuid, "parentUuid": t.parentUuid}).execute(callback)
         } else {
             gapi.client.itemsApi.moveItem({"uuid": t.uuid, "parentUuid": t.parentUuid}).execute(callback)
@@ -197,6 +197,7 @@ function showCurrent(task) {
     }
     gapi.client.itemsApi.getItem({uuid: task.parentUuid}).then(
         function(resp) {
+            convertItemRecordInplace(resp.result);
             pushParent(convertVarItem(resp.result))
         },
         function(reason) {
@@ -471,6 +472,14 @@ function convertVariantItems(variantItems) {
     return variantItems.map(convertVarItem);
 }
 
+function convertItemRecordInplace(x) {
+    ['createDate', 'updateDate', 'completeDate'].forEach(function(p) {
+        if (x[p] && typeof x[p] === 'string') {
+            x[p] = new Date(x[p]);
+        }
+    })
+}
+
 function toVariantItems(items) {
     return items.map(function(x) { return isTask(x) ? {task: x} : {item: x} })
 }
@@ -504,6 +513,7 @@ function fillCurrentTasks() {
         if (!Array.isArray(resp.items)) {
             resp.items = []
         }
+        resp.items.forEach(convertItemRecordInplace);
         viewModel.currentTasks(filterOldCompletedTasks(resp.items));
     })
 }
@@ -518,6 +528,7 @@ function fillItemList() {
         }
         // empty items with such parent
         if (!resp.variantItems) resp.variantItems = []
+        resp.variantItems.forEach(convertItemRecordInplace);
 
         viewModel.itemList(filterOldCompletedTasks(convertVariantItems(resp.variantItems)))
         console.log(resp)
