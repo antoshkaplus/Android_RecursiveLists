@@ -95,6 +95,12 @@ public class ItemsEndpoint {
         return new TaskList(taskList);
     }
 
+    @ApiMethod(name = "getAllTaskList", path = "get_all_task_list")
+    public TaskList getAllTaskList(User user) {
+        BackendUser backendUser = retrieveBackendUser(user);
+        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).list();
+        return new TaskList(taskList);
+    }
 
     @ApiMethod(name = "getRootUuid", path = "get_root_uuid")
     public Uuid getRootUuid(User user) {

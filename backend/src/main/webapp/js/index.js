@@ -24,13 +24,15 @@ $(function() {
         prepareMove: ko.observable(false),
         preparedItems: ko.observableArray(),
         showRemoved: ko.observable(false),
-        currentTasks: ko.observable([])
+        currentTasks: ko.observable([]),
+        allTasks: ko.observable([])
     };
 
     viewModel.apisLoaded.subscribe(function(val) {
         if (!val) return;
         initItemListRoot()
         fillCurrentTasks()
+        fillAllTasks()
         listTaskLists()
     });
 
@@ -193,12 +195,14 @@ function showCurrent(task) {
     if (root.uuid == task.parentUuid) {
         // it's root
         pushParent(root)
+        $('.nav-tabs a[href="#navigation"]').tab('show')
         return
     }
     gapi.client.itemsApi.getItem({uuid: task.parentUuid}).then(
         function(resp) {
             convertItemRecordInplace(resp.result);
             pushParent(convertVarItem(resp.result))
+            $('.nav-tabs a[href="#navigation"]').tab('show')
         },
         function(reason) {
             console.log("error", reason)
@@ -516,6 +520,20 @@ function fillCurrentTasks() {
         resp.items.forEach(convertItemRecordInplace);
         viewModel.currentTasks(filterOldCompletedTasks(resp.items));
     })
+}
+
+function fillAllTasks() {
+    gapi.client.itemsApi.getAllTaskList().then(
+        function(resp) {
+            if (!Array.isArray(resp.result.items)) {
+                resp.result.items = []
+            }
+            resp.result.items.forEach(convertItemRecordInplace);
+            viewModel.allTasks(filterOldCompletedTasks(resp.result.items));
+        },
+        function(reason) {
+            console.log(reason, "error fillAllTasks")
+        })
 }
 
 function fillItemList() {

@@ -15,6 +15,7 @@ public class Task extends Item {
     private int priority;
     private Subtask subtask;
     @Index private boolean current = false;
+    @Index private boolean topLevel = false;
 
     public Task() {
         setKind(ItemKind.Task);

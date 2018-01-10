@@ -28,29 +28,40 @@
     <button type="button" class="btn btn-primary" id="rereshAuth" data-bind="click: refreshAuth">Refresh Auth</button>
 
 
-    <form class="form-inline">
-        <div class="form-group">
-            <label for="item">Item</label>
-            <input type="text" class="form-control" id="item" placeholder="apple">
-        </div>
-        <button type="button" id="addItem" class="btn btn-primary" data-bind="click: addItem">Add Item</button>
-        <button type="button" id="fillItemList" class="btn btn-primary" data-bind="click: fillItemList">Update</button>
-        <button type="button" id="back" class="btn btn-primary" data-bind="click: back">Back</button>
-        <button type="button" id="addTask" class="btn btn-primary" data-bind="click: addTask">Add Task</button>
-        <div data-bind="if: !waitRelease()">
-            <button type="button" id="move" class="btn btn-primary" data-bind="enable: selectedItems().length > 0, click: moveSelected">Move</button>
-            <button type="button" id="remove" class="btn btn-primary" data-bind="enable: selectedItems().length > 0, click: removeSelected">Remove</button>
-        </div>
-        <div data-bind="if: waitRelease()">
-            <button type="button" id="release" class="btn btn-primary" data-bind="click: releaseMove">Release</button>
-            <button type="button" id="cancelMove" class="btn btn-primary" data-bind="click: cancelMove">Cancel Move</button>
-        </div>
-        <label><input type="checkbox" data-bind="checked: showRemoved">Show Removed</label>
-    </form>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" id="navigation-tab" data-toggle="tab" href="#navigation" role="tab" aria-controls="navigation-tab" aria-selected="true">Navigation</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="current-tasks-tab" data-toggle="tab" href="#current-tasks" role="tab" aria-controls="current-tasks-tab" aria-selected="false">Current Tasks</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="all-tasks-tab" data-toggle="tab" href="#all-tasks" role="tab" aria-controls="all-tasks-tab" aria-selected="false">All Tasks</a>
+        </li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="navigation" role="tabpanel" aria-labelledby="navigation-tab">
 
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="item">Item</label>
+                    <input type="text" class="form-control" id="item" placeholder="apple">
+                </div>
+                <button type="button" id="addItem" class="btn btn-primary" data-bind="click: addItem">Add Item</button>
+                <button type="button" id="fillItemList" class="btn btn-primary" data-bind="click: fillItemList">Update</button>
+                <button type="button" id="back" class="btn btn-primary" data-bind="click: back">Back</button>
+                <button type="button" id="addTask" class="btn btn-primary" data-bind="click: addTask">Add Task</button>
+                <div data-bind="if: !waitRelease()">
+                    <button type="button" id="move" class="btn btn-primary" data-bind="enable: selectedItems().length > 0, click: moveSelected">Move</button>
+                    <button type="button" id="remove" class="btn btn-primary" data-bind="enable: selectedItems().length > 0, click: removeSelected">Remove</button>
+                </div>
+                <div data-bind="if: waitRelease()">
+                    <button type="button" id="release" class="btn btn-primary" data-bind="click: releaseMove">Release</button>
+                    <button type="button" id="cancelMove" class="btn btn-primary" data-bind="click: cancelMove">Cancel Move</button>
+                </div>
+                <label><input type="checkbox" data-bind="checked: showRemoved">Show Removed</label>
+            </form>
 
-    <div class="row">
-        <div class="col-sm-6">
             <div class="card">
                 <div class="card-header" data-bind="text: parent().title">
                 </div>
@@ -89,8 +100,72 @@
                     </div>
                 </div>
             </div>
+
+
+            <div class="card">
+                <div class="card-block">
+                    <form class="form-inline" >
+                        <div class="form-group">
+                            <label for="googleTask">Task</label>
+                            <input type="text" class="form-control" id="googleTask" placeholder="eat apple">
+                        </div>
+                        <button type="button" class="btn btn-primary" data-bind="click: addGoogleTask">Add Google Task</button>
+
+                        <button type="button" class="btn btn-primary" data-bind="enable: false, click: importGoogleTasks">Import Google Tasks</button>
+
+                        <button type="button" class="btn btn-primary" data-bind="click: setPrepareMove">Prepare Move</button>
+                        <button type="button" class="btn btn-primary" data-bind="click: movePrepared">Move</button>
+                        <button type="button" class="btn btn-primary" data-bind="click: deletePrepared">Delete</button>
+
+                    </form>
+                </div>
+
+                <div class="row container">
+
+                    <div class="col">
+                        <div class="card-block">
+                            <div class="list-group" data-bind="foreach: gTasks">
+                                <button type="button" class="btn-primary list-group-item" data-bind="click: toggleShowTasks">
+                                    <div class="col" data-bind="text: title"></div>
+                                    <div class="col" data-bind="text: updated"></div>
+                                </button>
+                                <div data-bind="visible: showTasks">
+                                    <div data-bind="foreach: tasks" id="g-tasks">
+                                        <!-- ko if: showGtask($data) -->
+                                        <div class="list-group-item" data-bind="css: { 'g-completed': $data.completed, 'g-deleted': $data.deleted }">
+                                            <!-- TODO in another window somewhere -->
+                                            <!--<div class="col-1" data-bind="visible: $root.onlyDeleted()">-->
+                                            <!--<button type="button" class="btn btn-primary" data-bind="click: restoreGtask.bind($parent)">Restore</button>-->
+                                            <!--</div>-->
+                                            <div class="col-1" data-bind="visible: $root.prepareMove()">
+                                                <input type="checkbox" data-bind="checkedValue: $data, checked: $root.preparedItems">
+                                            </div>
+                                            <div class="col-4" data-bind="text: title"></div>
+                                            <div class="col-2" data-bind="text: status"></div>
+                                            <div class="col-4" data-bind="text: updated"></div>
+                                            <div class="col-1" data-bind="visible: moved"><span class="octicon octicon-home"></span></div>
+                                        </div>
+                                        <!-- /ko -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- should not use only keyword gtaskShowCompleted, gtaskShowDeleted; on the other hand the way it works is fine -->
+                    <div class="col-3">
+                        <label><input type="checkbox" data-bind="checked: showDeleted">Show Deleted</label>
+                        <label><input type="checkbox" data-bind="checked: showCompleted">Show Completed</label>
+                        <label><input type="checkbox" data-bind="checked: showMoved">Show Moved</label>
+                        <label><input type="checkbox" data-bind="checked: showUnmarked">Show Unmarked</label>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
-        <div class="col-sm-6">
+        <div class="tab-pane fade" id="current-tasks" role="tabpanel" aria-labelledby="current-tasks-tab">
+
             <div class="card card-block">
                 <div class="container" data-bind="foreach: currentTasks">
                     <div class="row" data-bind="css: itemCssClass($data)">
@@ -118,70 +193,37 @@
                     </div>
                 </div>
             </div>
+
         </div>
-    </div>
+        <div class="tab-pane fade" id="all-tasks" role="tabpanel" aria-labelledby="all-tasks-tab">
 
-
-    <div class="card">
-        <div class="card-block">
-            <form class="form-inline" >
-                <div class="form-group">
-                    <label for="googleTask">Task</label>
-                    <input type="text" class="form-control" id="googleTask" placeholder="eat apple">
-                </div>
-                <button type="button" class="btn btn-primary" data-bind="click: addGoogleTask">Add Google Task</button>
-
-                <button type="button" class="btn btn-primary" data-bind="enable: false, click: importGoogleTasks">Import Google Tasks</button>
-
-                <button type="button" class="btn btn-primary" data-bind="click: setPrepareMove">Prepare Move</button>
-                <button type="button" class="btn btn-primary" data-bind="click: movePrepared">Move</button>
-                <button type="button" class="btn btn-primary" data-bind="click: deletePrepared">Delete</button>
-
-            </form>
-        </div>
-
-        <div class="row container">
-
-            <div class="col">
-                <div class="card-block">
-                <div class="list-group" data-bind="foreach: gTasks">
-                    <button type="button" class="btn-primary list-group-item" data-bind="click: toggleShowTasks">
+            <div class="card card-block">
+                <div class="container" data-bind="foreach: allTasks">
+                    <div class="row" class="task">
                         <div class="col" data-bind="text: title"></div>
-                        <div class="col" data-bind="text: updated"></div>
-                    </button>
-                    <div data-bind="visible: showTasks">
-                        <div data-bind="foreach: tasks" id="g-tasks">
-                            <!-- ko if: showGtask($data) -->
-                            <div class="list-group-item" data-bind="css: { 'g-completed': $data.completed, 'g-deleted': $data.deleted }">
-                                <!-- TODO in another window somewhere -->
-                                <!--<div class="col-1" data-bind="visible: $root.onlyDeleted()">-->
-                                    <!--<button type="button" class="btn btn-primary" data-bind="click: restoreGtask.bind($parent)">Restore</button>-->
-                                <!--</div>-->
-                                <div class="col-1" data-bind="visible: $root.prepareMove()">
-                                    <input type="checkbox" data-bind="checkedValue: $data, checked: $root.preparedItems">
-                                </div>
-                                <div class="col-4" data-bind="text: title"></div>
-                                <div class="col-2" data-bind="text: status"></div>
-                                <div class="col-4" data-bind="text: updated"></div>
-                                <div class="col-1" data-bind="visible: moved"><span class="octicon octicon-home"></span></div>
-                            </div>
+                        <div class="col">
+                            <button type="button" class="col btn btn-primary" data-bind="click: showCurrent ">
+                                Show
+                            </button>
+                        </div>
+                        <div class="col">
+                            <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
+                            <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
+                                Complete
+                            </button>
+                            <!-- /ko -->
+                            <!-- ko if: $data.completeDate -->
+                            <div data-bind="text: completeDate"></div>
                             <!-- /ko -->
                         </div>
                     </div>
                 </div>
-                </div>
-            </div>
-
-            <!-- should not use only keyword gtaskShowCompleted, gtaskShowDeleted; on the other hand the way it works is fine -->
-            <div class="col-3">
-                <label><input type="checkbox" data-bind="checked: showDeleted">Show Deleted</label>
-                <label><input type="checkbox" data-bind="checked: showCompleted">Show Completed</label>
-                <label><input type="checkbox" data-bind="checked: showMoved">Show Moved</label>
-                <label><input type="checkbox" data-bind="checked: showUnmarked">Show Unmarked</label>
             </div>
 
         </div>
     </div>
+
+
 
     <script type="text/javascript" src="js/util.js"></script>
     <script type="text/javascript" src="js/gtask.js"></script>
