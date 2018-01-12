@@ -1,6 +1,7 @@
 package com.antoshkaplus.recursivelists.backend.remote;
 
 
+import com.antoshkaplus.recursivelists.backend.Traversal;
 import com.antoshkaplus.recursivelists.backend.model.BackendUser;
 import com.antoshkaplus.recursivelists.backend.model.Item;
 import com.antoshkaplus.recursivelists.backend.model.ItemKind;
@@ -32,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Stack;
 
 
 public class RecursiveLists {
@@ -54,12 +56,14 @@ public class RecursiveLists {
 
 
     private void run() {
-        RemoteApiOptions options = new RemoteApiOptions()
-                .server("localhost", 8080).useDevelopmentServerCredential();
+        RemoteApiOptions options = init();
 
         installer = new RemoteApiInstaller();
         try {
             installer.install(options);
+
+            while (executeCommand());
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -68,4 +72,90 @@ public class RecursiveLists {
         installer.uninstall();
     }
 
+    private RemoteApiOptions init() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Run dev? (Y/n): ");
+        String s = scanner.nextLine().toLowerCase();
+        String server = "localhost";
+        if (s.equals("n") || s.equals("no")) {
+            return new RemoteApiOptions()
+                    .server("antoshkaplus-recursivelists.appspot.com", 443)
+                    .useApplicationDefaultCredential();
+        } else {
+            return new RemoteApiOptions()
+                    .server("localhost", 8080)
+                    .useDevelopmentServerCredential();
+        }
+    }
+
+    boolean executeCommand() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("type command:");
+        String command = scanner.nextLine();
+        if (command.equals("exit")) {
+            return false;
+        }
+        else if (command.equals("list")) {
+            // try to use abbreviations for commands
+        }
+        else if (command.equals("correct-top-level-tasks")) {
+            List<BackendUser> users = getBackendUserList();
+
+        }
+        else if (command.equals("correct-disabled")) {
+            List<BackendUser> users = getBackendUserList();
+
+        }
+        else {
+            System.out.println("");
+        }
+        return true;
+    }
+
+    private List<BackendUser> getBackendUserList() {
+        return ofy().load().type(BackendUser.class).list();
+    }
+
+    void correctTopLevelTasks(BackendUser user) {
+        class P {
+            Item item;
+            ItemKind parentKind;
+            boolean parentDisabled;
+
+            P(Item item, ItemKind parentKind, boolean parentDisabled) {
+                this.item = item;
+                this.parentKind = parentKind;
+                this.parentDisabled = parentDisabled;
+            }
+        }
+
+        String uuid = user.getRootUuid();
+        Item item = new Item();
+        item.setUuid(uuid);
+
+        P p = new P(item, ItemKind.Item, false);
+
+        Stack<P> ps = new Stack<>();
+        ps.push(p);
+        while (!ps.empty()) {
+            p = ps.pop();
+            if (p.item.isTask()) {
+
+            } else {
+
+            }
+                // i need a way to save after i'm done
+        }
+
+    }
+
+    void correctDisabled(BackendUser user) {
+        // Info is boolean isDisabled
+
+        Traversal<>
+    }
+
+    List<Item> getChildren(BackendUser user, String parentUuid) {
+        return ofy().load().type(Item.class).ancestor(user).filter("parentUuid ==", parentUuid).list();
+    }
 }
