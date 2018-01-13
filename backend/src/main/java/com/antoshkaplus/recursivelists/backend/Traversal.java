@@ -18,6 +18,11 @@ public class Traversal<Info> {
     public static class Pair<Info> {
         boolean traverseChildren;
         Info info;
+
+        public Pair(boolean traverseChildren, Info info) {
+            this.traverseChildren = traverseChildren;
+            this.info = info;
+        }
     }
 
     public interface Handler<Info> {
@@ -38,9 +43,9 @@ public class Traversal<Info> {
     private Item item;
     private Stack<P<Info>> ps = new Stack<>();
 
-    public Traversal(BackendUser user, Item item) {
+    public Traversal(BackendUser user, Item item, Info info) {
         this.user = user;
-        this.ps.push(new P(item, null));
+        this.ps.push(new P(item, info));
     }
 
     public void traverse(Handler<Info> handler) {

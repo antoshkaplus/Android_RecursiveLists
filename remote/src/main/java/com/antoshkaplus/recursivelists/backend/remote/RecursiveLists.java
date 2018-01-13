@@ -61,13 +61,13 @@ public class RecursiveLists {
         installer = new RemoteApiInstaller();
         try {
             installer.install(options);
+            ObjectifyService.begin();
 
             while (executeCommand());
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        ObjectifyService.begin();
 
         installer.uninstall();
     }
@@ -97,14 +97,14 @@ public class RecursiveLists {
         }
         else if (command.equals("list")) {
             // try to use abbreviations for commands
+
+
         }
         else if (command.equals("correct-top-level-tasks")) {
-            List<BackendUser> users = getBackendUserList();
-
+            forEachUser(this::correctDisabled);
         }
         else if (command.equals("correct-disabled")) {
-            List<BackendUser> users = getBackendUserList();
-
+            forEachUser(this::correctTopLevelTasks);
         }
         else {
             System.out.println("");
@@ -116,46 +116,51 @@ public class RecursiveLists {
         return ofy().load().type(BackendUser.class).list();
     }
 
-    void correctTopLevelTasks(BackendUser user) {
-        class P {
-            Item item;
-            ItemKind parentKind;
-            boolean parentDisabled;
+    interface UserHandler {
+        void Handle(BackendUser user);
+    }
 
-            P(Item item, ItemKind parentKind, boolean parentDisabled) {
-                this.item = item;
-                this.parentKind = parentKind;
-                this.parentDisabled = parentDisabled;
-            }
-        }
+    private void forEachUser(UserHandler handler) {
+        List<BackendUser> users = getBackendUserList();
+        users.forEach((user) -> {
+            ofy().transact(() -> {
+                user.increaseVersion();
+                handler.Handle(user);
+                ofy().defer().save().entities(user);
+                return null;
+            });
+        });
+    }
+
+    void correctTopLevelTasks(BackendUser user) {
 
         String uuid = user.getRootUuid();
-        Item item = new Item();
-        item.setUuid(uuid);
+        Item rootItem = new Item();
+        rootItem.setUuid(uuid);
 
-        P p = new P(item, ItemKind.Item, false);
-
-        Stack<P> ps = new Stack<>();
-        ps.push(p);
-        while (!ps.empty()) {
-            p = ps.pop();
-            if (p.item.isTask()) {
-
-            } else {
-
-            }
-                // i need a way to save after i'm done
-        }
-
+        new Traversal<ItemKind>(user, rootItem, null).traverse((item, parentKind) -> {
+            return new Traversal.Pair<ItemKind>(!item.isDisabled(), item.getKind());
+        });
     }
 
     void correctDisabled(BackendUser user) {
         // Info is boolean isDisabled
 
-        Traversal<>
-    }
+        String uuid = user.getRootUuid();
+        Item rootItem = new Item();
+        rootItem.setUuid(uuid);
 
-    List<Item> getChildren(BackendUser user, String parentUuid) {
-        return ofy().load().type(Item.class).ancestor(user).filter("parentUuid ==", parentUuid).list();
+        final List<Item> changedItems = new ArrayList<>();
+
+        new Traversal<Boolean>(user, rootItem, false).traverse((item, parentDisabled) -> {
+            if (parentDisabled && !item.isDisabled()) {
+                item.setDisabled(true);
+                item.setDbVersion(user.getVersion());
+                changedItems.add(item);
+            }
+            return new Traversal.Pair<Boolean>(true, item.isDisabled());
+        });
+
+        ofy().defer().save().entities(changedItems);
     }
 }
