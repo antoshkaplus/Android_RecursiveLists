@@ -53,7 +53,7 @@ function refreshAuth() {
 
 function loadApi() {
     var apiName = 'itemsApi';
-    var apiVersion = 'v3';
+    var apiVersion = 'v4';
     var apiRoot = 'https://' + window.location.host + '/_ah/api';
     if (window.location.hostname == 'localhost'
       || window.location.hostname == '127.0.0.1'

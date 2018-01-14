@@ -43,7 +43,7 @@ import static ch.lambdaj.Lambda.extract;
  */
 @Api(
         name = "itemsApi",
-        version = "v3",
+        version = "v4",
         resource = "items",
         namespace = @ApiNamespace(
                 ownerDomain = "backend.recursivelists.antoshkaplus.com",
