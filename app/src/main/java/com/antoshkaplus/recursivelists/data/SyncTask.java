@@ -1,7 +1,9 @@
-package com.antoshkaplus.recursivelists;
+package com.antoshkaplus.recursivelists.data;
+
+import android.os.AsyncTask;
 
 import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
-import com.antoshkaplus.recursivelists.data.ItemDbRepository;
+import com.antoshkaplus.recursivelists.data.ItemLocalDbRepository;
 import com.antoshkaplus.recursivelists.model.Item;
 import com.antoshkaplus.recursivelists.model.RemovedItem;
 
@@ -15,21 +17,21 @@ import java.util.UUID;
 /**
  * Created by antoshkaplus on 4/16/15.
  */
-public class SyncTask implements Runnable {
+public class SyncTask extends AsyncTask<Void, Void, Void> {
 
     private ItemsApi api;
-    private ItemDbRepository repo;
+    private ItemLocalDbRepository repo;
     private Listener listener = new Adapter();
 
 
     // repository can be an interface
-    public SyncTask(ItemDbRepository repo, ItemsApi api) {
+    public SyncTask(ItemLocalDbRepository repo, ItemsApi api) {
         this.api = api;
         this.repo = repo;
     }
 
     @Override
-    public void run() {
+    protected Void doInBackground(Void... params) {
         listener.onStart();
         boolean success = true;
         try {
@@ -48,6 +50,7 @@ public class SyncTask implements Runnable {
             ex.printStackTrace();
         }
         listener.onFinish(success);
+        return null;
     }
 
     private UpdateResult update(List<Item> existingItems, List<RemovedItem> existingRemovedItems) throws IOException, SQLException {

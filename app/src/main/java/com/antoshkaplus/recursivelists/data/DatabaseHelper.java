@@ -26,7 +26,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     // name of the database file for your application -- change to something appropriate for your app
     private static final String DATABASE_NAME = "recursive_lists";
     // any time you make changes to your database objects, you may have to increase the database version
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     // the DAO object we use to access the SimpleData table
     private Dao<Item, Integer> itemsDao;
@@ -61,11 +61,14 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         if (oldVersion < 3) {
             try {
                 TableUtils.createTable(connectionSource, Task.class);
-                Dao<Item, UUID> dao = getDao(Item.class);
             } catch (java.sql.SQLException e) {
                 Log.e(this.getClass().getName(), "Unable to do database migration from | to |", e);
                 throw new RuntimeException(e);
             }
+        }
+        if (oldVersion < 4) {
+            db.execSQL("ALTER TABLE `item` ADD COLUMN create_date DATE NOT NULL");
+            db.execSQL("ALTER TABLE `item` ADD COLUMN update_date DATE NOT NULL");
         }
     }
 }

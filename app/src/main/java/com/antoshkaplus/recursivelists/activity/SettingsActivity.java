@@ -11,6 +11,7 @@ import android.preference.PreferenceManager;
 
 import com.antoshkaplus.recursivelists.CredentialFactory;
 import com.antoshkaplus.recursivelists.R;
+
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 
 

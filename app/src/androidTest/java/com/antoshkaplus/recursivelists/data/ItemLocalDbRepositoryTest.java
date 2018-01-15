@@ -12,7 +12,6 @@ import static android.support.test.InstrumentationRegistry.getContext;
 import static android.support.test.InstrumentationRegistry.getTargetContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 import org.junit.After;
 import org.junit.Before;
@@ -28,9 +27,9 @@ import java.util.UUID;
  */
 @RunWith(AndroidJUnit4.class)
 @SmallTest
-public class ItemDbRepositoryTest {
+public class ItemLocalDbRepositoryTest {
 
-    ItemDbRepository repo;
+    ItemLocalDbRepository repo;
     DatabaseHelper dbHelper;
     static final String TEST_DB_NAME = "test.db";
 
@@ -40,7 +39,7 @@ public class ItemDbRepositoryTest {
     public void setUp() throws Exception {
         getTargetContext().deleteDatabase(TEST_DB_NAME);
         dbHelper = new DatabaseHelper(getTargetContext(), TEST_DB_NAME);
-        repo = new ItemDbRepository(dbHelper, "example@gmail.com");
+        repo = new ItemLocalDbRepository(dbHelper, "example@gmail.com");
 
         InputStream input = getContext().getResources().openRawResource(com.antoshkaplus.recursivelists.test.R.raw.test_data);
 

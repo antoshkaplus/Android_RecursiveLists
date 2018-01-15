@@ -28,20 +28,20 @@ import java.util.stream.Collectors;
  * well can think of deleting items better,
  * but user is too slow... creating data
  *
- *
+ * TODO test and make sure that items are taken only owned by current user!
  */
-public class ItemDbRepository {
+public class ItemLocalDbRepository {
     private static final String TAG = "ItemRepository";
 
     private DatabaseHelper helper;
     private String user;
 
-    public ItemDbRepository(Context ctx, String user) {
+    public ItemLocalDbRepository(Context ctx, String user) {
         helper = new DatabaseHelper(ctx);
         this.user = user;
     }
 
-    public ItemDbRepository(DatabaseHelper helper, String user) {
+    public ItemLocalDbRepository(DatabaseHelper helper, String user) {
         this.helper = helper;
         this.user = user;
     }

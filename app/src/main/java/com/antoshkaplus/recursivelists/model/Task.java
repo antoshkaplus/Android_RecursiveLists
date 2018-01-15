@@ -22,12 +22,18 @@ public class Task extends Item {
     private int priority;
     @DatabaseField(dataType = DataType.SERIALIZABLE)
     private Subtask subtask;
+    @DatabaseField
+    private boolean current = false;
 
     public Task() {
     }
 
+    public Task(String title, int order, UUID parentId, ItemState state) {
+        super(title, order, parentId, state);
+    }
+
     public Task(String title, int order, UUID parentId) {
-        super(title, order, parentId);
+        super(title, order, parentId, ItemState.Local);
     }
 
     public Date getCompleteDate() {
@@ -66,5 +72,13 @@ public class Task extends Item {
     @Override
     public ItemKind getItemKind() {
         return ItemKind.Task;
+    }
+
+    public void setCurrent(boolean current) {
+        this.current = current;
+    }
+
+    public boolean isCurrent() {
+        return current;
     }
 }

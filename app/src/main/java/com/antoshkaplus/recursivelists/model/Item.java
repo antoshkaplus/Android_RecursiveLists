@@ -26,6 +26,8 @@ public class Item {
     public static final String FIELD_NAME_PARENT_ID = "parent_id";
     public static final String FIELD_NAME_ID = "id";
     public static final String FIELD_NAME_STATE = "state";
+    public static final String FIELD_NAME_CREATE_DATE = "create_date";
+    public static final String FIELD_NAME_UPDATE_DATE = "update_date";
 
     @DatabaseField(columnName = FIELD_NAME_TITLE, canBeNull = false)
     public String title;
@@ -40,15 +42,24 @@ public class Item {
     public UUID id;
 
     @DatabaseField(columnName = FIELD_NAME_STATE, canBeNull = false)
-    public ItemState state;
+    public ItemState state = ItemState.Local;
 
+    @DatabaseField(columnName = FIELD_NAME_CREATE_DATE, canBeNull = false)
+    public Date createDate = new Date();
 
+    @DatabaseField(columnName = FIELD_NAME_UPDATE_DATE, canBeNull = false)
+    public Date updateDate = new Date();
 
-    public Item(String title, int order, UUID parentId) {
+    public Item(String title, int order, UUID parentId, ItemState state) {
         this.id = UUID.randomUUID();
         this.title = title;
         this.order = order;
         this.parentId = parentId;
+        this.state = state;
+    }
+
+    public Item(String title, int order, UUID parentId) {
+        this(title, order, parentId, ItemState.Local);
     }
 
     // should be called by orm

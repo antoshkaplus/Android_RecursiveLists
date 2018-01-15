@@ -1,7 +1,5 @@
 package com.antoshkaplus.recursivelists.model;
 
-import android.content.Context;
-
 /**
  * Created by antoshkaplus on 3/5/17.
  */

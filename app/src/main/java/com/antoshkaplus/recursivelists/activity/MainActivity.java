@@ -21,32 +21,26 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.antoshkaplus.fly.dialog.RetryDialog;
 import com.antoshkaplus.fly.fragment.PermissionHelper;
-import com.antoshkaplus.recursivelists.BuildConfig;
 import com.antoshkaplus.recursivelists.CredentialFactory;
 import com.antoshkaplus.recursivelists.ItemAdapter;
 import com.antoshkaplus.recursivelists.R;
-import com.antoshkaplus.recursivelists.SyncTask;
 import com.antoshkaplus.recursivelists.Utils;
-import com.antoshkaplus.recursivelists.backend.itemsApi.ItemsApi;
-import com.antoshkaplus.recursivelists.data.ItemDbRepository;
-import com.antoshkaplus.recursivelists.data.ItemRepository;
+import com.antoshkaplus.recursivelists.data.ItemGlobalRepository;
 import com.antoshkaplus.recursivelists.data.ItemsApiFactory;
 import com.antoshkaplus.recursivelists.dialog.AddItemDialog;
 import com.antoshkaplus.recursivelists.dialog.EditStringDialog;
 import com.antoshkaplus.fly.dialog.OkDialog;
 import com.antoshkaplus.recursivelists.model.Item;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpRequestInitializer;
+import com.antoshkaplus.recursivelists.model.ItemState;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import org.json.JSONObject;
 
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -81,7 +75,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     // should always be ordered
     private List<Item> items = new ArrayList<>();
-    private ItemRepository repository;
+    private ItemGlobalRepository repository;
 
     SharedPreferences settings;
 
@@ -126,8 +120,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         if (account == null) {
             chooseAccount();
         } else {
-            repository = new ItemRepository(this, account, new ItemsApiFactory(credential));
-            repository.Start();
+            repository = new ItemGlobalRepository(this, account, new ItemsApiFactory(credential), getMainLooper());
             try {
                 rootId = repository.getRootId();
                 if (savedInstanceState == null) {
@@ -232,7 +225,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         Iterator<String> iter = json.keys();
         while (iter.hasNext()) {
             String k = iter.next();
-            Item item = new Item(k, order++, parentId);
+            Item item = new Item(k, order++, parentId, ItemState.Local);
             result.add(item);
             recursion(result, item.id, (JSONObject)json.get(k));
         }
@@ -253,7 +246,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         super.onPrepareOptionsMenu(menu);
         MenuItem item = menu.findItem(R.id.action_undo_removal);
         // can be not initialized...
-        ItemRepository manager = repository;
+        ItemGlobalRepository manager = repository;
         try {
             item.setVisible(manager.hasRemovedItems());
         } catch (Exception ex) {
@@ -666,13 +659,21 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             for (int i = item.order+1; i < items.size(); ++i) {
                 items.get(i).order = i;
             }
-            repository.addNewItem(item, null);
+            repository.addNewItem(item, new Handler() {
+                @Override
+                public void handleMessage(Message msg) {
+                    Boolean b = msg.getData().getBoolean("success");
+                    Toast.makeText(MainActivity.this, b ? "Item add success" : "Item add failure", Toast.LENGTH_LONG).show();
+                }
+            });
             //repository.updateAllItems(items.subList(item.order+1, items.size()));
             onItemsChanged();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
+
+
 
 
     private void reposition(int positionBefore, int positionAfter) {
@@ -784,14 +785,12 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     protected void onStop() {
         super.onStop();
-        repository.Destroy();
     }
 
     private void onAccountChanged() {
         String account = retrieveAccount();
         credential.setSelectedAccountName(account);
-        repository = new ItemRepository(this, account, new ItemsApiFactory(credential));
-        repository.Start();
+        repository = new ItemGlobalRepository(this, account, new ItemsApiFactory(credential), getMainLooper());
         try {
             parentId = rootId = repository.getRootId();
         } catch (Exception ex) {
