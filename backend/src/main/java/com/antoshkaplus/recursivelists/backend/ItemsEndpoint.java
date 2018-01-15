@@ -43,7 +43,7 @@ import static ch.lambdaj.Lambda.extract;
  */
 @Api(
         name = "itemsApi",
-        version = "v4",
+        version = "v5",
         resource = "items",
         namespace = @ApiNamespace(
                 ownerDomain = "backend.recursivelists.antoshkaplus.com",
@@ -98,7 +98,7 @@ public class ItemsEndpoint {
     @ApiMethod(name = "getAllTaskList", path = "get_all_task_list")
     public TaskList getAllTaskList(User user) {
         BackendUser backendUser = retrieveBackendUser(user);
-        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).list();
+        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).filter("disabled", false).list();
         return new TaskList(taskList);
     }
 

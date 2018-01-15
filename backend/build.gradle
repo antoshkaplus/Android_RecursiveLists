@@ -30,7 +30,7 @@ dependencies {
     compile 'javax.inject:javax.inject:1'
     compileOnly 'javax.servlet:javax.servlet-api:4.0.0'
 
-    compile 'com.googlecode.objectify:objectify:5.1.9'
+    compile 'com.googlecode.objectify:objectify:5.1.21'
     compile 'com.google.apis:google-api-services-tasks:v1-rev46-1.22.0'
     compile 'org.apache.commons:commons-lang3:3.6'
     compile 'com.googlecode.lambdaj:lambdaj:2.3.3'
@@ -60,7 +60,7 @@ appengine {
         // The following is used for acceptance tests and
         // is not required for a migration.
         project = findProperty("appengine.deploy.project")
-        version = '4'
+        version = '5'
         def promoteProp = findProperty("appengine.deploy.promote")
         if (promoteProp != null) {
             promote = new Boolean(promoteProp)

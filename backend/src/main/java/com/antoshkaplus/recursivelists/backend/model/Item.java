@@ -35,6 +35,7 @@ public class Item {
     // after item gets disabled there is no way for it to change
     // otherwise as get enabled again
     // that way we always know when it got disabled
+    @Index
     private boolean disabled;
     private Date createDate;
     private Date updateDate;

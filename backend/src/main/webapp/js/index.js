@@ -414,8 +414,9 @@ function listTaskLists() {
             tasks.forEach(function(t) { t.listId = taskList.id; })
             var ids = tasks.map(function(t) { return t.id });
             gapi.client.itemsApi.checkGtaskIdPresent({ids : ids}).then(function(resp) {
+                if (!Array.isArray(resp.result.ids)) return;
 
-                ids = resp.result.ids
+                var ids = resp.result.ids
                 for (var j = 0; j < tasks.length; ++j) {
                     tasks[j].moved = (ids[j] != null);
                     obj.tasks.push(tasks[j])
