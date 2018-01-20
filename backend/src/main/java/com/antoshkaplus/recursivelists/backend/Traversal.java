@@ -52,7 +52,7 @@ public class Traversal<Info> {
         while (!ps.empty()) {
             P<Info> p = ps.pop();
 
-            List<Item> items = ofy().load().type(Item.class).ancestor(user).filter("parentUuid== ", p.item.getUuid()).list();
+            List<Item> items = ofy().load().type(Item.class).ancestor(user).filter("parentUuid ==", p.item.getUuid()).list();
             for (Item item : items) {
                 Pair<Info> res = handler.handle(item, p.info);
                 if (res.traverseChildren) {
