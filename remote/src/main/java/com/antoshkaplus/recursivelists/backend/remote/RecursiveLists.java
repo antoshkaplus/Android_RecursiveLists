@@ -24,7 +24,7 @@ public class RecursiveLists {
         ObjectifyService.register(Task.class);
         ObjectifyService.register(BackendUser.class);
     }
-    
+
     RemoteApiInstaller installer;
 
     public static void main(String[] args) {
@@ -87,6 +87,9 @@ public class RecursiveLists {
         }
         else if (command.equals("save-tasks-as-tasks")) {
             forEachUser(this::saveTasksAsTasks);
+        }
+        else if (command.equals("resave-items")) {
+            forEachUser(this::resaveItems);
         }
         else {
             System.out.println("");
@@ -161,5 +164,20 @@ public class RecursiveLists {
         });
         System.out.println("Save tasks: " + tasks.size());
         ofy().defer().save().entities(tasks);
+    }
+
+    void resaveItems(BackendUser user) {
+        String uuid = user.getRootUuid();
+        Item rootItem = new Item();
+        rootItem.setUuid(uuid);
+
+        final List<Item> items = new ArrayList<>();
+
+        new Traversal<Void>(user, rootItem, null).traverse((item, parentDisabled) -> {
+            items.add(item);
+            return new Traversal.Pair<Void>(true, null);
+        });
+        System.out.println("Resave items: " + items.size());
+        ofy().defer().save().entities(items);
     }
 }

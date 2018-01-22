@@ -197,27 +197,29 @@
         </div>
         <div class="tab-pane fade" id="all-tasks" role="tabpanel" aria-labelledby="all-tasks-tab">
 
-            <div class="card card-block">
-                <div class="container" data-bind="foreach: allTasks">
-                    <div class="row" class="task">
-                        <div class="col" data-bind="text: title"></div>
-                        <div class="col">
-                            <button type="button" class="col btn btn-primary" data-bind="click: showCurrent ">
-                                Show
-                            </button>
-                        </div>
-                        <div class="col">
-                            <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
-                            <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
-                                Complete
-                            </button>
-                            <!-- /ko -->
-                            <!-- ko if: $data.completeDate -->
-                            <div data-bind="text: completeDate"></div>
-                            <!-- /ko -->
-                        </div>
-                    </div>
-                </div>
+            <div class="container-fluid">
+                <table class="table">
+                    <tbody data-bind="foreach: allTasks">
+                        <tr>
+                            <td data-bind="text: path + title"></td>
+                            <td class="fit">
+                                <button type="button" class="btn btn-primary" data-bind="click: showCurrent ">
+                                    Show
+                                </button>
+                            </td>
+                            <td class="fit">
+                                <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
+                                <button type="button" class="btn btn-primary" data-bind="click: completeTask">
+                                    Complete
+                                </button>
+                                <!-- /ko -->
+                                <!-- ko if: $data.completeDate -->
+                                <div data-bind="text: completeDate"></div>
+                                <!-- /ko -->
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
         </div>

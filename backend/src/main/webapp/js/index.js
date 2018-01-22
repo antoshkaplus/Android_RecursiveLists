@@ -524,13 +524,44 @@ function fillCurrentTasks() {
 }
 
 function fillAllTasks() {
-    gapi.client.itemsApi.getAllTaskList().then(
+    gapi.client.itemsApi.getItems().then(
         function(resp) {
-            if (!Array.isArray(resp.result.items)) {
-                resp.result.items = []
+            var items = resp.result.variantItems
+            if (!Array.isArray(items)) {
+                items = []
             }
-            resp.result.items.forEach(convertItemRecordInplace);
-            viewModel.allTasks(filterOldCompletedTasks(resp.result.items));
+            items = convertVariantItems(items)
+
+            items.forEach(convertItemRecordInplace);
+            var allItems = filterOldCompletedTasks(items)
+            var allTasks = allItems.filter(isTask)
+
+            allItems = new Map(allItems.map(item => [item.uuid, item]))
+
+            for (let task of allTasks) {
+                child = task;
+                while (!child.parent) {
+                    parent = allItems.get(child.parentUuid);
+                    if (!parent) break;
+                    child.parent = parent;
+                    child = parent;
+                }
+            }
+
+            for (let s of allTasks) {
+                s.path = "/ ";
+                it = s.parent;
+                while (it) {
+                    s.path += it.title + " / ";
+                    it = it.parent;
+                }
+            }
+
+            allTasks.sort(function (a, b) {
+                return (a.path + a.title).localeCompare(b.path + b.path);
+            })
+
+            viewModel.allTasks(allTasks);
         },
         function(reason) {
             console.log(reason, "error fillAllTasks")
@@ -547,10 +578,10 @@ function fillItemList() {
         }
         // empty items with such parent
         if (!resp.variantItems) resp.variantItems = []
-        resp.variantItems.forEach(convertItemRecordInplace);
 
-        viewModel.itemList(filterOldCompletedTasks(convertVariantItems(resp.variantItems)))
-        console.log(resp)
+        items = convertVariantItems(resp.variantItems);
+        items.forEach(convertItemRecordInplace)
+        viewModel.itemList(filterOldCompletedTasks(items))
     })
 }
 

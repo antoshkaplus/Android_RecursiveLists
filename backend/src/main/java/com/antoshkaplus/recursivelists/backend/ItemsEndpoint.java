@@ -77,7 +77,7 @@ public class ItemsEndpoint {
     public VariantItemList getItems(User user) {
 
         BackendUser backendUser = retrieveBackendUser(user);
-        List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).list();
+        List<Item> itemList = ofy().load().type(Item.class).ancestor(backendUser).filter("disabled", false).list();
         return VariantItemList.createFromItems(itemList);
     }
 

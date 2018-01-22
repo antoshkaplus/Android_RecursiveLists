@@ -18,3 +18,10 @@
     background-color: #ff837a;
     color: red;
 }
+
+.table td.fit,
+.table th.fit {
+    white-space: nowrap;
+    width: 1%;
+    text-align: center;
+}
