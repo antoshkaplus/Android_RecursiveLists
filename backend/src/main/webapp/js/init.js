@@ -3,6 +3,18 @@
 var CLIENT_ID = "582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com"
 var SCOPES = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/tasks"
 
+$(function() {
+
+    externalApisVM = {
+
+        gtaskApiLoaded: ko.observable(false),
+        itemsApiLoaded: ko.observable(false),
+        apisLoaded: ko.pureComputed(function() {
+            return viewModel.gtaskApiLoaded() && viewModel.itemsApiLoaded();
+        }),
+    }
+
+})
 
 function init() {
     gapi.load('client:auth2', initAuth);

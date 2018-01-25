@@ -2,6 +2,12 @@
 
 $(function() {
 
+    navigationVM = {
+
+    }
+
+
+
     viewModel = {
         itemList: ko.observableArray(),
         parent: ko.observable({title:null, kind:null, uuid:null}),
@@ -16,16 +22,14 @@ $(function() {
         waitRelease: ko.observable(false),
         moveItems: [],
         moveParent: "",
-        gtaskApiLoaded: ko.observable(false),
-        itemsApiLoaded: ko.observable(false),
-        apisLoaded: ko.pureComputed(function() {
-            return viewModel.gtaskApiLoaded() && viewModel.itemsApiLoaded();
-        }),
+
+
+
         prepareMove: ko.observable(false),
         preparedItems: ko.observableArray(),
         showRemoved: ko.observable(false),
         currentTasks: ko.observable([]),
-        allTasks: ko.observable([])
+        allTasks: ko.observable([]),
     };
 
     viewModel.apisLoaded.subscribe(function(val) {
@@ -60,56 +64,8 @@ function showGtask(gtask) {
             (vm.showDeleted() && g.deleted) || (vm.showMoved() && g.moved) || (vm.showCompleted() && g.completed);
 }
 
-
 function setPrepareMove() {
     viewModel.prepareMove(true)
-}
-
-function itemKindClass(kind) {
-    return kind == "Task" ? "task" : "item";
-}
-
-function isTask(t) {
-    return t.kind == "Task"
-}
-
-function completeTask(task) {
-    task.completeDate = new Date()
-    gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).then(
-        function(resp) {
-            console.log("completeTask complete")
-
-        },
-        function(error) {
-            console.log("completeTask failure")
-        }
-    )
-}
-
-function makeCurrent(task) {
-    task.current = true
-    gapi.client.itemsApi.setCurrentTask({"uuid": task.uuid, "current": true}).then(
-        function(resp) {
-            refreshItemList()
-            viewModel.currentTasks(viewModel.currentTasks().concat([task]))
-            console.log("task made current")
-        }, 
-        function(error) {
-            console.log("task is not made current. failure.")
-        })
-}
-
-function removeCurrent(task) {
-    task.current = false
-    gapi.client.itemsApi.setCurrentTask({"uuid": task.uuid, "current": false}).then(
-        function(resp) {
-            viewModel.currentTasks(viewModel.currentTasks().filter(x => x !== task))
-            console.log("task remove current. success.")
-        },
-        function(error) {
-            console.log("task remove current. failure.")
-        }
-    )
 }
 
 function back() {
@@ -125,6 +81,8 @@ function moveSelected() {
     viewModel.itemList.removeAll(viewModel.moveItems)
     viewModel.selectedItems.removeAll()
     viewModel.moveParent = viewModel.parent()
+
+    // no server side handling
 }
 
 function removeSelected() {
@@ -173,16 +131,6 @@ function releaseMove() {
 function pushParent(item) {
     viewModel.parentPath.push(viewModel.parent())
     viewModel.parent(item)
-}
-
-function guid() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000)
-      .toString(16)
-      .substring(1);
-  }
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-    s4() + '-' + s4() + s4() + s4();
 }
 
 function getRootItem() {
@@ -282,8 +230,6 @@ function updateGtasksVisualization() {
     viewModel.gTasks(data);
 }
 
-
-
 function deletePrepared() {
     s = new Map()
     viewModel.preparedItems().forEach(function(item) {
@@ -306,7 +252,6 @@ function deletePrepared() {
         Gtask.deleteTasks(listId, itemIds, callback, errorHandler)
     })
 }
-
 
 function importGoogleTasks() {
     // get last update date from our server
@@ -393,7 +338,6 @@ function importGoogleTasks() {
 
 }
 
-
 function listTaskLists() {
     gTasks = viewModel.gTasks
 
@@ -433,62 +377,6 @@ function appendPre(message) {
     pre.appendChild(textContent);
 }
 
-
-function Item(title) {
-    this.title = title
-    this.createDate = timestampToSend()
-    this.kind = "Item"
-    this.uuid = guid()
-    this.parentUuid = viewModel.parent().uuid
-}
-
-function addTask() {
-    title = $('#item').val()
-    item = new Item(title)
-    item.kind = "Task"
-    gapi.client.itemsApi.addItem({task: item}).then(
-       function(resp) {
-           console.log(item, "add item success")
-       },
-       function(reason) {
-           console.log(reason, "add item failure")
-       })
-}
-
-function addItem() {
-    if (isTask(viewModel.parent())) throw "Can't insert Item into Task."
-    title = $('#item').val()
-    item = new Item(title)
-    item.kind = "Item"
-    gapi.client.itemsApi.addItem({item: item}).then(
-        function(resp) {
-            console.log(item, "add item success")
-        },
-        function(reason) {
-            console.log(reason, "add item failure")
-        })
-}
-
-function convertVarItem(x) {
-    return x.item ? x.item : x.task;
-}
-
-function convertVariantItems(variantItems) {
-    return variantItems.map(convertVarItem);
-}
-
-function convertItemRecordInplace(x) {
-    ['createDate', 'updateDate', 'completeDate'].forEach(function(p) {
-        if (x[p] && typeof x[p] === 'string') {
-            x[p] = new Date(x[p]);
-        }
-    })
-}
-
-function toVariantItems(items) {
-    return items.map(function(x) { return isTask(x) ? {task: x} : {item: x} })
-}
-
 function initItemListRoot() {
     gapi.client.itemsApi.getRootUuid().execute(function(resp) {
         if (resp.error != null) {
@@ -507,7 +395,6 @@ function filterOldCompletedTasks(items) {
     bound.setMonth(bound.getMonth() - 1);
     return items.filter(function(x) { return !isTask(x) || !x.completeDate || x.completeDate > bound})
 }
-
 
 function fillCurrentTasks() {
     gapi.client.itemsApi.getCurrentTaskList().execute(function(resp) {

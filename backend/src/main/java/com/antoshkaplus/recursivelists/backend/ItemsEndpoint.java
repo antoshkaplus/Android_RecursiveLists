@@ -248,7 +248,7 @@ public class ItemsEndpoint {
     }
 
     @ApiMethod(name = "addItem", path = "add_item")
-    public void addVariantItem(final VariantItem item, final User user) {
+    public VariantItem addVariantItem(final VariantItem item, final User user) {
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
@@ -258,6 +258,7 @@ public class ItemsEndpoint {
                 ofy().save().entities(backendUser);
             }
         });
+        return item;
     }
 
     private void addVariantItemImpl(final VariantItem item, final BackendUser backendUser) {
