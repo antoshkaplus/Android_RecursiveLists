@@ -49,3 +49,10 @@ For webapp show only 10 first.. or whatever user asks for.
 
 The question was when to make user to pick type of the item / how. It's best to make him to pick it separate at first.
 And then ask for input. That way, if he made a mistake or in doubt, he can always go back and repick again.
+
+
+Should consider keeping all ancestors items inside an item
+
+
+
+
