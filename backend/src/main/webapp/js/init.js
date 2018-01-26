@@ -5,12 +5,12 @@ var SCOPES = "https://www.googleapis.com/auth/userinfo.email https://www.googlea
 
 $(function() {
 
-    externalApisVM = {
+    externalApis = {
 
-        gtaskApiLoaded: ko.observable(false),
-        itemsApiLoaded: ko.observable(false),
-        apisLoaded: ko.pureComputed(function() {
-            return viewModel.gtaskApiLoaded() && viewModel.itemsApiLoaded();
+        gtaskLoaded: ko.observable(false),
+        itemsLoaded: ko.observable(false),
+        allLoaded: ko.pureComputed(function() {
+            return externalApis.gtaskLoaded() && externalApis.itemsLoaded();
         }),
     }
 
@@ -77,11 +77,11 @@ function loadApi() {
 
     gapi.client.load(apiName, apiVersion, undefined, apiRoot).then(
         function(response) {
-            viewModel.itemsApiLoaded(true)
+            externalApis.itemsLoaded(true)
             console.log("items api loaded")
         },
         function(reason) {
             console.log("items api load failure", reason)
         })
-    gapi.client.load('tasks', 'v1', function(resp) { viewModel.gtaskApiLoaded(true); });
+    gapi.client.load('tasks', 'v1', function(resp) { externalApis.gtaskLoaded(true); });
 }

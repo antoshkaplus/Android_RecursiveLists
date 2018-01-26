@@ -1,0 +1,30 @@
+<template>
+    <div class="card card-block">
+        <div class="container" data-bind="foreach: currentTasks">
+            <div class="row" data-bind="css: itemCssClass($data)">
+                <div class="col" data-bind="text: title"></div>
+                <div class="col">
+                    <button type="button" class="col btn btn-primary" data-bind="click: showCurrent ">
+                        Show
+                    </button>
+                </div>
+                <div class="col">
+                    <button type="button" class="col btn btn-primary" data-bind="click: removeCurrent">
+                        Not Current
+                    </button>
+                </div>
+                <div class="col">
+                    <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
+                    <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
+                        Complete
+                    </button>
+                    <!-- /ko -->
+                    <!-- ko if: $data.completeDate -->
+                    <div data-bind="text: completeDate"></div>
+                    <!-- /ko -->
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+<script type="text/javascript" src="current-tasks.js"></script>

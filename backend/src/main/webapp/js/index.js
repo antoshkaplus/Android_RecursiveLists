@@ -1,12 +1,5 @@
 
-
 $(function() {
-
-    navigationVM = {
-
-    }
-
-
 
     viewModel = {
         itemList: ko.observableArray(),
@@ -23,8 +16,6 @@ $(function() {
         moveItems: [],
         moveParent: "",
 
-
-
         prepareMove: ko.observable(false),
         preparedItems: ko.observableArray(),
         showRemoved: ko.observable(false),
@@ -32,13 +23,13 @@ $(function() {
         allTasks: ko.observable([]),
     };
 
-    viewModel.apisLoaded.subscribe(function(val) {
+    externalApis.allLoaded.subscribe(function(val) {
         if (!val) return;
         initItemListRoot()
         fillCurrentTasks()
         fillAllTasks()
         listTaskLists()
-    });
+    })
 
     viewModel.parent.subscribe(fillItemList)
     viewModel.parent.subscribe(function (val) {

@@ -1,5 +1,5 @@
 
-globalHandler = {
+itemsRepo = {
 
     pubs: {
         task: {
@@ -7,17 +7,17 @@ globalHandler = {
             makeCurrent: ko.subscribable(),
             removeCurrent: ko.subscribable(),
             complete: ko.subscribable()
-        }
+        },
 
         item: {
             add: ko.subscribable()
-        }
+        },
 
         any: {
             move: ko.subscribable(),
             remove: ko.subscribable()
         }
-    }
+    },
 
     task: {
         add: function() {
@@ -58,7 +58,7 @@ globalHandler = {
                     console.log("task remove current. failure.")
                 }
             )
-        }
+        },
         completeTask: function(task) {
             task.completeDate = new Date()
             gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).then(

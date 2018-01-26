@@ -1,0 +1,27 @@
+<template>
+    <div class="container-fluid">
+        <table class="table">
+            <tbody data-bind="foreach: allTasks">
+            <tr>
+                <td data-bind="text: path + title"></td>
+                <td class="fit">
+                    <button type="button" class="btn btn-primary" data-bind="click: showCurrent ">
+                        Show
+                    </button>
+                </td>
+                <td class="fit">
+                    <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
+                    <button type="button" class="btn btn-primary" data-bind="click: completeTask">
+                        Complete
+                    </button>
+                    <!-- /ko -->
+                    <!-- ko if: $data.completeDate -->
+                    <div data-bind="text: completeDate"></div>
+                    <!-- /ko -->
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</template>
+<script type="text/javascript" src="all-tasks.js"></script>
