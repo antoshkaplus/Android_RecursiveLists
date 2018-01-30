@@ -88,7 +88,7 @@
                         </button>
                         <div data-bind="visible: showTasks">
                             <div data-bind="foreach: tasks" id="g-tasks">
-                                <!-- ko if: showGtask($data) -->
+                                <!-- ko if: $root.showGtask($data) -->
                                 <div class="list-group-item" data-bind="css: { 'g-completed': $data.completed, 'g-deleted': $data.deleted }">
                                     <!-- TODO in another window somewhere -->
                                     <!--<div class="col-1" data-bind="visible: $root.onlyDeleted()">-->
