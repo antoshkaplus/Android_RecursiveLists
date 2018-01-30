@@ -3,100 +3,115 @@ itemsRepo = {
 
     pubs: {
         task: {
-            add: ko.subscribable(),
-            makeCurrent: ko.subscribable(),
-            removeCurrent: ko.subscribable(),
-            complete: ko.subscribable()
+            add: new ko.subscribable(),
+            update: new ko.subscribable(),
         },
 
         item: {
-            add: ko.subscribable()
+            add: new ko.subscribable()
         },
 
         any: {
-            move: ko.subscribable(),
-            remove: ko.subscribable()
+            move: new ko.subscribable(),
+            remove: new ko.subscribable()
         }
     },
 
     task: {
-        add: function() {
-        // this has to go away.. pass ready to use object in
-            title = $('#item').val()
-            var item = new Item(title)
-            item.kind = "Task"
-            gapi.client.itemsApi.addItem({task: item}).then(
-               function(resp) {
-                   globalHandler.task.add.notifySubscribers(resp.result.task, "success")
-        //           console.log(item, "add item success")
-               },
-               function(reason) {
-                   globalHandler.task.add.notifySubscribers(item, "failure")
-        //           console.log(reason, "add item failure")
-               })
+        add: function(task) {
+            gapi.client.itemsApi.addItem({task: task}).then(
+                function(resp) {
+                    convertItemRecordInplace(resp.result.task)
+                    itemsRepo.pubs.task.add.notifySubscribers(resp.result.task)
+                },
+                function(reason) {
+                    console.log("task.add.failure", reason)
+                })
         },
         makeCurrent: function(task) {
-            task.current = true
             gapi.client.itemsApi.setCurrentTask({"uuid": task.uuid, "current": true}).then(
                 function(resp) {
-                    refreshItemList()
-                    viewModel.currentTasks(viewModel.currentTasks().concat([task]))
-                    console.log("task made current")
+                    convertItemRecordInplace(resp.result)
+                    itemsRepo.pubs.task.update.notifySubscribers(resp.result)
                 },
                 function(error) {
-                    console.log("task is not made current. failure.")
+                    console.log("task.makeCurrent.failure", error)
                 })
         },
         removeCurrent: function(task) {
-            task.current = false
             gapi.client.itemsApi.setCurrentTask({"uuid": task.uuid, "current": false}).then(
                 function(resp) {
-                    viewModel.currentTasks(viewModel.currentTasks().filter(x => x !== task))
-                    console.log("task remove current. success.")
+                    convertItemRecordInplace(resp.result)
+                    itemsRepo.pubs.task.update.notifySubscribers(resp.result)
                 },
                 function(error) {
-                    console.log("task remove current. failure.")
+                    console.log("task remove current. failure.", error)
                 }
             )
         },
-        completeTask: function(task) {
+        complete: function(task) {
             task.completeDate = new Date()
             gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).then(
                 function(resp) {
-                    console.log("completeTask complete")
-
-                },
-                function(error) {
-                    console.log("completeTask failure")
-                }
-            )
-        }
-    },
-    item: {
-        add: function() {
-        // this has to go away.. pass ready to use object in
-
-            if (isTask(viewModel.parent())) throw "Can't insert Item into Task."
-            title = $('#item').val()
-            var item = new Item(title)
-            item.kind = "Item"
-            gapi.client.itemsApi.addItem({item: item}).then(
-                function(resp) {
-                    globalHandler.item.add.notifySubscribers(resp.result.item, "success");
-        //            console.log(item, "add item success")
+                    convertItemRecordInplace(resp.result)
+                    itemsRepo.pubs.task.update.notifySubscribers(resp.result)
                 },
                 function(reason) {
-                    globalHandler.item.add.notifySubscribers(item);
-        //            console.log(reason, "add item failure")
+                    console.log("task.complete.failure", reason)
+                }
+            )
+        },
+        getCurrent: function(callback) {
+            gapi.client.itemsApi.getCurrentTaskList().execute(
+                function(resp) {
+                    if (!Array.isArray(resp.items)) {
+                        resp.items = []
+                    }
+                    resp.items.forEach(convertItemRecordInplace);
+                    callback(filterOldCompletedTasks(resp.items));
+                },
+                function(reason) {
+                    console.log("task getCurrentList failure", reason)
                 })
         }
     },
+
+    item: {
+        add: function(item) {
+            gapi.client.itemsApi.addItem({item: item}).then(
+                function(resp) {
+                    convertItemRecordInplace(resp.result.item)
+                    itemsRepo.pubs.item.add.notifySubscribers(resp.result.item);
+                },
+                function(reason) {
+                    console.log("item add failure", reason)
+                })
+        }
+    },
+
     any: {
         remove: function(uuid) {
 
         },
         move: function(uuid, newParentUuid) {
 
+        },
+        getAll: function(callback) {
+            gapi.client.itemsApi.getItems().then(
+                function(resp) {
+
+                    var items = resp.result.variantItems
+                    if (!Array.isArray(items)) {
+                        items = []
+                    }
+                    items = convertVariantItems(items)
+
+                    items.forEach(convertItemRecordInplace);
+                    callback(filterOldCompletedTasks(items))
+                },
+                function(reason) {
+                    console.log("any getAll failure", reason);
+                });
         }
     }
 }

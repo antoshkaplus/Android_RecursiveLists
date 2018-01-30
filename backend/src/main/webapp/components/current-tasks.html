@@ -9,13 +9,15 @@
                     </button>
                 </div>
                 <div class="col">
-                    <button type="button" class="col btn btn-primary" data-bind="click: removeCurrent">
+                    <!-- ko if: $data.current -->
+                    <button type="button" class="col btn btn-primary" data-bind="click: itemsRepo.task.removeCurrent">
                         Not Current
                     </button>
+                    <!-- /ko -->
                 </div>
                 <div class="col">
                     <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
-                    <button type="button" class="col btn btn-primary" data-bind="click: completeTask">
+                    <button type="button" class="col btn btn-primary" data-bind="click: itemsRepo.task.complete">
                         Complete
                     </button>
                     <!-- /ko -->

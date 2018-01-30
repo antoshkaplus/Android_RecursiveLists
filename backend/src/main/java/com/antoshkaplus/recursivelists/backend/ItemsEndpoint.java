@@ -359,7 +359,8 @@ public class ItemsEndpoint {
 
 
     @ApiMethod(name = "completeTask", path = "completeTask")
-    public void completeTask(@Named("uuid") final String uuid, @Named("completeDate")final Date completeDate, final User user) {
+    public Task completeTask(@Named("uuid") final String uuid, @Named("completeDate")final Date completeDate, final User user) {
+        ValContainer<Task> valTask = new ValContainer<>();
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
@@ -367,12 +368,15 @@ public class ItemsEndpoint {
                 Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
                 updateTaskComplete(task, completeDate, backendUser);
                 ofy().save().entity(task).now();
+                valTask.setVal(task);
             }
         });
+        return valTask.getVal();
     }
 
     @ApiMethod(name = "setCurrentTask", path = "setCurrentTask")
-    public void setCurrentTask(@Named("uuid") final String uuid, @Named("current") final boolean current, final User user) {
+    public Task setCurrentTask(@Named("uuid") final String uuid, @Named("current") final boolean current, final User user) {
+        ValContainer<Task> valTask = new ValContainer<>();
         ofy().transact(new VoidWork() {
             @Override
             public void vrun() {
@@ -381,8 +385,10 @@ public class ItemsEndpoint {
                 task.setDbVersion(backendUser.increaseVersion());
                 task.setCurrent(current);
                 ofy().save().entity(task).now();
+                valTask.setVal(task);
             }
         });
+        return valTask.getVal();
     }
 
     private void removeTask(String taskId, BackendUser backendUser) {

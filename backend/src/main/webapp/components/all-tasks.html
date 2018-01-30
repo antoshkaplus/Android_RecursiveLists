@@ -1,6 +1,6 @@
 <template>
     <div class="container-fluid">
-        <table class="table">
+        <table class="table table-hover">
             <tbody data-bind="foreach: allTasks">
             <tr>
                 <td data-bind="text: path + title"></td>
@@ -11,7 +11,7 @@
                 </td>
                 <td class="fit">
                     <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
-                    <button type="button" class="btn btn-primary" data-bind="click: completeTask">
+                    <button type="button" class="btn btn-primary" data-bind="click: itemsRepo.task.complete">
                         Complete
                     </button>
                     <!-- /ko -->

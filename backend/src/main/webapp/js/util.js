@@ -1,4 +1,12 @@
 
+ko.observableArray.fn.refresh = function (item) {
+    var index = this['indexOf'](item);
+    if (index >= 0) {
+        this.splice(index, 1);
+        this.splice(index, 0, item);
+    }
+}
+
 function guid() {
   function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
@@ -49,4 +57,10 @@ function itemKindClass(kind) {
 
 function isTask(t) {
     return t.kind == "Task"
+}
+
+function filterOldCompletedTasks(items) {
+    var bound = new Date();
+    bound.setMonth(bound.getMonth() - 1);
+    return items.filter(function(x) { return !isTask(x) || !x.completeDate || x.completeDate > bound})
 }

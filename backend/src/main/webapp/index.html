@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Hello, Endpoints!</title>
+    <title>RecursiveLists</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
 
@@ -9,21 +9,6 @@
     <link rel="stylesheet" href="css/base.css">
 
     <link rel="stylesheet" href="libs/bootstrap-multiselect-0.9.13/css/bootstrap-multiselect.css">
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-
-    <!-- needed for bootstrap 4 somehow -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
-
-    <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect.js"></script>
-    <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect-collapsible-groups.js"></script>
-
-    <link rel="import" href="components/navigation.html">
-    <link rel="import" href="components/current-tasks.html">
-    <link rel="import" href="components/all-tasks.html">
 </head>
 <body class="container-fluid">
 
@@ -44,20 +29,37 @@
     </ul>
     <div class="tab-content">
         <div class="tab-pane fade show active" id="navigation" role="tabpanel" aria-labelledby="navigation-tab">
-            <components-navigation></components-navigation>
+            <components-navigation/>
         </div>
         <div class="tab-pane fade" id="current-tasks" role="tabpanel" aria-labelledby="current-tasks-tab">
-            <components-current-tasks></components-current-tasks>
+            <components-current-tasks/>
         </div>
         <div class="tab-pane fade" id="all-tasks" role="tabpanel" aria-labelledby="all-tasks-tab">
-            <components-all-tasks></components-all-tasks>
+            <components-all-tasks/>
         </div>
     </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <!-- needed for bootstrap 4 somehow -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+
+    <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect.js"></script>
+    <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect-collapsible-groups.js"></script>
 
     <script type="text/javascript" src="js/items-repo.js"></script>
     <script type="text/javascript" src="js/util.js"></script>
     <script type="text/javascript" src="js/gtask.js"></script>
     <script type="text/javascript" src="js/init.js"></script>
+
     <script type="text/javascript" src="js/index.js"></script>
     <script src="https://apis.google.com/js/client.js?onload=init"></script>
+
+    <!-- the problem arises when component start nesting each other in some weird way??? - no -->
+    <link rel="import" href="components/navigation.html">
+    <link rel="import" href="components/current-tasks.html">
+    <link rel="import" href="components/all-tasks.html">
+
 </body>
