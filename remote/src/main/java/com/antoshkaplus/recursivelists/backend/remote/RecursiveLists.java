@@ -80,10 +80,10 @@ public class RecursiveLists {
             System.out.println("save-tasks-as-tasks");
         }
         else if (command.equals("correct-top-level-tasks")) {
-            forEachUser(this::correctDisabled);
+            forEachUser(this::correctTopLevelTasks);
         }
         else if (command.equals("correct-disabled")) {
-            forEachUser(this::correctTopLevelTasks);
+            forEachUser(this::correctDisabled);
         }
         else if (command.equals("save-tasks-as-tasks")) {
             forEachUser(this::saveTasksAsTasks);
@@ -92,7 +92,7 @@ public class RecursiveLists {
             forEachUser(this::resaveItems);
         }
         else {
-            System.out.println("");
+            System.out.println("command not found");
         }
         return true;
     }
@@ -145,7 +145,7 @@ public class RecursiveLists {
             }
             return new Traversal.Pair<Boolean>(true, item.isDisabled());
         });
-
+        System.out.println("Save items: " + changedItems.size());
         ofy().defer().save().entities(changedItems);
     }
 
