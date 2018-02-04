@@ -1,9 +1,9 @@
 
 //server:client_id:
-var CLIENT_ID = "582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com"
-var SCOPES = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/tasks"
+var CLIENT_ID = "582892993246-g35aia2vqj3dl9umucp57utfvmvt57u3.apps.googleusercontent.com";
+var SCOPES = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/tasks";
 
-$(function() {
+(function() {
 
     externalApis = {
 
@@ -14,7 +14,7 @@ $(function() {
         }),
     }
 
-})
+})()
 
 function init() {
     gapi.load('client:auth2', initAuth);

@@ -26,6 +26,9 @@
         <li class="nav-item">
             <a class="nav-link" id="all-tasks-tab" data-toggle="tab" href="#all-tasks" role="tab" aria-controls="all-tasks-tab" aria-selected="false">All Tasks</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" id="recent-tasks-tab" data-toggle="tab" href="#recent-tasks" role="tab" aria-controls="recent-tasks" aria-selected="false">Recent Tasks</a>
+        </li>
     </ul>
     <div class="tab-content">
         <div class="tab-pane fade show active" id="navigation" role="tabpanel" aria-labelledby="navigation-tab">
@@ -36,6 +39,9 @@
         </div>
         <div class="tab-pane fade" id="all-tasks" role="tabpanel" aria-labelledby="all-tasks-tab">
             <components-all-tasks/>
+        </div>
+        <div class="tab-pane fade" id="recent-tasks" role="tabpanel" aria-labelledby="recent-tasks-tab">
+            <components-recent-tasks/>
         </div>
     </div>
 
@@ -61,5 +67,6 @@
     <link rel="import" href="components/navigation.html">
     <link rel="import" href="components/current-tasks.html">
     <link rel="import" href="components/all-tasks.html">
+    <link rel="import" href="components/recent-tasks.html">
 
 </body>

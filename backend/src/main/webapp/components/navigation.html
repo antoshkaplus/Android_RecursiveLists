@@ -29,7 +29,9 @@
                     <div class="col-1">
                         <input type="checkbox" data-bind="enable: !$root.waitRelease(), checkedValue: $data, checked: $root.selectedItems"/>
                     </div>
-                    <div class="col" data-bind="text: title"></div>
+                    <div class="col">
+                        <a href="#" data-bind="text: title, click: $root.pushParent"></a>
+                    </div>
                     <div class="col-2">
                         <!-- ko if: isTask($data) && !$data.completeDate && !$data.current -->
                         <button type="button" class="btn btn-primary" data-bind="click: itemsRepo.task.makeCurrent">
@@ -46,11 +48,6 @@
                         <!-- ko if: $data.completeDate -->
                         <div data-bind="text: completeDate"></div>
                         <!-- /ko -->
-                    </div>
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-primary" data-bind="click: $root.pushParent">
-                            <span class="octicon octicon-triangle-right"></span>
-                        </button>
                     </div>
                 </div>
                 <!-- /ko -->

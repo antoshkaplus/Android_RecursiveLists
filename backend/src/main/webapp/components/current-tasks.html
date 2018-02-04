@@ -2,11 +2,8 @@
     <div class="card card-block">
         <div class="container" data-bind="foreach: currentTasks">
             <div class="row" data-bind="css: itemCssClass($data)">
-                <div class="col" data-bind="text: title"></div>
                 <div class="col">
-                    <button type="button" class="col btn btn-primary" data-bind="click: showCurrent ">
-                        Show
-                    </button>
+                    <a href="#" data-bind="text: title, click: showCurrent"></a>
                 </div>
                 <div class="col">
                     <!-- ko if: $data.current -->

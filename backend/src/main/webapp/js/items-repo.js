@@ -1,6 +1,8 @@
 
 itemsRepo = {
 
+    _allItems: null,
+
     pubs: {
         task: {
             add: new ko.subscribable(),
@@ -97,21 +99,26 @@ itemsRepo = {
 
         },
         getAll: function(callback) {
-            gapi.client.itemsApi.getItems().then(
-                function(resp) {
+            if (Array.isArray(itemsRepo._allItems)) {
+                callback(itemsRepo._allItems);
+            } else {
+                gapi.client.itemsApi.getItems().then(
+                    function(resp) {
 
-                    var items = resp.result.variantItems
-                    if (!Array.isArray(items)) {
-                        items = []
-                    }
-                    items = convertVariantItems(items)
+                        var items = resp.result.variantItems
+                        if (!Array.isArray(items)) {
+                            items = []
+                        }
+                        items = convertVariantItems(items)
 
-                    items.forEach(convertItemRecordInplace);
-                    callback(filterOldCompletedTasks(items))
-                },
-                function(reason) {
-                    console.log("any getAll failure", reason);
-                });
+                        items.forEach(convertItemRecordInplace);
+                        itemsRepo._allItems = items;
+                        callback(filterOldCompletedTasks(items));
+                    },
+                    function(reason) {
+                        console.log("any getAll failure", reason);
+                    });
+            }
         }
     }
 }

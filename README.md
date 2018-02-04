@@ -54,12 +54,10 @@ different classes.
 * have a setting that shows for how long to show completed tasks.
 
 ## TODO Web
-* finish top-level tasks
-* cache ancestor list (gonna be 3-4-5 max elements) inside object. check validity before usage
-* latest tasks (created)
-* recently accessed items (easy navigation)
 * hashtags: on save let user to add tags of directories on current path or maybe just last directory.
 remember user hashtags to give suggestions
+* edit dialog
+* distinguish between leaf and non-leaf items. show button for adding nestiness.
 
 ## Old Android App Screenshots
 
