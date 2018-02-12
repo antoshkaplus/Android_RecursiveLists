@@ -27,12 +27,13 @@
             leafTasks = allTasks.filter(task => !parentTasks.has(task))
 
             for (let s of leafTasks) {
-                s.path = "/ ";
+                s.path = ""
                 it = s.parent;
                 while (it) {
-                    s.path += it.title + " / ";
+                    s.path = " / " + it.title + s.path;
                     it = it.parent;
                 }
+                s.path += " / ";
             }
 
             leafTasks.sort(function (a, b) {

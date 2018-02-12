@@ -23,12 +23,13 @@
             }
 
             for (let s of allTasks) {
-                s.path = "/ ";
+                s.path = ""
                 it = s.parent;
                 while (it) {
-                    s.path += it.title + " / ";
+                    s.path = " / " + it.title + s.path;
                     it = it.parent;
                 }
+                s.path += " / ";
             }
 
             allTasks.sort(function (a, b) {
