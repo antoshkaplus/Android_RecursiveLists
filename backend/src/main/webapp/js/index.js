@@ -55,57 +55,6 @@ function addGoogleTask() {
     })
 }
 
-
-function movePrepared() {
-//    WHY THIS IS HERE ???
-//    var d = new Date().toISOString();
-//    viewModel.preparedItems().forEach(function(item) {
-//         item.updated = d;
-//    });
-    gapi.client.itemsApi.addGtaskList({gtasks: viewModel.preparedItems(), parentUuid: viewModel.parent().uuid}).then(function(resp) {
-        if (resp.code) {
-            console.log("was unable to move prepared items")
-            return
-        }
-        viewModel.preparedItems().forEach(function(entry) {
-            entry.moved = true
-        });
-        viewModel.preparedItems([])
-        viewModel.prepareMove(false)
-
-        updateGtasksVisualization()
-    });
-}
-
-function updateGtasksVisualization() {
-    var data = viewModel.gTasks().slice(0);
-    viewModel.gTasks([]);
-    viewModel.gTasks(data);
-}
-
-function deletePrepared() {
-    s = new Map()
-    viewModel.preparedItems().forEach(function(item) {
-        if (!s.has(item.listId)) s.set(item.listId, [item.id])
-        else s.get(item.listId).push(item.id)
-    })
-    s.forEach(function(itemIds, listId) {
-        callback = function(p) {
-            viewModel.preparedItems().forEach(function(entry) {
-                entry.deleted = true
-            });
-            viewModel.preparedItems([])
-            viewModel.prepareMove(false)
-            console.log(p, 'success delete')
-
-            updateGtasksVisualization()
-        }
-        errorHandler = function(p) { console.log(p, 'failure delete') }
-
-        Gtask.deleteTasks(listId, itemIds, callback, errorHandler)
-    })
-}
-
 function importGoogleTasks() {
     // get last update date from our server
     gapi.client.itemsApi.getGtaskLastUpdate().execute(function(resp) {

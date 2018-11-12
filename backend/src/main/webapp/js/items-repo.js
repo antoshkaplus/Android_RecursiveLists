@@ -20,6 +20,7 @@ itemsRepo = {
     },
 
     task: {
+        // TODO calculate path and parent for the new guy
         add: function(task) {
             gapi.client.itemsApi.addItem({task: task}).then(
                 function(resp) {
@@ -56,12 +57,32 @@ itemsRepo = {
             gapi.client.itemsApi.completeTask({"uuid": task.uuid, "completeDate": task.completeDate.toISOString()}).then(
                 function(resp) {
                     convertItemRecordInplace(resp.result)
+                    UpdateTaskPathParent(itemsRepo._allItems, resp.result)
+
                     itemsRepo.pubs.task.update.notifySubscribers(resp.result)
                 },
                 function(reason) {
                     console.log("task.complete.failure", reason)
                 }
             )
+        },
+        setPriority: function(task) {
+            gapi.client.itemsApi.setPriority({"uuid": task.uuid, "priority": task.priority}).then(
+                function(resp) {
+                    convertItemRecordInplace(resp.result)
+                    UpdateTaskPathParent(itemsRepo._allItems, resp.result)
+
+                    itemsRepo.pubs.task.update.notifySubscribers(resp.result)
+                },
+                function(error) {
+                    msg = error.result.error.message
+                    $.notify({
+                    	message: `task.setPriority.failure ${msg}`
+                    },{
+                    	type: 'danger'
+                    });
+                    console.log(`task.setPriority.failure ${msg}`)
+                })
         },
         getCurrent: function(callback) {
             gapi.client.itemsApi.getCurrentTaskList().execute(
@@ -112,7 +133,13 @@ itemsRepo = {
                         items = convertVariantItems(items)
 
                         items.forEach(convertItemRecordInplace);
+                        items.filter(isTask).forEach((task) => {
+                            if (typeof task.priority == 'undefined') task.priority = 0
+                        })
                         itemsRepo._allItems = items;
+
+                        AddTasksPathsParents(items)
+
                         callback(filterOldCompletedTasks(items));
                     },
                     function(reason) {

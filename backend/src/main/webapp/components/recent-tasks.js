@@ -16,25 +16,14 @@
             for (let task of allTasks) {
                 child = task;
                 while (!child.parent) {
-                    parent = allItems.get(child.parentUuid);
+                    parent = child.parent;
                     if (!parent) break;
                     if (isTask(parent)) parentTasks.add(parent.uuid)
-                    child.parent = parent;
                     child = parent;
                 }
             }
 
             leafTasks = allTasks.filter(task => !parentTasks.has(task))
-
-            for (let s of leafTasks) {
-                s.path = ""
-                it = s.parent;
-                while (it) {
-                    s.path = " / " + it.title + s.path;
-                    it = it.parent;
-                }
-                s.path += " / ";
-            }
 
             leafTasks.sort(function (a, b) {
                 return b.updateDate.getTime() - a.updateDate.getTime();

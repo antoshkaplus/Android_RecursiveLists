@@ -2,8 +2,7 @@
 <html>
 <head>
     <title>RecursiveLists</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css">
-    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/3.5.0/octicons.min.css">
     <link rel="stylesheet" href="css/base.css">
@@ -29,6 +28,9 @@
         <li class="nav-item">
             <a class="nav-link" id="recent-tasks-tab" data-toggle="tab" href="#recent-tasks" role="tab" aria-controls="recent-tasks" aria-selected="false">Recent Tasks</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" id="search-tasks-tab" data-toggle="tab" href="#search-tasks" role="tab" aria-controls="search-tasks" aria-selected="false">Search Tasks</a>
+        </li>
     </ul>
     <div class="tab-content">
         <div class="tab-pane fade show active" id="navigation" role="tabpanel" aria-labelledby="navigation-tab">
@@ -43,30 +45,35 @@
         <div class="tab-pane fade" id="recent-tasks" role="tabpanel" aria-labelledby="recent-tasks-tab">
             <components-recent-tasks/>
         </div>
+        <div class="tab-pane fade" id="search-tasks" role="tabpanel" aria-labelledby="search-tasks-tab">
+            <components-search-tasks/>
+        </div>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <!-- needed for bootstrap 4 somehow -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
 
     <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect.js"></script>
     <script src="libs/bootstrap-multiselect-0.9.13/js/bootstrap-multiselect-collapsible-groups.js"></script>
+    <script src="libs/bootstrap-notify-3.1.3/bootstrap-notify.min.js"></script>
 
+    <script type="text/javascript" src="js/tasks.js"></script>
     <script type="text/javascript" src="js/items-repo.js"></script>
     <script type="text/javascript" src="js/util.js"></script>
     <script type="text/javascript" src="js/gtask.js"></script>
     <script type="text/javascript" src="js/init.js"></script>
-
     <script type="text/javascript" src="js/index.js"></script>
+
     <script src="https://apis.google.com/js/client.js?onload=init"></script>
 
     <!-- the problem arises when component start nesting each other in some weird way??? - no -->
-    <link rel="import" href="components/navigation.html">
-    <link rel="import" href="components/current-tasks.html">
-    <link rel="import" href="components/all-tasks.html">
-    <link rel="import" href="components/recent-tasks.html">
-
+    <link rel="import" href="/components/edit-task.html">
+    <link rel="import" href="/components/navigation.html">
+    <link rel="import" href="/components/current-tasks.html">
+    <link rel="import" href="/components/all-tasks.html">
+    <link rel="import" href="/components/recent-tasks.html">
+    <link rel="import" href="/components/search-tasks.html">
 </body>

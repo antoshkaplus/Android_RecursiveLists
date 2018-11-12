@@ -58,6 +58,7 @@ different classes.
 remember user hashtags to give suggestions
 * edit dialog
 * distinguish between leaf and non-leaf items. show button for adding nestiness.
+* think about showing items created date, maybe as "hover description"
 
 ## Old Android App Screenshots
 

@@ -2,12 +2,7 @@
 *.iml
 /local.properties
 
-/.idea/workspace.xml
-/.idea/libraries
-/.idea/encodings.xml
-/.idea/vcs.xml
-/.idea/modules.xml
-/.idea/misc.xml
+.idea/
 
 .DS_Store
 /build

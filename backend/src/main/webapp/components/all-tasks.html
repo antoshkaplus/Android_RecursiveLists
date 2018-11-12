@@ -3,8 +3,15 @@
         <table class="table table-hover">
             <tbody data-bind="foreach: allTasks">
             <tr>
+                <td class="fit" data-bind="text: priority">
+                </td>
                 <td>
                     <a href="#" data-bind="text: path + title, click: showCurrent"></a>
+                </td>
+                <td class="fit">
+                    <button type="button" class="btn btn-primary" data-bind="click: $root.editTask">
+                        <span class="octicon octicon-pencil"></span>
+                    </button>
                 </td>
                 <td class="fit">
                     <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
@@ -20,5 +27,6 @@
             </tbody>
         </table>
     </div>
+    <div data-bind='component: {name: "ko-component-edit-task", params: {editedTask: editedTask}}'></div>
 </template>
 <script type="text/javascript" src="all-tasks.js"></script>

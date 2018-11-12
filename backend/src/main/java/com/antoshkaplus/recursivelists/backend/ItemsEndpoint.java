@@ -91,7 +91,7 @@ public class ItemsEndpoint {
     @ApiMethod(name = "getCurrentTaskList", path = "get_current_task_list")
     public TaskList getCurrentTaskList(User user) {
         BackendUser backendUser = retrieveBackendUser(user);
-        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).filter("current", true).list();
+        List<Task> taskList = ofy().load().type(Task.class).ancestor(backendUser).filter("current", true).filter("disabled", false).list();
         return new TaskList(taskList);
     }
 
@@ -384,6 +384,23 @@ public class ItemsEndpoint {
                 Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
                 task.setDbVersion(backendUser.increaseVersion());
                 task.setCurrent(current);
+                ofy().save().entity(task).now();
+                valTask.setVal(task);
+            }
+        });
+        return valTask.getVal();
+    }
+
+    @ApiMethod(name = "setPriority", path = "setPriority")
+    public Task setPriority(@Named("uuid") final String uuid, @Named("priority") final int priority, final User user) {
+        ValContainer<Task> valTask = new ValContainer<>();
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                BackendUser backendUser = retrieveBackendUser(user);
+                Task task = ofy().load().type(Task.class).parent(backendUser).id(uuid).now();
+                task.setDbVersion(backendUser.increaseVersion());
+                task.setPriority(priority);
                 ofy().save().entity(task).now();
                 valTask.setVal(task);
             }

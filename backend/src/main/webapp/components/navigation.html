@@ -20,7 +20,13 @@
     </form>
 
     <div class="card">
-        <div class="card-header" data-bind="text: parent().title">
+        <div class="card-header" data-bind="click: setEditingTitle">
+            <div data-bind="if: editingTitle() == false">
+                <div data-bind="text: parent().title"></div>
+            </div>
+            <div data-bind="if: editingTitle">
+                <input id="editTitleInput" type="text" data-bind="attr: {placeholder: parent().title}, textInput: editedTitle, event: {focusout: resetEditingTitle}">
+            </div>
         </div>
         <div class="card-body">
             <div class="container-fluid" data-bind="foreach: itemList">

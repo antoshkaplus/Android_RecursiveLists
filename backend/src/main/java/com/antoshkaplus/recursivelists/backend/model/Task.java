@@ -12,7 +12,7 @@ import java.util.Date;
 public class Task extends Item {
 
     private Date completeDate;
-    private int priority;
+    private int priority = 0;
     private Subtask subtask;
     @Index private boolean current = false;
     @Index private boolean topLevel = false;
@@ -38,6 +38,7 @@ public class Task extends Item {
     }
 
     public void setPriority(int priority) {
+        if (priority < 0) priority = 0;
         this.priority = priority;
     }
 

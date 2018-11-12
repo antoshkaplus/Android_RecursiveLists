@@ -1,4 +1,6 @@
 
+var VM = null;
+
 (function () {
 
     // has to go inside constructor
@@ -22,6 +24,8 @@
         prepareMove: ko.observable(false),
         preparedItems: ko.observableArray(),
         showRemoved: ko.observable(false),
+        editingTitle: ko.observable(false),
+        editedTitle: ko.observable(),
 
         addItem: function(data, event) {
             if (isTask(vm.parent())) throw "Can't insert Item into Task."
@@ -95,7 +99,7 @@
                     gapi.client.itemsApi.moveItem({"uuid": t.uuid, "parentUuid": t.parentUuid}).execute(callback)
                 }
             }
-            cancelMove()
+            vm.cancelMove()
         },
         pushParent: function(item) {
             vm.parentPath.push(vm.parent())
@@ -192,6 +196,59 @@
             list = vm.itemList().slice()
             vm.itemList.removeAll()
             vm.itemList(list)
+        },
+
+        movePrepared: function() {
+            gapi.client.itemsApi.addGtaskList({gtasks: vm.preparedItems(), parentUuid: vm.parent().uuid}).then(
+                function(resp) {
+                    vm.preparedItems().forEach(function(entry) {
+                        entry.moved = true
+                    });
+                    vm.preparedItems([])
+                    vm.prepareMove(false)
+
+                    vm.updateGtasksVisualization()
+                },
+                function(reason) {
+                    console.log("unable to move gtask items")
+                });
+        },
+        deletePrepared: function() {
+            s = new Map()
+            vm.preparedItems().forEach(function(item) {
+                if (!s.has(item.listId)) s.set(item.listId, [item.id])
+                else s.get(item.listId).push(item.id)
+            })
+            s.forEach(function(itemIds, listId) {
+                callback = function(p) {
+                    vm.preparedItems().forEach(function(entry) {
+                        entry.deleted = true
+                    });
+                    vm.preparedItems([])
+                    vm.prepareMove(false)
+                    console.log(p, 'success delete')
+
+                    vm.updateGtasksVisualization()
+                }
+                errorHandler = function(p) { console.log(p, 'failure delete') }
+
+                Gtask.deleteTasks(listId, itemIds, callback, errorHandler)
+            })
+        },
+        updateGtasksVisualization: function() {
+            var data = vm.gTasks().slice(0);
+            vm.gTasks([]);
+            vm.gTasks(data);
+        },
+
+        setEditingTitle: function() {
+            vm.editingTitle(true);
+            $('#editTitleInput').focus().select()
+        },
+        resetEditingTitle: function() {
+            vm.editingTitle(false);
+            // send whatever value is there to the server
+            // maybe keep the previous value for sometime
         }
     }
 
@@ -239,4 +296,6 @@
     }
 
     thatDoc.registerElement('components-navigation', {prototype: Element});
+
+    VM = vm;
 })()

@@ -2,7 +2,15 @@
 (function () {
 
     var vm = {
-        allTasks: ko.observable([])
+        allTasks: ko.observableArray([]),
+        editedTask: ko.observable(),
+
+        editTask: (task) => {
+            vm.editedTask(task)
+        },
+        saveEdit: (changes) => {
+            console.log(changes)
+        }
     }
 
     externalApis.itemsLoaded.subscribe(function(val) {
@@ -10,30 +18,9 @@
         itemsRepo.any.getAll(function(allItems) {
             var allTasks = allItems.filter(isTask)
 
-            allItems = new Map(allItems.map(item => [item.uuid, item]))
-
-            for (let task of allTasks) {
-                child = task;
-                while (!child.parent) {
-                    parent = allItems.get(child.parentUuid);
-                    if (!parent) break;
-                    child.parent = parent;
-                    child = parent;
-                }
-            }
-
-            for (let s of allTasks) {
-                s.path = ""
-                it = s.parent;
-                while (it) {
-                    s.path = " / " + it.title + s.path;
-                    it = it.parent;
-                }
-                s.path += " / ";
-            }
-
             allTasks.sort(function (a, b) {
-                return (a.path + a.title).localeCompare(b.path + b.path);
+                //return (a.path + a.title).localeCompare(b.path + b.path);
+                return a.priority - b.priority;
             })
 
             vm.allTasks(allTasks);
@@ -44,13 +31,20 @@
 //            vm.allTasks.unshift(newTask);
 //        }
 //    });
-//    itemsRepo.pubs.task.update.subscribe(function(task) {
-//        listTask = vm.currentTasks().find(item => item.uuid == task.uuid);
-//        listTask.
-//        if (listTask) {
-//            vm.allTasks.replace(listTask, task)
-//        }
-//    }
+
+    // TODO could be that became an Item, naybe need a flag to tell what happened
+    itemsRepo.pubs.task.update.subscribe(function(task) {
+        listTask = vm.allTasks().find(item => item.uuid == task.uuid);
+        if (listTask) {
+            vm.allTasks.replace(listTask, task)
+        } else {
+            vm.allTasks.unshift(task)
+        }
+        vm.allTasks.sort(function (a, b) {
+            //return (a.path + a.title).localeCompare(b.path + b.path);
+            return a.priority - b.priority;
+        })
+    })
 
     var thatDoc = document;
     var thisDoc = document.currentScript.ownerDocument

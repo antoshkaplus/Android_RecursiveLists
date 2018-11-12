@@ -11,9 +11,14 @@ buildscript {
 }
 
 repositories {
+    maven {
+        url 'https://maven-central.storage.googleapis.com'
+    }
     mavenCentral()
     jcenter();
 }
+
+def projectId = 'antoshkaplus-recursivelists'
 
 apply plugin: 'java'
 apply plugin: 'war'
@@ -22,31 +27,29 @@ apply plugin: 'com.google.cloud.tools.appengine'
 
 dependencies {
 
-    compile 'com.google.endpoints:endpoints-framework:2.0.10'
+    implementation 'com.google.endpoints:endpoints-framework:2.0.10'
     //compile 'com.google.appengine:appengine-api-1.0-sdk:1.9.59'
 
-    compile 'javax.inject:javax.inject:1'
-    compileOnly 'javax.servlet:javax.servlet-api:4.0.0'
+    implementation 'javax.inject:javax.inject:1'
+    implementation 'javax.servlet:javax.servlet-api:4.0.0'
 
-    compile 'com.googlecode.objectify:objectify:5.1.21'
-    compile 'com.google.apis:google-api-services-tasks:v1-rev46-1.22.0'
-    compile 'org.apache.commons:commons-lang3:3.6'
-    compile 'com.googlecode.lambdaj:lambdaj:2.3.3'
+    implementation 'com.googlecode.objectify:objectify:5.1.21'
+    implementation 'com.google.apis:google-api-services-tasks:v1-rev46-1.22.0'
+    implementation 'org.apache.commons:commons-lang3:3.6'
+    implementation 'com.googlecode.lambdaj:lambdaj:2.3.3'
 
-    compile project(path: ':bee')
+    implementation project(path: ':bee')
 
-    testCompile 'com.google.appengine:appengine-api-labs:+'
-    testCompile 'com.google.appengine:appengine-api-stubs:+'
-    testCompile 'com.google.appengine:appengine-testing:+'
+    testImplementation 'com.google.appengine:appengine-api-labs:+'
+    testImplementation 'com.google.appengine:appengine-api-stubs:+'
+    testImplementation 'com.google.appengine:appengine-testing:+'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.googlecode.json-simple:json-simple:1.1.1'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'com.googlecode.json-simple:json-simple:1.1.1'
 }
 
 appengine {
     deploy {   // deploy configuration
-
-        project = 'antoshkaplus-recursivelists'
         version = 5
         stopPreviousVersion = true
         promote = true
@@ -54,8 +57,18 @@ appengine {
 }
 
 endpointsServer {
-    hostname = "antoshkaplus-recursivelists.appspot.com"
+    hostname = "${projectId}.appspot.com"
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
+
+// this replaces the ${endpoints.project.id} in appengine-web.xml and web.xml
+task replaceProjectId(type: Copy) {
+    from 'src/main/webapp/WEB-INF/'
+    include '*.xml'
+    into 'build/exploded-backend/WEB-INF'
+    expand(endpoints:[project:[id:projectId]])
+    filteringCharset = 'UTF-8'
+}
+assemble.dependsOn replaceProjectId

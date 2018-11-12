@@ -1,0 +1,35 @@
+<template>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Search</span>
+                </div>
+                <input type="text" class="form-control" placeholder="Request" data-bind="textInput: searchRequest"/>
+            </div>
+        </div>
+        <div class="row">
+            <table class="table table-hover">
+                <tbody data-bind="foreach: searchResult">
+                <tr>
+                    <td>
+                        <a href="#" data-bind="text: path + title, click: showCurrent"></a>
+                    </td>
+                    <td class="fit">
+                        <!-- ko if: !($data.completeDate || subtask.totalCount > 0) -->
+                        <button type="button" class="btn btn-primary" data-bind="click: itemsRepo.task.complete">
+                            Complete
+                        </button>
+                        <!-- /ko -->
+                        <!-- ko if: $data.completeDate -->
+                        <div data-bind="text: completeDate"></div>
+                        <!-- /ko -->
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</template>
+<script type="text/javascript" src="/js/tasks.js"></script>
+<script type="text/javascript" src="search-tasks.js"></script>
