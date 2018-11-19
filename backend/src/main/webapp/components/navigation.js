@@ -147,11 +147,12 @@ var VM = null;
                     tasks.forEach(function(t) { t.listId = taskList.id; })
                     var ids = tasks.map(function(t) { return t.id });
                     gapi.client.itemsApi.checkGtaskIdPresent({ids : ids}).then(function(resp) {
-                        if (!Array.isArray(resp.result.ids)) return;
-
-                        var ids = resp.result.ids
+                        var idPresent = resp.result.ids
+                        if (!Array.isArray(idPresent)) {
+                            idPresent = new Array(tasks.length).fill(null);
+                        }
                         for (var j = 0; j < tasks.length; ++j) {
-                            tasks[j].moved = (ids[j] != null);
+                            tasks[j].moved = (idPresent[j] != null);
                             obj.tasks.push(tasks[j])
                         }
                         obj.tasks.sort(function (left, right) { return new Date(right.updated) - new Date(left.updated); });

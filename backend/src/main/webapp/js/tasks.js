@@ -7,7 +7,10 @@ function BuildTasksSearchMap(allItems) {
 
     var regex = /[a-zA-Z\u{0400}-\u{04FF}\+\-]{2,}/ug;
     for (let task of allTasks) {
-        for (let word of task.title.match(regex)) {
+        var match = task.title.match(regex)
+        if (match == null) continue
+
+        for (let word of match) {
             word = word.toLowerCase()
             for (var len = 2; len <= word.length; ++len) {
                 var start = word.substr(0, len)

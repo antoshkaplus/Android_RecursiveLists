@@ -14,12 +14,16 @@
         $(componentInfo.element).find('.modal').attr('id', vm.componentUuid)
 
         vm.editedTask = ko.observable()
+        vm.editedTitle = ko.observable()
         vm.editedPriority = ko.observable()
+        vm.makeItem = ko.observable()
 
         params.editedTask.subscribe((task) => {
             if (!task) return
             this.editedTask(task)
+            this.editedTitle(task.title)
             this.editedPriority(task.priority)
+            this.makeItem(false)
             $('#' + this.componentUuid).modal()
         })
 

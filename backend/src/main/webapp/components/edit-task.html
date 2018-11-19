@@ -4,13 +4,24 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" data-bind="text: editedTask().title"></h5>
+                    <textarea class="modal-title" data-bind="text: editedTask().title" style="min-width: 100%"></textarea>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <input data-bind="value: editedPriority">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" data-bind="checked: makeItem">
+                        <label class="form-check-label">
+                            Replace with Item
+                        </label>
+
+                        <!-- TODO provide old path and ability to write a new one -->
+
+                    </div>
+                    <div data-bind="visible: !makeItem()">
+                        <input data-bind="value: editedPriority">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bind="click: save">Save changes</button>
