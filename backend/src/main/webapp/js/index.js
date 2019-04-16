@@ -1,4 +1,10 @@
 
+(function () {
+
+    ko.applyBindings()
+
+})()
+
 function itemCssClass(item) {
     cssClass = ""
     if (item.disabled) cssClass += 'g-deleted '
